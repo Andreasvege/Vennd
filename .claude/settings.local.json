@@ -2,7 +2,27 @@
   "permissions": {
     "allow": [
       "Bash(\"C:/Users/andyv/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0/scripts/start-server.sh\" --project-dir \"C:/Users/andyv/Documents/GitHub/Vennekart\")",
-      "Bash(\"C:/Users/andyv/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0/skills/brainstorming/scripts/start-server.sh\" --project-dir \"C:/Users/andyv/Documents/GitHub/Vennekart\")"
+      "Bash(\"C:/Users/andyv/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0/skills/brainstorming/scripts/start-server.sh\" --project-dir \"C:/Users/andyv/Documents/GitHub/Vennekart\")",
+      "Bash(npm install:*)",
+      "Bash(npm view:*)",
+      "Bash(node -e \"const p = require\\(''./package.json''\\); console.log\\(Object.keys\\({...p.dependencies,...p.devDependencies}\\).filter\\(k => [''next-auth'',''@prisma/client'',''@xyflow/react'',''vitest'',''prisma''].includes\\(k\\)\\).join\\('', ''\\)\\)\")",
+      "Bash(npm test:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(echo \"Exit code: $?\")",
+      "Bash(npx prisma:*)",
+      "Bash(npx tsc:*)",
+      "Bash(find C:/Users/andyv/Documents/GitHub/Vennekart/node_modules/prisma -name *.d.ts)",
+      "Bash(find C:/Users/andyv/Documents/GitHub/Vennekart/node_modules/@prisma/config -name *.d.ts)",
+      "Bash(node -e \"const rf = require\\(''./node_modules/@xyflow/react/dist/esm/index.js''\\); console.log\\(Object.keys\\(rf\\).filter\\(k => k.includes\\(''NodeDrag''\\) || k.includes\\(''OnNode''\\)\\)\\)\")",
+      "Bash(npm run:*)",
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(exit 0)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :3000)",
+      "Bash(taskkill /PID 27616 /F)",
+      "Bash(cmd /c \"taskkill /PID 27616 /F\")",
+      "Bash(del \"C:\\\\Users\\\\andyv\\\\Documents\\\\GitHub\\\\Vennekart\\\\.next\\\\dev\\\\lock\")"
     ]
   }
 }

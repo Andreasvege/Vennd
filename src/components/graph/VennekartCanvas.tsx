@@ -109,7 +109,7 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
           variant={BackgroundVariant.Dots}
           gap={24}
           size={1}
-          color="rgba(255,255,255,0.06)"
+          color="rgba(255,255,255,0.3)"
         />
         <Controls className="!bg-Glass !border-GlassBorder !rounded-xl !shadow-lg" />
       </ReactFlow>
