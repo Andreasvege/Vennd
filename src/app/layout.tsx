@@ -1,36 +1,38 @@
-import type { Metadata } from "next";
-import { Geist } from "next/font/google";
-import "./globals.css";
-import { Navbar } from "@/components/Navbar";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import type { Metadata } from 'next'
+import { Geist } from 'next/font/google'
+import './globals.css'
+import { Navbar } from '@/components/Navbar'
+import { SessionProvider } from '@/components/providers/SessionProvider'
+import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
-// Change to any Google Font, or remove and use a local font via @font-face in globals.css
 const geist = Geist({
-  variable: "--font-sans",
-  subsets: ["latin"],
-});
+  variable: '--font-sans',
+  subsets: ['latin'],
+})
 
 export const metadata: Metadata = {
-  title: "Your Project Name",
-  description: "Your project description",
-};
+  title: 'Vennekart',
+  description: 'Din personlige sosiale relasjonsdagbok',
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="no">
       <body className={`${geist.variable} antialiased`}>
-        <div className="min-h-screen">
-          <Navbar />
-          {children}
-        </div>
+        <SessionProvider>
+          <div className="min-h-screen">
+            <Navbar />
+            {children}
+          </div>
+        </SessionProvider>
         <Analytics />
         <SpeedInsights />
       </body>
     </html>
-  );
+  )
 }

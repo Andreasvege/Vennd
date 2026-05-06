@@ -54,9 +54,11 @@
    Tailwind usage: bg-Primary, text-Accent, border-Accent, etc.
    ==================================== */
 :root {
-  --Primary: #1a1a2e;   /* Main background / dark color */
-  --Accent:  #e94560;   /* Brand accent / highlight color */
-  --Text:    #eaeaea;   /* Main text color */
+  --Primary: #0f0f1a;
+  --Accent:  #6c63ff;
+  --Text:    #eaeaea;
+  --Glass:   rgba(255, 255, 255, 0.06);
+  --GlassBorder: rgba(255, 255, 255, 0.12);
 }
 
 
@@ -69,8 +71,8 @@
   --color-Primary: var(--Primary);
   --color-Accent:  var(--Accent);
   --color-Text:    var(--Text);
-
-  /* Custom breakpoint for the navbar — adjust if needed */
+  --color-Glass:   var(--Glass);
+  --color-GlassBorder: var(--GlassBorder);
   --breakpoint-navbar: 768px;
 }
 
@@ -93,4 +95,13 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   font-weight: bold;
+}
+
+/* Glassmorphism card — use className="glass-card" */
+.glass-card {
+  background: var(--Glass);
+  border: 1px solid var(--GlassBorder);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 1rem;
 }
