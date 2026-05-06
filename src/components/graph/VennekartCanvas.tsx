@@ -52,7 +52,7 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
 
   // Convert persons → React Flow nodes
   useEffect(() => {
-    const newNodes: Node[] = persons.map((p) => ({
+    const newNodes: Node[] = persons.map((p: Person) => ({
       id: p.id,
       type: 'person',
       position: { x: p.positionX, y: p.positionY },
@@ -70,7 +70,7 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
 
   // Convert relationships → React Flow edges
   useEffect(() => {
-    const newEdges: Edge[] = relationships.map((r) => ({
+    const newEdges: Edge[] = relationships.map((r: Relationship) => ({
       id: r.id,
       source: r.fromPersonId,
       target: r.toPersonId,

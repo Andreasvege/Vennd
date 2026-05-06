@@ -35,7 +35,7 @@ export function RemindersSidebar({ refreshKey }: Props) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ dismissed: true }),
     })
-    setReminders((prev) => prev.filter((r) => r.id !== id))
+    setReminders((prev) => prev.filter((r: ReminderWithPerson) => r.id !== id))
   }
 
   if (!visible) {
@@ -67,7 +67,7 @@ export function RemindersSidebar({ refreshKey }: Props) {
         {reminders.length === 0 ? (
           <p className="text-xs text-Text/30 text-center py-6">Ingen påminnelser</p>
         ) : (
-          reminders.map((r) => (
+          reminders.map((r: ReminderWithPerson) => (
             <div
               key={r.id}
               className="bg-white/4 rounded-xl p-3 flex flex-col gap-1.5 group"

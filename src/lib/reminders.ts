@@ -14,13 +14,13 @@ export function generateAutoReminders(
   now: Date = new Date()
 ): AutoReminderInput[] {
   return persons
-    .filter((person) => {
+    .filter((person: PersonWithLastContact) => {
       if (!person.lastContactDate) return true
       const diffMs = now.getTime() - person.lastContactDate.getTime()
       const diffWeeks = diffMs / (1000 * 60 * 60 * 24 * 7)
       return diffWeeks >= WEEKS_THRESHOLD
     })
-    .map((person) => {
+    .map((person: PersonWithLastContact) => {
       const weeksAgo = person.lastContactDate
         ? Math.floor(
             (now.getTime() - person.lastContactDate.getTime()) /

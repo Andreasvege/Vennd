@@ -69,7 +69,7 @@ export function AddRelationshipModal({ isOpen, onClose, onSuccess }: Props) {
           <label className="text-sm text-Text/60">Fra person</label>
           <select value={fromId} onChange={(e) => setFromId(e.target.value)} className={selectClass}>
             <option value="">Velg person...</option>
-            {persons.map((p) => (
+            {persons.map((p: Person) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
@@ -79,7 +79,7 @@ export function AddRelationshipModal({ isOpen, onClose, onSuccess }: Props) {
           <label className="text-sm text-Text/60">Til person</label>
           <select value={toId} onChange={(e) => setToId(e.target.value)} className={selectClass}>
             <option value="">Velg person...</option>
-            {persons.filter((p) => p.id !== fromId).map((p) => (
+            {persons.filter((p: Person) => p.id !== fromId).map((p: Person) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
@@ -88,7 +88,7 @@ export function AddRelationshipModal({ isOpen, onClose, onSuccess }: Props) {
         <div className="flex flex-col gap-2">
           <label className="text-sm text-Text/60">Relasjonstype</label>
           <div className="flex flex-wrap gap-2">
-            {RELATIONSHIP_TYPES.map((t) => (
+            {RELATIONSHIP_TYPES.map((t: RelationshipType) => (
               <button
                 key={t}
                 type="button"

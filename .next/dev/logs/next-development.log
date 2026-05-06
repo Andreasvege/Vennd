@@ -248,3 +248,14 @@ See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode de
 [01:02:44.870] Server  LOG     prisma:query "SELECT \"public\".\"User\".\"id\", \"public\".\"User\".\"name\", \"public\".\"User\".\"email\", \"public\".\"User\".\"emailVerified\", \"public\".\"User\".\"image\", \"public\".\"User\".\"createdAt\" FROM \"public\".\"User\" WHERE \"public\".\"User\".\"id\" = $1 OFFSET $2"
 [01:02:45.005] Server  LOG     prisma:query "SELECT \"public\".\"Session\".\"id\", \"public\".\"Session\".\"sessionToken\", \"public\".\"Session\".\"userId\", \"public\".\"Session\".\"expires\" FROM \"public\".\"Session\" WHERE (\"public\".\"Session\".\"sessionToken\" = $1 AND 1=1) LIMIT $2 OFFSET $3"
 [01:02:45.115] Server  LOG     prisma:query "SELECT \"public\".\"User\".\"id\", \"public\".\"User\".\"name\", \"public\".\"User\".\"email\", \"public\".\"User\".\"emailVerified\", \"public\".\"User\".\"image\", \"public\".\"User\".\"createdAt\" FROM \"public\".\"User\" WHERE \"public\".\"User\".\"id\" = $1 OFFSET $2"
+[01:09:20.257] Server  LOG     ✓ Compiled in 25ms
+[01:11:45.246] Server  LOG     ✓ Compiled in 178ms
+[01:11:50.201] Server  LOG     ✓ Compiled in 108ms
+[01:11:54.135] Server  LOG     ✓ Compiled in 82ms
+[01:11:57.372] Server  LOG     ✓ Compiled in 74ms
+[01:12:03.318] Server  LOG     ✓ Compiled in 90ms
+[01:12:06.515] Server  LOG     ✓ Compiled in 104ms
+[01:12:12.578] Server  LOG     ✓ Compiled in 114ms
+[01:12:16.025] Server  LOG     ✓ Compiled in 120ms
+[01:12:19.296] Server  LOG     ✓ Compiled in 106ms
+[01:12:24.014] Server  LOG     ✓ Compiled in 86ms

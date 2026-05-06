@@ -57,7 +57,7 @@ export function TimelineStripe({ refreshKey, onAddLog }: Props) {
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex gap-4 flex-1 overflow-hidden">
-          {entries.slice(0, 4).map((entry) => (
+          {entries.slice(0, 4).map((entry: LogEntryWithPerson) => (
             <div key={entry.id} className="flex items-center gap-1.5 text-sm whitespace-nowrap text-Text/70">
               <span>{LOG_EMOJI[entry.type]}</span>
               <span className="font-medium text-Text">{entry.person.name}</span>
@@ -79,7 +79,7 @@ export function TimelineStripe({ refreshKey, onAddLog }: Props) {
       {/* Expanded list */}
       {expanded && (
         <div className="border-t border-white/5 px-4 py-3 flex flex-col gap-2 max-h-48 overflow-y-auto">
-          {entries.map((entry) => (
+          {entries.map((entry: LogEntryWithPerson) => (
             <Link
               key={entry.id}
               href={`/person/${entry.personId}`}

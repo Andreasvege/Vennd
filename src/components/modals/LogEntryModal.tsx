@@ -73,7 +73,7 @@ export function LogEntryModal({ isOpen, onClose, onSuccess, defaultPersonId }: P
             className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-Text focus:outline-none focus:border-Accent transition-colors"
           >
             <option value="">Velg person...</option>
-            {persons.map((p) => (
+            {persons.map((p: Person) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>

@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import type { Reminder, LogEntry } from '@/types'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -91,7 +92,7 @@ export default async function PersonPage({ params }: Params) {
         <div className="glass-card p-5 mb-6">
           <h2 className="text-sm font-semibold text-Text/60 uppercase tracking-wider mb-3">Påminnelser</h2>
           <div className="flex flex-col gap-2">
-            {person.reminders.map((r) => (
+            {person.reminders.map((r: Reminder) => (
               <div key={r.id} className="flex items-start gap-2 text-sm text-Text/70">
                 <span>{r.type === 'AUTO' ? '⏰' : '📌'}</span>
                 <span>{r.message}</span>
@@ -108,7 +109,7 @@ export default async function PersonPage({ params }: Params) {
           <p className="text-Text/30 text-sm">Ingen loggede kontakter ennå.</p>
         ) : (
           <div className="flex flex-col gap-3">
-            {person.logEntries.map((entry) => (
+            {person.logEntries.map((entry: LogEntry) => (
               <div key={entry.id} className="flex items-start gap-3 py-2 border-b border-white/5 last:border-0">
                 <span className="text-xl mt-0.5">{LOG_EMOJI[entry.type]}</span>
                 <div className="flex-1 min-w-0">

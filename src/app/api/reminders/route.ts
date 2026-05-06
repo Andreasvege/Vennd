@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { generateAutoReminders } from '@/lib/reminders'
+import { generateAutoReminders, type AutoReminderInput } from '@/lib/reminders'
 import type { ReminderType } from '@/types'
 
 export async function GET() {
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     })
 
     const created = await prisma.reminder.createMany({
-      data: toGenerate.map((r) => ({
+      data: toGenerate.map((r: AutoReminderInput) => ({
         userId: r.userId,
         personId: r.personId,
         type: 'AUTO' as ReminderType,

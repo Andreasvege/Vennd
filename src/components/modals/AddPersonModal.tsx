@@ -78,7 +78,7 @@ export function AddPersonModal({ isOpen, onClose, onSuccess }: Props) {
         <div className="flex flex-col gap-2">
           <label className="text-sm text-Text/60">Farge</label>
           <div className="flex gap-2 flex-wrap">
-            {COLOR_OPTIONS.map((c) => (
+            {COLOR_OPTIONS.map((c: string) => (
               <button
                 key={c}
                 type="button"
