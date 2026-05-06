@@ -39,7 +39,7 @@ export async function POST(req: Request) {
       },
     })
 
-    const personsWithLastContact = persons.map((p) => ({
+    const personsWithLastContact = persons.map((p: { id: string; name: string; userId: string; logEntries: { date: Date }[] }) => ({
       id: p.id,
       name: p.name,
       userId: p.userId,
