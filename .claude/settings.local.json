@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"C:/Users/andyv/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0/scripts/start-server.sh\" --project-dir \"C:/Users/andyv/Documents/GitHub/Vennekart\")",
+      "Bash(\"C:/Users/andyv/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0/skills/brainstorming/scripts/start-server.sh\" --project-dir \"C:/Users/andyv/Documents/GitHub/Vennekart\")"
+    ]
+  }
+}

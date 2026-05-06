@@ -1,0 +1,97 @@
+<h2>Layoutforslag — Graf i sentrum</h2>
+<p class="subtitle">Slik kan grensesnittet se ut. Klikk for å velge om dette er riktig retning.</p>
+
+<div class="options">
+  <div class="option" data-choice="layout-a" onclick="toggleSelect(this)" style="flex-direction:column;align-items:stretch;padding:0;overflow:hidden;">
+    <div style="background:#0f0f1a;border-radius:8px;overflow:hidden;font-family:sans-serif;">
+
+      <!-- Top bar / nav -->
+      <div style="background:#16162a;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #2a2a40;">
+        <span style="color:#6c63ff;font-weight:700;font-size:14px;">Vennekartet</span>
+        <div style="display:flex;gap:12px;">
+          <span style="color:#888;font-size:11px;">Graf</span>
+          <span style="color:#888;font-size:11px;">Logg</span>
+          <span style="color:#888;font-size:11px;">Søk</span>
+        </div>
+        <div style="width:28px;height:28px;border-radius:50%;background:#6c63ff;display:flex;align-items:center;justify-content:center;color:white;font-size:11px;">A</div>
+      </div>
+
+      <!-- Timeline strip (collapsed) -->
+      <div style="background:#1a1a30;border-bottom:1px solid #2a2a40;padding:6px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;">
+        <span style="color:#6c63ff;font-size:10px;text-transform:uppercase;letter-spacing:1px;">Tidslinje</span>
+        <div style="display:flex;gap:6px;flex:1;align-items:center;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#ff6584;"></div>
+          <span style="color:#888;font-size:10px;">Jenny – kaffe</span>
+          <div style="width:1px;height:12px;background:#333;"></div>
+          <div style="width:8px;height:8px;border-radius:50%;background:#43b89c;"></div>
+          <span style="color:#888;font-size:10px;">Lars – ringte</span>
+          <div style="width:1px;height:12px;background:#333;"></div>
+          <div style="width:8px;height:8px;border-radius:50%;background:#f9a825;"></div>
+          <span style="color:#888;font-size:10px;">Mia – fødselsdagen</span>
+        </div>
+        <span style="color:#555;font-size:10px;">▼ vis mer</span>
+      </div>
+
+      <!-- Main area -->
+      <div style="display:flex;height:240px;">
+
+        <!-- Graph (center) -->
+        <div style="flex:1;background:#0f0f1a;position:relative;display:flex;align-items:center;justify-content:center;">
+          <svg width="260" height="200" viewBox="0 0 260 200">
+            <line x1="130" y1="100" x2="60" y2="50" stroke="#6c63ff" stroke-width="1.5" opacity="0.5"/>
+            <line x1="130" y1="100" x2="200" y2="55" stroke="#43b89c" stroke-width="1.5" opacity="0.5"/>
+            <line x1="130" y1="100" x2="55" y2="148" stroke="#6c63ff" stroke-width="1.5" opacity="0.5"/>
+            <line x1="130" y1="100" x2="205" y2="148" stroke="#f9a825" stroke-width="1.5" opacity="0.5"/>
+            <line x1="130" y1="100" x2="130" y2="175" stroke="#6c63ff" stroke-width="1.5" opacity="0.5"/>
+            <line x1="60" y1="50" x2="200" y2="55" stroke="#444" stroke-width="1" opacity="0.3"/>
+            <!-- You -->
+            <circle cx="130" cy="100" r="22" fill="#6c63ff" opacity="0.9"/>
+            <text x="130" y="104" text-anchor="middle" fill="white" font-size="11" font-weight="bold">Meg</text>
+            <!-- Friends -->
+            <circle cx="60" cy="50" r="14" fill="#ff6584"/>
+            <text x="60" y="54" text-anchor="middle" fill="white" font-size="9">Jenny</text>
+            <circle cx="200" cy="55" r="14" fill="#43b89c"/>
+            <text x="200" y="59" text-anchor="middle" fill="white" font-size="9">Lars</text>
+            <circle cx="55" cy="148" r="12" fill="#29b6f6"/>
+            <text x="55" y="152" text-anchor="middle" fill="white" font-size="9">Erik</text>
+            <circle cx="205" cy="148" r="12" fill="#f9a825"/>
+            <text x="205" y="152" text-anchor="middle" fill="white" font-size="9">Mia</text>
+            <circle cx="130" cy="175" r="12" fill="#ef5350"/>
+            <text x="130" y="179" text-anchor="middle" fill="white" font-size="9">Kari</text>
+          </svg>
+          <!-- Floating add button -->
+          <div style="position:absolute;bottom:12px;right:12px;width:28px;height:28px;border-radius:50%;background:#6c63ff;display:flex;align-items:center;justify-content:center;color:white;font-size:16px;cursor:pointer;">+</div>
+        </div>
+
+        <!-- Right sidebar (persistent, dismissible) -->
+        <div style="width:160px;background:#13132a;border-left:1px solid #2a2a40;display:flex;flex-direction:column;">
+          <div style="padding:8px 10px;border-bottom:1px solid #2a2a40;display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:#aaa;font-size:10px;text-transform:uppercase;letter-spacing:1px;">Påminnelser</span>
+            <span style="color:#555;font-size:11px;cursor:pointer;">×</span>
+          </div>
+          <div style="padding:8px;display:flex;flex-direction:column;gap:6px;overflow:auto;">
+            <div style="background:#1e1e38;border-radius:6px;padding:7px 8px;border-left:2px solid #f9a825;">
+              <div style="color:#f9a825;font-size:9px;">3 uker siden</div>
+              <div style="color:#ddd;font-size:10px;margin-top:2px;">Ring <strong>Lars</strong></div>
+            </div>
+            <div style="background:#1e1e38;border-radius:6px;padding:7px 8px;border-left:2px solid #ef5350;">
+              <div style="color:#ef5350;font-size:9px;">6 uker siden</div>
+              <div style="color:#ddd;font-size:10px;margin-top:2px;">Se <strong>Kari</strong></div>
+            </div>
+            <div style="background:#1e1e38;border-radius:6px;padding:7px 8px;border-left:2px solid #6c63ff;">
+              <div style="color:#6c63ff;font-size:9px;">Manuell</div>
+              <div style="color:#ddd;font-size:10px;margin-top:2px;">Spør Jenny om Amsterdam</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="content" style="padding:12px 16px;">
+      <h3>Denne layouten — stemmer den?</h3>
+      <p>Tidslinje øverst (kollapset), graf i midten, påminnelser i høyre sidepanel med ×-knapp for å skjule.</p>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:16px;">Klikk på kortet hvis dette er riktig retning, eller gi tilbakemelding i terminalen.</p>
