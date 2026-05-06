@@ -1,50 +1,88 @@
-import Link from "next/link";
+'use client'
 
-export default function Home() {
-  return (
-    <main>
-      {/* Hero Section */}
-      <section className="min-h-[80vh] flex flex-col items-center justify-center text-center px-4">
-        {/* Replace with logo: <img src="/logo.png" alt="Logo" className="w-64 mb-8" /> */}
-        <h1 className="text-6xl md:text-8xl font-bold text-Accent mb-6">
-          YourBrand
-        </h1>
-        <p className="text-xl md:text-2xl text-Text/80 max-w-xl mb-10">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-          Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+import { useState } from 'react'
+import { useSession, signIn } from 'next-auth/react'
+import { VennekartCanvas } from '@/components/graph/VennekartCanvas'
+import { TimelineStripe } from '@/components/TimelineStripe'
+import { RemindersSidebar } from '@/components/RemindersSidebar'
+import { AddPersonModal } from '@/components/modals/AddPersonModal'
+import { AddRelationshipModal } from '@/components/modals/AddRelationshipModal'
+import { LogEntryModal } from '@/components/modals/LogEntryModal'
+
+export default function HomePage() {
+  const { data: session, status } = useSession()
+
+  const [refreshKey, setRefreshKey] = useState(0)
+  const refresh = () => setRefreshKey((k) => k + 1)
+
+  const [addPersonOpen, setAddPersonOpen] = useState(false)
+  const [addRelationshipOpen, setAddRelationshipOpen] = useState(false)
+  const [logEntryOpen, setLogEntryOpen] = useState(false)
+  const [logEntryPersonId, setLogEntryPersonId] = useState<string | undefined>()
+
+  const handleAddLog = (personId?: string) => {
+    setLogEntryPersonId(personId)
+    setLogEntryOpen(true)
+  }
+
+  if (status === 'loading') {
+    return (
+      <div className="flex items-center justify-center h-[80vh]">
+        <div className="text-Text/40">Laster...</div>
+      </div>
+    )
+  }
+
+  if (!session) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[80vh] gap-6 text-center px-4">
+        <h1 className="text-5xl font-bold text-Accent">Vennekart</h1>
+        <p className="text-Text/60 max-w-sm">
+          Din personlige sosiale relasjonsdagbok. Hold oversikt over vennene dine, logg kontakt og få påminnelser.
         </p>
-        <Link
-          id="cta"
-          href="/about"
-          className="hover-glitch font-bold bg-Accent text-Primary px-8 py-4 rounded-lg hover:opacity-80 transition-all text-xl"
+        <button
+          onClick={() => signIn('google')}
+          className="bg-Accent text-Primary font-bold px-8 py-4 rounded-2xl text-lg hover:opacity-90 transition-opacity shadow-lg shadow-Accent/30"
         >
-          Learn More →
-        </Link>
-      </section>
+          Kom i gang med Google
+        </button>
+      </div>
+    )
+  }
 
-      {/* About Teaser */}
-      <section className="py-16 px-4 max-w-3xl mx-auto text-center">
-        <h2 className="text-4xl font-bold mb-6">What We Do</h2>
-        <p className="text-lg text-Text/80 leading-relaxed">
-          Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris
-          nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in
-          reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-        </p>
-      </section>
+  return (
+    <>
+      <TimelineStripe
+        refreshKey={refreshKey}
+        onAddLog={() => handleAddLog(undefined)}
+      />
 
-      {/* CTA Section */}
-      <section className="py-16 px-4 bg-Accent">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-4 text-Primary">Ready to get started?</h2>
-          <p className="text-lg text-Primary/80 mb-8">
-            Excepteur sint occaecat cupidatat non proident, sunt in culpa qui
-            officia deserunt mollit anim id est laborum.
-          </p>
-          <Link href="/contact" className="hover-glitch text-Primary font-bold hover:underline">
-            Contact us →
-          </Link>
-        </div>
-      </section>
-    </main>
-  );
+      <div className="flex mx-4 mt-2 gap-0" style={{ height: 'calc(100vh - 140px)' }}>
+        <VennekartCanvas
+          onAddPerson={() => setAddPersonOpen(true)}
+          onAddRelationship={() => setAddRelationshipOpen(true)}
+          onAddLog={handleAddLog}
+          refreshKey={refreshKey}
+        />
+        <RemindersSidebar refreshKey={refreshKey} />
+      </div>
+
+      <AddPersonModal
+        isOpen={addPersonOpen}
+        onClose={() => setAddPersonOpen(false)}
+        onSuccess={refresh}
+      />
+      <AddRelationshipModal
+        isOpen={addRelationshipOpen}
+        onClose={() => setAddRelationshipOpen(false)}
+        onSuccess={refresh}
+      />
+      <LogEntryModal
+        isOpen={logEntryOpen}
+        onClose={() => setLogEntryOpen(false)}
+        onSuccess={refresh}
+        defaultPersonId={logEntryPersonId}
+      />
+    </>
+  )
 }
