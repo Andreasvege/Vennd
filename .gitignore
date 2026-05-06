@@ -159,3 +159,5 @@ node_modules
 .next/dev/cache/turbopack/23c46498/00006165.sst
 .next/dev/cache/turbopack/23c46498/00006164.sst
 .next/dev/cache/turbopack/23c46498/00006163.sst
+*.meta
+*.sst
