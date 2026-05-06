@@ -1,7 +1,9 @@
-import type { Person, Relationship, LogEntry, Reminder, RelationshipType, LogEntryType, ReminderType } from '@prisma/client'
+import type { Person, Relationship, LogEntry, Reminder, $Enums } from '@prisma/client'
 
-// Re-export Prisma types for convenience
-export type { Person, Relationship, LogEntry, Reminder, RelationshipType, LogEntryType, ReminderType }
+export type { Person, Relationship, LogEntry, Reminder }
+export type RelationshipType = $Enums.RelationshipType
+export type LogEntryType = $Enums.LogEntryType
+export type ReminderType = $Enums.ReminderType
 
 // Person with last contact date (used for reminder logic)
 export type PersonWithLastContact = {

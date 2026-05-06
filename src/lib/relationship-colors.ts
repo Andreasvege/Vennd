@@ -1,4 +1,4 @@
-import type { RelationshipType } from '@prisma/client'
+import type { RelationshipType } from '@/types'
 
 export const RELATIONSHIP_COLORS: Record<RelationshipType, string> = {
   FRIEND: '#6c63ff',

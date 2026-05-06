@@ -3,3 +3,25 @@ node_modules
 .env.local
 
 /src/generated/prisma
+.next/dev/cache/turbopack/23c46498/00006051.sst
+.next/dev/cache/turbopack/23c46498/00006052.sst
+.next/dev/cache/turbopack/23c46498/00006053.sst
+.next/dev/cache/turbopack/23c46498/00006054.meta
+.next/dev/cache/turbopack/23c46498/00006055.meta
+.next/dev/cache/turbopack/23c46498/00006056.meta
+.next/dev/cache/turbopack/23c46498/00006057.sst
+.next/dev/cache/turbopack/23c46498/00006058.sst
+.next/dev/cache/turbopack/23c46498/00006059.sst
+.next/dev/cache/turbopack/23c46498/00006060.meta
+.next/dev/cache/turbopack/23c46498/00006061.meta
+.next/dev/cache/turbopack/23c46498/00006062.meta
+.next/dev/cache/turbopack/23c46498/00006063.sst
+.next/dev/cache/turbopack/23c46498/00006064.sst
+.next/dev/cache/turbopack/23c46498/00006065.sst
+.next/dev/cache/turbopack/23c46498/00006066.meta
+.next/dev/cache/turbopack/23c46498/00006067.meta
+.next/dev/cache/turbopack/23c46498/00006068.meta
+.next/dev/cache/turbopack/23c46498/CURRENT
+.next/dev/cache/turbopack/23c46498/LOG
+.next/dev/logs/next-development.log
+*.log

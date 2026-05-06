@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { generateAutoReminders } from '@/lib/reminders'
-import type { ReminderType } from '@prisma/client'
+import type { ReminderType } from '@/types'
 
 export async function GET() {
   const session = await auth()
