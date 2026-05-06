@@ -46,7 +46,7 @@ export default async function PersonPage({ params }: Params) {
 
   const initials = person.name
     .split(' ')
-    .map((w) => w[0])
+    .map((w: string) => w[0])
     .join('')
     .toUpperCase()
     .slice(0, 2)
