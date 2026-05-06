@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Auth.js v5 required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model User {
+  id            String     @id @default(cuid())
+  name          String?
+  email         String?    @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime   @default(now())
+  accounts      Account[]
+  sessions      Session[]
+  persons       Person[]
+  logEntries    LogEntry[]
+  reminders     Reminder[]
+}
+
+model Person {
+  id            String         @id @default(cuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  birthday      DateTime?
+  notes         String?        @db.Text
+  color         String         @default("#6c63ff")
+  positionX     Float          @default(0)
+  positionY     Float          @default(0)
+  createdAt     DateTime       @default(now())
+  logEntries    LogEntry[]
+  reminders     Reminder[]
+  relationsFrom Relationship[] @relation("FromPerson")
+  relationsTo   Relationship[] @relation("ToPerson")
+}
+
+model Relationship {
+  id           String           @id @default(cuid())
+  fromPersonId String
+  toPersonId   String
+  fromPerson   Person           @relation("FromPerson", fields: [fromPersonId], references: [id], onDelete: Cascade)
+  toPerson     Person           @relation("ToPerson", fields: [toPersonId], references: [id], onDelete: Cascade)
+  type         RelationshipType
+  color        String
+  createdAt    DateTime         @default(now())
+}
+
+enum RelationshipType {
+  FRIEND
+  FAMILY
+  COLLEAGUE
+  PARTNER
+  ACQUAINTANCE
+  OTHER
+}
+
+model LogEntry {
+  id        String       @id @default(cuid())
+  userId    String
+  personId  String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  person    Person       @relation(fields: [personId], references: [id], onDelete: Cascade)
+  date      DateTime     @default(now())
+  type      LogEntryType
+  notes     String?      @db.Text
+  createdAt DateTime     @default(now())
+}
+
+enum LogEntryType {
+  MET
+  CALLED
+  MESSAGE
+  OTHER
+}
+
+model Reminder {
+  id        String       @id @default(cuid())
+  userId    String
+  personId  String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  person    Person       @relation(fields: [personId], references: [id], onDelete: Cascade)
+  type      ReminderType
+  message   String?      @db.Text
+  dueDate   DateTime?
+  dismissed Boolean      @default(false)
+  createdAt DateTime     @default(now())
+}
+
+enum ReminderType {
+  AUTO
+  MANUAL
+}
