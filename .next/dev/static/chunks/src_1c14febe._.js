@@ -16,11 +16,11 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$xyflow$2f$
 ;
 function PersonNode(t0) {
     const $ = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$compiler$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["c"])(22);
-    if ($[0] !== "9a39b06abcdd04d361382971cf2399c3d983df3c35b2c9ad445814f00cbde8a2") {
+    if ($[0] !== "3ab1ea6d829552433154849fd809787bc56fb21e7aa7e183a4b4a758c5282d8d") {
         for(let $i = 0; $i < 22; $i += 1){
             $[$i] = Symbol.for("react.memo_cache_sentinel");
         }
-        $[0] = "9a39b06abcdd04d361382971cf2399c3d983df3c35b2c9ad445814f00cbde8a2";
+        $[0] = "3ab1ea6d829552433154849fd809787bc56fb21e7aa7e183a4b4a758c5282d8d";
     }
     const { data, selected } = t0;
     const d = data;
@@ -33,90 +33,123 @@ function PersonNode(t0) {
         t1 = $[2];
     }
     const initials = t1;
-    let t2;
-    if ($[3] === Symbol.for("react.memo_cache_sentinel")) {
-        t2 = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$xyflow$2f$react$2f$dist$2f$esm$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["Handle"], {
-            type: "target",
-            position: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$xyflow$2f$system$2f$dist$2f$esm$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Position"].Top,
-            className: "opacity-0 !w-1 !h-1"
-        }, void 0, false, {
-            fileName: "[project]/src/components/graph/PersonNode.tsx",
-            lineNumber: 30,
-            columnNumber: 10
-        }, this);
-        $[3] = t2;
-    } else {
-        t2 = $[3];
-    }
-    const t3 = `
+    const t2 = `
           flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all cursor-pointer
           ${selected ? "ring-2 ring-white/60 scale-110" : "hover:scale-105"}
         `;
-    let t4;
-    if ($[4] !== d.color) {
-        t4 = {
+    let t3;
+    if ($[3] !== d.color) {
+        t3 = {
             backgroundColor: d.color
         };
-        $[4] = d.color;
+        $[3] = d.color;
+        $[4] = t3;
+    } else {
+        t3 = $[4];
+    }
+    let t4;
+    if ($[5] === Symbol.for("react.memo_cache_sentinel")) {
+        t4 = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$xyflow$2f$react$2f$dist$2f$esm$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["Handle"], {
+            type: "target",
+            position: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$xyflow$2f$system$2f$dist$2f$esm$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Position"].Top,
+            style: {
+                opacity: 0,
+                width: 1,
+                height: 1,
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)"
+            }
+        }, void 0, false, {
+            fileName: "[project]/src/components/graph/PersonNode.tsx",
+            lineNumber: 44,
+            columnNumber: 10
+        }, this);
         $[5] = t4;
     } else {
         t4 = $[5];
     }
     let t5;
-    if ($[6] !== initials || $[7] !== t4) {
-        t5 = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-            className: "w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-black/40",
-            style: t4,
-            children: initials
+    if ($[6] === Symbol.for("react.memo_cache_sentinel")) {
+        t5 = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$xyflow$2f$react$2f$dist$2f$esm$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["Handle"], {
+            type: "source",
+            position: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$xyflow$2f$system$2f$dist$2f$esm$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Position"].Bottom,
+            style: {
+                opacity: 0,
+                width: 1,
+                height: 1,
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)"
+            }
         }, void 0, false, {
             fileName: "[project]/src/components/graph/PersonNode.tsx",
-            lineNumber: 51,
+            lineNumber: 58,
             columnNumber: 10
         }, this);
-        $[6] = initials;
-        $[7] = t4;
-        $[8] = t5;
+        $[6] = t5;
     } else {
-        t5 = $[8];
+        t5 = $[6];
     }
     let t6;
-    if ($[9] !== d.name) {
-        t6 = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+    if ($[7] !== initials || $[8] !== t3) {
+        t6 = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+            className: "relative w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-black/40",
+            style: t3,
+            children: [
+                t4,
+                initials,
+                t5
+            ]
+        }, void 0, true, {
+            fileName: "[project]/src/components/graph/PersonNode.tsx",
+            lineNumber: 72,
+            columnNumber: 10
+        }, this);
+        $[7] = initials;
+        $[8] = t3;
+        $[9] = t6;
+    } else {
+        t6 = $[9];
+    }
+    let t7;
+    if ($[10] !== d.name) {
+        t7 = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
             className: "text-xs font-medium text-white bg-black/50 backdrop-blur-sm px-2.5 py-0.5 rounded-full whitespace-nowrap max-w-[100px] overflow-hidden text-ellipsis",
             children: d.name
         }, void 0, false, {
             fileName: "[project]/src/components/graph/PersonNode.tsx",
-            lineNumber: 60,
+            lineNumber: 81,
             columnNumber: 10
         }, this);
-        $[9] = d.name;
-        $[10] = t6;
+        $[10] = d.name;
+        $[11] = t7;
     } else {
-        t6 = $[10];
+        t7 = $[11];
     }
-    let t7;
-    if ($[11] !== t3 || $[12] !== t5 || $[13] !== t6) {
-        t7 = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-            className: t3,
+    let t8;
+    if ($[12] !== t2 || $[13] !== t6 || $[14] !== t7) {
+        t8 = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+            className: t2,
             children: [
-                t5,
-                t6
+                t6,
+                t7
             ]
         }, void 0, true, {
             fileName: "[project]/src/components/graph/PersonNode.tsx",
-            lineNumber: 68,
+            lineNumber: 89,
             columnNumber: 10
         }, this);
-        $[11] = t3;
-        $[12] = t5;
+        $[12] = t2;
         $[13] = t6;
         $[14] = t7;
+        $[15] = t8;
     } else {
-        t7 = $[14];
+        t8 = $[15];
     }
-    let t8;
-    if ($[15] !== d || $[16] !== selected) {
-        t8 = selected && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+    let t9;
+    if ($[16] !== d || $[17] !== selected) {
+        t9 = selected && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
             className: "flex gap-1 mt-1",
             children: [
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -128,7 +161,7 @@ function PersonNode(t0) {
                     children: "+ Logg"
                 }, void 0, false, {
                     fileName: "[project]/src/components/graph/PersonNode.tsx",
-                    lineNumber: 78,
+                    lineNumber: 99,
                     columnNumber: 55
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -140,53 +173,36 @@ function PersonNode(t0) {
                     children: "Profil"
                 }, void 0, false, {
                     fileName: "[project]/src/components/graph/PersonNode.tsx",
-                    lineNumber: 80,
+                    lineNumber: 101,
                     columnNumber: 185
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/src/components/graph/PersonNode.tsx",
-            lineNumber: 78,
+            lineNumber: 99,
             columnNumber: 22
         }, this);
-        $[15] = d;
-        $[16] = selected;
-        $[17] = t8;
-    } else {
-        t8 = $[17];
-    }
-    let t9;
-    if ($[18] === Symbol.for("react.memo_cache_sentinel")) {
-        t9 = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$xyflow$2f$react$2f$dist$2f$esm$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["Handle"], {
-            type: "source",
-            position: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$xyflow$2f$system$2f$dist$2f$esm$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Position"].Bottom,
-            className: "opacity-0 !w-1 !h-1"
-        }, void 0, false, {
-            fileName: "[project]/src/components/graph/PersonNode.tsx",
-            lineNumber: 91,
-            columnNumber: 10
-        }, this);
+        $[16] = d;
+        $[17] = selected;
         $[18] = t9;
     } else {
         t9 = $[18];
     }
     let t10;
-    if ($[19] !== t7 || $[20] !== t8) {
+    if ($[19] !== t8 || $[20] !== t9) {
         t10 = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
             className: "flex flex-col items-center gap-1 select-none",
             children: [
-                t2,
-                t7,
                 t8,
                 t9
             ]
         }, void 0, true, {
             fileName: "[project]/src/components/graph/PersonNode.tsx",
-            lineNumber: 98,
+            lineNumber: 112,
             columnNumber: 11
         }, this);
-        $[19] = t7;
-        $[20] = t8;
+        $[19] = t8;
+        $[20] = t9;
         $[21] = t10;
     } else {
         t10 = $[21];

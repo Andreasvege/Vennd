@@ -15,8 +15,6 @@ export function PersonNode({ data, selected }: NodeProps) {
 
   return (
     <div className="flex flex-col items-center gap-1 select-none">
-      <Handle type="target" position={Position.Top} className="opacity-0 !w-1 !h-1" />
-
       <div
         className={`
           flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all cursor-pointer
@@ -26,12 +24,22 @@ export function PersonNode({ data, selected }: NodeProps) {
           }
         `}
       >
-        {/* Avatar circle */}
+        {/* Avatar circle with centered handles */}
         <div
-          className="w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-black/40"
+          className="relative w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-black/40"
           style={{ backgroundColor: d.color }}
         >
+          <Handle
+            type="target"
+            position={Position.Top}
+            style={{ opacity: 0, width: 1, height: 1, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
+          />
           {initials}
+          <Handle
+            type="source"
+            position={Position.Bottom}
+            style={{ opacity: 0, width: 1, height: 1, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
+          />
         </div>
 
         {/* Name label */}
@@ -60,7 +68,6 @@ export function PersonNode({ data, selected }: NodeProps) {
         </div>
       )}
 
-      <Handle type="source" position={Position.Bottom} className="opacity-0 !w-1 !h-1" />
     </div>
   )
 }
