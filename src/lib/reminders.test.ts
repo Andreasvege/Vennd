@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { generateAutoReminders, WEEKS_THRESHOLD } from './reminders'
+import { generateAutoReminders } from './reminders'
 import type { PersonWithLastContact } from '@/types'
 
 const makeDate = (weeksAgo: number): Date => {

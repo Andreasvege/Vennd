@@ -27,11 +27,22 @@ export function LogEntryModal({ isOpen, onClose, onSuccess, defaultPersonId }: P
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  // Modalen holdes montert mellom åpninger, så state må synkes mot props når
+  // den åpnes på nytt (React-mønsteret «juster state under render»).
+  const [prevKey, setPrevKey] = useState(`${isOpen}-${defaultPersonId ?? ''}`)
+  const key = `${isOpen}-${defaultPersonId ?? ''}`
+  if (key !== prevKey) {
+    setPrevKey(key)
+    if (isOpen && defaultPersonId) setPersonId(defaultPersonId)
+  }
+
   useEffect(() => {
     if (!isOpen) return
-    fetch('/api/persons').then((r) => r.json()).then(setPersons)
-    if (defaultPersonId) setPersonId(defaultPersonId)
-  }, [isOpen, defaultPersonId])
+    fetch('/api/persons')
+      .then((r) => r.json())
+      .then(setPersons)
+      .catch(() => setError('Klarte ikke hente personer.'))
+  }, [isOpen])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
