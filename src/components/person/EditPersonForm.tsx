@@ -167,7 +167,7 @@ export function EditPersonForm({ person }: Props) {
         </div>
 
         <div className="flex gap-2 mt-2">
-          <Button type="submit" isDisabled={saving || name.trim!()} className="flex-1">
+          <Button type="submit" isDisabled={saving || !name.trim()} className="flex-1">
             {saving ? 'Lagrer...' : 'Lagre'}
           </Button>
           <Button
