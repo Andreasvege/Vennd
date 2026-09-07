@@ -11,17 +11,20 @@ import type { ReactNode } from 'react'
 const EXIT_MS = 200
 
 /**
- * Profilen vist over kartet. Lukking går via router.back() slik at
- * avskjæringen forsvinner og du står igjen på kartet der du var — med
- * scrollposisjon og grafutsnitt intakt.
+ * Skallet rundt alt som vises over kartet. Ligger i en layout, så det
+ * overlever navigasjon mellom profil og redigering — modalen blir stående
+ * mens innholdet bytter.
  */
 export function PersonModalShell({ children }: { children: ReactNode }) {
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(true)
 
+  // Tilbake til kartet, ikke router.back(): står du på redigeringssteget ville
+  // back() bare tatt deg til profilen igjen, ikke lukket modalen. Kartet ligger
+  // allerede montert under, så dette er en myk navigasjon.
   const close = () => {
     setIsOpen(false)
-    setTimeout(() => router.back(), EXIT_MS)
+    setTimeout(() => router.push('/'), EXIT_MS)
   }
 
   return (
