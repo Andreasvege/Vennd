@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { RELATIONSHIP_LABELS } from '@/lib/relationship-colors'
+import { LogContactPanel } from './LogContactPanel'
 import type { Person, Reminder, LogEntry } from '@/types'
 
 const LOG_EMOJI: Record<string, string> = {
@@ -98,9 +99,7 @@ export function PersonProfile({ person }: { person: PersonWithHistory }) {
       )}
 
       <div className="glass-card p-5">
-        <h2 className="text-sm font-semibold text-Text/60 uppercase tracking-wider mb-4">
-          Kontaktlogg
-        </h2>
+        <LogContactPanel personId={person.id} personName={person.name} />
         {person.logEntries.length === 0 ? (
           <p className="text-Text/30 text-sm">Ingen loggede kontakter ennå.</p>
         ) : (
