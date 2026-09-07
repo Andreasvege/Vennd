@@ -13,11 +13,21 @@ import {
   BackgroundVariant,
 } from '@xyflow/react'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { PersonNode } from './PersonNode'
+import { MeNode } from './MeNode'
 import { RelationshipEdge } from './RelationshipEdge'
+import { RELATIONSHIP_COLORS, RELATIONSHIP_LABELS } from '@/lib/relationship-colors'
 import type { Person, Relationship } from '@/types'
 
-const nodeTypes = { person: PersonNode }
+// Syntetisk id. «Meg» er ingen databaserad, så den kan ikke kollidere med
+// en cuid fra Person.
+const ME_ID = 'me'
+
+const initialsOf = (name: string) =>
+  name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
+
+const nodeTypes = { person: PersonNode, me: MeNode }
 const edgeTypes = { relationship: RelationshipEdge }
 
 type Props = {
@@ -29,6 +39,7 @@ type Props = {
 
 export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refreshKey }: Props) {
   const router = useRouter()
+  const { data: session } = useSession()
   const [persons, setPersons] = useState<Person[]>([])
   const [relationships, setRelationships] = useState<Relationship[]>([])
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
@@ -51,9 +62,9 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
     fetchData()
   }, [refreshKey])
 
-  // Convert persons → React Flow nodes
+  // Convert persons → React Flow nodes, med deg selv i midten
   useEffect(() => {
-    const newNodes: Node[] = persons.map((p: Person) => ({
+    const personNodes: Node[] = persons.map((p: Person) => ({
       id: p.id,
       type: 'person',
       position: { x: p.positionX, y: p.positionY },
@@ -61,25 +72,60 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
         id: p.id,
         name: p.name,
         color: p.color,
-        initials: p.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2),
+        initials: initialsOf(p.name),
         onAddLog,
         onViewProfile: (id: string) => router.push(`/person/${id}`),
       },
     }))
-    setNodes(newNodes)
-  }, [persons, onAddLog, router, setNodes])
 
-  // Convert relationships → React Flow edges
+    // Plasser «meg» i tyngdepunktet av personene, så noden faktisk står midt
+    // i kartet uansett hvor de er dratt hen.
+    const center = persons.length
+      ? {
+          x: persons.reduce((sum, p) => sum + p.positionX, 0) / persons.length,
+          y: persons.reduce((sum, p) => sum + p.positionY, 0) / persons.length,
+        }
+      : { x: 0, y: 0 }
+
+    const meName = session?.user?.name ?? 'Meg'
+    const meNode: Node = {
+      id: ME_ID,
+      type: 'me',
+      position: center,
+      // Noden har ingen lagret posisjon, så den skal ikke kunne dras ut av midten.
+      draggable: false,
+      selectable: false,
+      data: {
+        name: meName,
+        image: session?.user?.image ?? null,
+        initials: initialsOf(meName),
+      },
+    }
+
+    setNodes(persons.length ? [meNode, ...personNodes] : personNodes)
+  }, [persons, session, onAddLog, router, setNodes])
+
+  // Kanter: én stråle fra «meg» til hver person, farget etter din relasjon
+  // til dem. Person↔person beholdes, men dempet — det er sekundært nå.
   useEffect(() => {
-    const newEdges: Edge[] = relationships.map((r: Relationship) => ({
+    const spokes: Edge[] = persons.map((p: Person) => ({
+      id: `me:${p.id}`,
+      source: ME_ID,
+      target: p.id,
+      type: 'relationship',
+      data: { color: RELATIONSHIP_COLORS[p.type], label: undefined },
+    }))
+
+    const between: Edge[] = relationships.map((r: Relationship) => ({
       id: r.id,
       source: r.fromPersonId,
       target: r.toPersonId,
       type: 'relationship',
-      data: { color: r.color, label: undefined },
+      data: { color: r.color, label: undefined, dimmed: true },
     }))
-    setEdges(newEdges)
-  }, [relationships, setEdges])
+
+    setEdges(persons.length ? [...spokes, ...between] : between)
+  }, [persons, relationships, setEdges])
 
   // Dra fra knotten under én person til en annen for å lage en relasjon.
   // Typen settes til FRIEND: Person↔Person er sekundært nå som relasjonen til
@@ -106,6 +152,7 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
 
   // Save node position when dragging stops
   const onNodeDragStop = async (_event: React.MouseEvent, node: Node) => {
+    if (node.id === ME_ID) return
     await fetch(`/api/persons/${node.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -156,6 +203,21 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
           +
         </button>
       </div>
+
+      {/* Fargeforklaring — viser bare typene du faktisk har på kartet */}
+      {persons.length > 0 && (
+        <div className="absolute bottom-6 left-6 z-10 glass-card px-3 py-2 flex flex-col gap-1">
+          {[...new Set(persons.map((p) => p.type))].map((t) => (
+            <div key={t} className="flex items-center gap-2">
+              <span
+                className="w-4 h-0.5 rounded-full shrink-0"
+                style={{ backgroundColor: RELATIONSHIP_COLORS[t] }}
+              />
+              <span className="text-[10px] text-Text/50">{RELATIONSHIP_LABELS[t]}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Empty state */}
       {persons.length === 0 && (

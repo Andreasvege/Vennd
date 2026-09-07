@@ -39,6 +39,13 @@ export type ReminderResponse = {
   weeksSinceContact: number | null
 }
 
+// «Meg»-noden bygges fra sesjonen, ikke fra databasen.
+export type MeNodeData = {
+  name: string
+  image: string | null
+  initials: string
+}
+
 // React Flow node data shape
 export type PersonNodeData = {
   id: string

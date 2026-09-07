@@ -5,6 +5,8 @@ import { BaseEdge, EdgeLabelRenderer, getStraightPath, type EdgeProps } from '@x
 type RelationshipEdgeData = {
   label?: string
   color: string
+  // Person↔person-kanter dempes så strålene ut fra «meg» dominerer bildet.
+  dimmed?: boolean
 }
 
 export function RelationshipEdge({
@@ -30,8 +32,9 @@ export function RelationshipEdge({
         path={edgePath}
         style={{
           stroke: edgeData?.color ?? '#6c63ff',
-          strokeWidth: 2,
-          strokeOpacity: 0.7,
+          strokeWidth: edgeData?.dimmed ? 1.5 : 2.5,
+          strokeOpacity: edgeData?.dimmed ? 0.25 : 0.85,
+          strokeDasharray: edgeData?.dimmed ? '4 4' : undefined,
         }}
       />
       {edgeData?.label && (
