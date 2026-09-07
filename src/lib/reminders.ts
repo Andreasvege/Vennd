@@ -1,42 +1,49 @@
-import type { PersonWithLastContact } from '@/types'
+import type { PersonWithCadence, ComputedReminder } from '@/types'
 
-export const WEEKS_THRESHOLD = 3
+const MS_PER_WEEK = 1000 * 60 * 60 * 24 * 7
 
-export type AutoReminderInput = {
-  personId: string
-  userId: string
-  message: string
-  type: 'AUTO'
+function weeksBetween(from: Date, to: Date): number {
+  return Math.floor((to.getTime() - from.getTime()) / MS_PER_WEEK)
 }
 
-export function generateAutoReminders(
-  persons: PersonWithLastContact[],
+/**
+ * Utleder auto-påminnelser fra siste kontakt og personens kadens.
+ *
+ * Disse lagres bevisst ikke. Den forrige løsningen skrev dem til Reminder-
+ * tabellen og slettet/gjenskapte dem ved hver sidelast, noe som gjorde det
+ * umulig å avvise én: den avviste raden ble liggende igjen mens en fersk
+ * kopi dukket opp med det samme. Beregning ved lesing fjerner hele den
+ * klassen av problemer — utsettelse er nå én kolonne på Person.
+ */
+export function computeAutoReminders(
+  persons: PersonWithCadence[],
   now: Date = new Date()
-): AutoReminderInput[] {
+): ComputedReminder[] {
   return persons
-    .filter((person: PersonWithLastContact) => {
-      if (!person.lastContactDate) return true
-      const diffMs = now.getTime() - person.lastContactDate.getTime()
-      const diffWeeks = diffMs / (1000 * 60 * 60 * 24 * 7)
-      return diffWeeks >= WEEKS_THRESHOLD
+    .filter((p) => {
+      if (p.cadenceWeeks === null) return false
+      if (p.snoozedUntil !== null && p.snoozedUntil.getTime() > now.getTime()) return false
+      if (p.lastContactDate === null) return true
+      return weeksBetween(p.lastContactDate, now) >= p.cadenceWeeks
     })
-    .map((person: PersonWithLastContact) => {
-      const weeksAgo = person.lastContactDate
-        ? Math.floor(
-            (now.getTime() - person.lastContactDate.getTime()) /
-              (1000 * 60 * 60 * 24 * 7)
-          )
-        : null
-
-      const message = weeksAgo
-        ? `Du har ikke hatt kontakt med ${person.name} på ${weeksAgo} uker`
-        : `Du har aldri logget kontakt med ${person.name}`
-
+    .map((p) => {
+      const weeks = p.lastContactDate === null ? null : weeksBetween(p.lastContactDate, now)
       return {
-        personId: person.id,
-        userId: person.userId,
-        message,
+        id: `auto:${p.id}`,
+        personId: p.id,
+        personName: p.name,
         type: 'AUTO' as const,
+        message:
+          weeks === null
+            ? `Du har aldri logget kontakt med ${p.name}`
+            : `Du har ikke hatt kontakt med ${p.name} på ${weeks} uker`,
+        weeksSinceContact: weeks,
       }
+    })
+    .sort((a, b) => {
+      // Aldri kontaktet er mest forfalt av alt, og sorteres øverst.
+      if (a.weeksSinceContact === null) return b.weeksSinceContact === null ? 0 : -1
+      if (b.weeksSinceContact === null) return 1
+      return b.weeksSinceContact - a.weeksSinceContact
     })
 }
