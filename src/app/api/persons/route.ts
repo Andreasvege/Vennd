@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json()
-  const { name, birthday, notes, color } = body
+  const { name, birthday, notes, color, type, cadenceWeeks } = body
 
   if (!name || typeof name !== 'string' || name.trim() === '') {
     return NextResponse.json({ error: 'Navn er påkrevd' }, { status: 400 })
@@ -36,6 +36,10 @@ export async function POST(req: Request) {
       birthday: birthday ? new Date(birthday) : null,
       notes: notes ?? null,
       color: color ?? '#6c63ff',
+      ...(type !== undefined && { type }),
+      // undefined faller tilbake på skjemaets default (4 uker); null betyr
+      // at brukeren aktivt har valgt «aldri påminn».
+      ...(cadenceWeeks !== undefined && { cadenceWeeks }),
       positionX: Math.random() * 400,
       positionY: Math.random() * 300,
     },

@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { generateAutoReminders, type AutoReminderInput } from '@/lib/reminders'
-import type { ReminderType } from '@/types'
+import { computeAutoReminders } from '@/lib/reminders'
+import type { PersonWithCadence, ReminderResponse } from '@/types'
 
 export async function GET() {
   const session = await auth()
@@ -10,13 +10,56 @@ export async function GET() {
     return NextResponse.json({ error: 'Ikke innlogget' }, { status: 401 })
   }
 
-  const reminders = await prisma.reminder.findMany({
-    where: { userId: session.user.id, dismissed: false },
-    include: { person: true },
+  // Auto-påminnelser beregnes her og lagres aldri. Alt vi trenger er siste
+  // loggførte kontakt per person.
+  const persons = await prisma.person.findMany({
+    where: { userId: session.user.id },
+    select: {
+      id: true,
+      name: true,
+      userId: true,
+      cadenceWeeks: true,
+      snoozedUntil: true,
+      logEntries: { orderBy: { date: 'desc' }, take: 1, select: { date: true } },
+    },
+  })
+
+  const withCadence: PersonWithCadence[] = persons.map((p) => ({
+    id: p.id,
+    name: p.name,
+    userId: p.userId,
+    cadenceWeeks: p.cadenceWeeks,
+    snoozedUntil: p.snoozedUntil,
+    lastContactDate: p.logEntries[0]?.date ?? null,
+  }))
+
+  const auto: ReminderResponse[] = computeAutoReminders(withCadence).map((r) => ({
+    id: r.id,
+    personId: r.personId,
+    personName: r.personName,
+    type: 'AUTO',
+    message: r.message,
+    dueDate: null,
+    weeksSinceContact: r.weeksSinceContact,
+  }))
+
+  const stored = await prisma.reminder.findMany({
+    where: { userId: session.user.id, type: 'MANUAL', dismissed: false },
+    include: { person: { select: { name: true } } },
     orderBy: { createdAt: 'desc' },
   })
 
-  return NextResponse.json(reminders)
+  const manual: ReminderResponse[] = stored.map((r) => ({
+    id: r.id,
+    personId: r.personId,
+    personName: r.person.name,
+    type: 'MANUAL',
+    message: r.message ?? '',
+    dueDate: r.dueDate?.toISOString() ?? null,
+    weeksSinceContact: null,
+  }))
+
+  return NextResponse.json([...auto, ...manual])
 }
 
 export async function POST(req: Request) {
@@ -26,45 +69,6 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json()
-
-  // Special action: generate auto-reminders based on last contact dates
-  if (body.action === 'generate-auto') {
-    const persons = await prisma.person.findMany({
-      where: { userId: session.user.id },
-      include: {
-        logEntries: {
-          orderBy: { date: 'desc' },
-          take: 1,
-        },
-      },
-    })
-
-    const personsWithLastContact = persons.map((p: { id: string; name: string; userId: string; logEntries: { date: Date }[] }) => ({
-      id: p.id,
-      name: p.name,
-      userId: p.userId,
-      lastContactDate: p.logEntries[0]?.date ?? null,
-    }))
-
-    const toGenerate = generateAutoReminders(personsWithLastContact)
-
-    await prisma.reminder.deleteMany({
-      where: { userId: session.user.id, type: 'AUTO', dismissed: false },
-    })
-
-    const created = await prisma.reminder.createMany({
-      data: toGenerate.map((r: AutoReminderInput) => ({
-        userId: r.userId,
-        personId: r.personId,
-        type: 'AUTO' as ReminderType,
-        message: r.message,
-      })),
-    })
-
-    return NextResponse.json({ created: created.count }, { status: 201 })
-  }
-
-  // Manual reminder
   const { personId, message, dueDate } = body
 
   if (!personId || !message) {

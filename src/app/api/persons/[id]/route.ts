@@ -34,7 +34,7 @@ export async function PATCH(req: Request, { params }: Params) {
 
   const { id } = await params
   const body = await req.json()
-  const { name, birthday, notes, color, positionX, positionY } = body
+  const { name, birthday, notes, color, positionX, positionY, type, cadenceWeeks, snoozedUntil } = body
 
   const existing = await prisma.person.findFirst({
     where: { id, userId: session.user.id },
@@ -53,6 +53,12 @@ export async function PATCH(req: Request, { params }: Params) {
       ...(color !== undefined && { color }),
       ...(positionX !== undefined && { positionX }),
       ...(positionY !== undefined && { positionY }),
+      ...(type !== undefined && { type }),
+      // null er en gyldig verdi her: «aldri auto-påminn om denne personen».
+      ...(cadenceWeeks !== undefined && { cadenceWeeks }),
+      ...(snoozedUntil !== undefined && {
+        snoozedUntil: snoozedUntil ? new Date(snoozedUntil) : null,
+      }),
     },
   })
 
