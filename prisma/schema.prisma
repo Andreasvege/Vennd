@@ -63,6 +63,15 @@ model Person {
   birthday      DateTime?
   notes         String?        @db.Text
   color         String         @default("#6c63ff")
+
+  // Din relasjon til personen, og hvor ofte du vil minnes om å ta kontakt.
+  // cadenceWeeks = null betyr eksplisitt «aldri auto-påminn».
+  // snoozedUntil erstatter Reminder.dismissed for auto-påminnelser, som nå
+  // beregnes ved lesing i stedet for å lagres.
+  type          RelationshipType @default(FRIEND)
+  cadenceWeeks  Int?           @default(4)
+  snoozedUntil  DateTime?
+
   positionX     Float          @default(0)
   positionY     Float          @default(0)
   createdAt     DateTime       @default(now())
