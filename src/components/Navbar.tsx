@@ -7,7 +7,6 @@ import Image from 'next/image'
 
 const navLinks = [
   { label: 'Kart', href: '/' },
-  { label: 'Påminnelser', href: '/reminders' },
   { label: 'Innstillinger', href: '/settings' },
 ]
 
