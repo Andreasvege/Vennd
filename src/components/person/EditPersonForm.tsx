@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Radio, RadioGroup, Label } from 'react-aria-components'
-import { Dialog, TextField, Button } from '@/components/ui'
+import { TextField, Button } from '@/components/ui'
 import { RELATIONSHIP_COLORS, RELATIONSHIP_LABELS } from '@/lib/relationship-colors'
 import { DEFAULT_CADENCE_WEEKS } from '@/lib/cadence'
 import type { Person, RelationshipType } from '@/types'
@@ -18,11 +18,9 @@ const CADENCE_CHOICES = [1, 2, 3, 4, 6, 8, 12, 26, 52] as const
 
 type Props = {
   person: Person
-  isOpen: boolean
-  onClose: () => void
 }
 
-export function EditPersonModal({ person, isOpen, onClose }: Props) {
+export function EditPersonForm({ person }: Props) {
   const router = useRouter()
   const [name, setName] = useState(person.name)
   const [color, setColor] = useState(person.color)
@@ -65,7 +63,7 @@ export function EditPersonModal({ person, isOpen, onClose }: Props) {
       return
     }
 
-    onClose()
+    router.push(`/person/${person.id}`)
     router.refresh()
   }
 
@@ -83,17 +81,7 @@ export function EditPersonModal({ person, isOpen, onClose }: Props) {
   }
 
   return (
-    <Dialog
-      isOpen={isOpen}
-      onOpenChange={(open) => {
-        if (!open) {
-          setConfirmDelete(false)
-          onClose()
-        }
-      }}
-      title={`Rediger ${person.name}`}
-    >
-      <form onSubmit={save} className="flex flex-col gap-4">
+    <form onSubmit={save} className="glass-card p-6 flex flex-col gap-4">
         {error && <p className="text-red-400 text-sm">{error}</p>}
 
         <TextField label="Navn" isRequired value={name} onChange={setName} />
@@ -182,6 +170,13 @@ export function EditPersonModal({ person, isOpen, onClose }: Props) {
           <Button type="submit" isDisabled={saving || !name.trim()} className="flex-1">
             {saving ? 'Lagrer...' : 'Lagre'}
           </Button>
+          <Button
+            variant="glass"
+            onPress={() => router.push(`/person/${person.id}`)}
+            isDisabled={saving}
+          >
+            Avbryt
+          </Button>
           {confirmDelete ? (
             <Button
               variant="glass"
@@ -203,7 +198,6 @@ export function EditPersonModal({ person, isOpen, onClose }: Props) {
             Sletter også all logg, påminnelser og relasjoner for {person.name}.
           </p>
         )}
-      </form>
-    </Dialog>
+    </form>
   )
 }

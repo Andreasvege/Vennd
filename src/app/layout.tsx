@@ -18,8 +18,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
+  modal,
 }: Readonly<{
   children: React.ReactNode
+  modal: React.ReactNode
 }>) {
   return (
     <html lang="no">
@@ -28,6 +30,7 @@ export default function RootLayout({
           <div className="min-h-screen">
             <Navbar />
             {children}
+            {modal}
           </div>
         </SessionProvider>
         <Analytics />
