@@ -9,6 +9,7 @@ import {
   useEdgesState,
   type Node,
   type Edge,
+  type Connection,
   BackgroundVariant,
 } from '@xyflow/react'
 import { useRouter } from 'next/navigation'
@@ -80,6 +81,29 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
     setEdges(newEdges)
   }, [relationships, setEdges])
 
+  // Dra fra knotten under én person til en annen for å lage en relasjon.
+  // Typen settes til FRIEND: Person↔Person er sekundært nå som relasjonen til
+  // deg selv ligger på Person, og en typevelger her ville vært i veien.
+  const onConnect = async (connection: Connection) => {
+    if (!connection.source || !connection.target) return
+    if (connection.source === connection.target) return
+
+    const res = await fetch('/api/relationships', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fromPersonId: connection.source,
+        toPersonId: connection.target,
+        type: 'FRIEND',
+      }),
+    })
+
+    if (!res.ok) return
+
+    const created = (await res.json()) as Relationship
+    setRelationships((prev) => [...prev, created])
+  }
+
   // Save node position when dragging stops
   const onNodeDragStop = async (_event: React.MouseEvent, node: Node) => {
     await fetch(`/api/persons/${node.id}`, {
@@ -96,6 +120,7 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
         onNodeDragStop={onNodeDragStop}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}

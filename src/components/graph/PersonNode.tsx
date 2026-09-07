@@ -14,7 +14,7 @@ export function PersonNode({ data, selected }: NodeProps) {
     .slice(0, 2)
 
   return (
-    <div className="flex flex-col items-center gap-1 select-none">
+    <div className="flex flex-col items-center gap-1 select-none group/node">
       <div
         className={`
           flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all cursor-pointer
@@ -29,16 +29,19 @@ export function PersonNode({ data, selected }: NodeProps) {
           className="relative w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-black/40"
           style={{ backgroundColor: d.color }}
         >
+          {/* Målhåndtaket dekker hele sirkelen, så du kan slippe hvor som helst
+              på personen. Kilden er en synlig knott nederst som dukker opp ved
+              hover — uten den var drag-for-å-koble umulig å oppdage. */}
           <Handle
             type="target"
             position={Position.Top}
-            style={{ opacity: 0, width: 1, height: 1, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
+            className="!w-full !h-full !rounded-full !border-0 !bg-transparent !left-0 !top-0 !transform-none"
           />
           {initials}
           <Handle
             type="source"
             position={Position.Bottom}
-            style={{ opacity: 0, width: 1, height: 1, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
+            className="!w-3 !h-3 !border-2 !border-white/70 !bg-Accent !-bottom-1 opacity-0 group-hover/node:opacity-100 transition-opacity"
           />
         </div>
 
