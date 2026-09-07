@@ -18,9 +18,9 @@ build/
 # testing
 coverage
 
-# env
-.env
-.env*.local
+# env — ignorer alt bortsett fra malen
+.env*
+!.env.example
 
 # logs
 *.log
