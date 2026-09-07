@@ -13,7 +13,11 @@ export async function DELETE(_req: Request, { params }: Params) {
   const { id } = await params
 
   const relationship = await prisma.relationship.findFirst({
-    where: { id, fromPerson: { userId: session.user.id } },
+    where: {
+      id,
+      fromPerson: { userId: session.user.id },
+      toPerson: { userId: session.user.id },
+    },
   })
 
   if (!relationship) {

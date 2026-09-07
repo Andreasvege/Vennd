@@ -10,9 +10,12 @@ export async function GET() {
     return NextResponse.json({ error: 'Ikke innlogget' }, { status: 401 })
   }
 
+  // Begge sider må eies av brukeren. Filtrerte vi bare på fromPerson, ville
+  // svaret lekke hele toPerson-raden til en annen brukers person.
   const relationships = await prisma.relationship.findMany({
     where: {
       fromPerson: { userId: session.user.id },
+      toPerson: { userId: session.user.id },
     },
     include: { fromPerson: true, toPerson: true },
   })
