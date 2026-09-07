@@ -129,7 +129,7 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
   // Typen settes til FRIEND: Person↔Person er sekundært nå som relasjonen til
   // deg selv ligger på Person, og en typevelger her ville vært i veien.
   const onConnect = async (connection: Connection) => {
-    if (!connection.source || !connection.target) return
+    if (!connection.source || connection.target!) return
     if (connection.source === connection.target) return
 
     const res = await fetch('/api/relationships', {
@@ -184,7 +184,7 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
           size={1}
           color="rgba(255,255,255,0.3)"
         />
-        <Controls className="!bg-Glass !border-GlassBorder !rounded-xl !shadow-lg" />
+        <Controls className="bg-Glass! border-GlassBorder! rounded-xl! shadow-lg!" />
       </ReactFlow>
 
       {/* Floating action buttons */}

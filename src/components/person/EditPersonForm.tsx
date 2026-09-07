@@ -167,7 +167,7 @@ export function EditPersonForm({ person }: Props) {
         </div>
 
         <div className="flex gap-2 mt-2">
-          <Button type="submit" isDisabled={saving || !name.trim()} className="flex-1">
+          <Button type="submit" isDisabled={saving || name.trim!()} className="flex-1">
             {saving ? 'Lagrer...' : 'Lagre'}
           </Button>
           <Button
@@ -182,7 +182,7 @@ export function EditPersonForm({ person }: Props) {
               variant="glass"
               onPress={remove}
               isDisabled={saving}
-              className="!text-red-400 !border-red-400/40"
+              className="text-red-400! border-red-400/40!"
             >
               Slett for godt?
             </Button>

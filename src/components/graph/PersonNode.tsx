@@ -42,14 +42,14 @@ export function PersonNode({ data, selected }: NodeProps) {
             type="target"
             position={Position.Top}
             isConnectableStart={false}
-            className="!w-full !h-full !rounded-full !border-0 !bg-transparent !left-0 !top-0 !transform-none !pointer-events-none"
+            className="w-full! h-full! rounded-full! border-0! bg-transparent! left-0! top-0! transform-none! pointer-events-none!"
           />
           <Handle
             id="center"
             type="source"
             position={Position.Top}
             isConnectableStart={false}
-            className="!w-full !h-full !rounded-full !border-0 !bg-transparent !left-0 !top-0 !transform-none !pointer-events-none"
+            className="w-full! h-full! rounded-full! border-0! bg-transparent! left-0! top-0! transform-none! pointer-events-none!"
           />
           {initials}
           {/* Selve dra-punktet. Kun herfra kan en relasjon starte — dette er
@@ -58,7 +58,7 @@ export function PersonNode({ data, selected }: NodeProps) {
             id="knob"
             type="source"
             position={Position.Bottom}
-            className="!w-3 !h-3 !border-2 !border-white/70 !bg-Accent !-bottom-1 opacity-0 group-hover/node:opacity-100 transition-opacity"
+            className="w-3! h-3! border-2! border-white/70! bg-Accent! -bottom-1! opacity-0 group-hover/node:opacity-100 transition-opacity"
           />
         </div>
 

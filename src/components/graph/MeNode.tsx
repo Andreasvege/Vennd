@@ -21,7 +21,7 @@ export function MeNode({ data }: NodeProps) {
         <Handle
           type="source"
           position={Position.Right}
-          className="!w-full !h-full !rounded-full !border-0 !bg-transparent !left-0 !top-0 !transform-none !pointer-events-none"
+          className="w-full! h-full! rounded-full! border-0! bg-transparent! left-0! top-0! transform-none! pointer-events-none!"
         />
         {d.image ? (
           <Image
