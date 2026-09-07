@@ -12,8 +12,20 @@ import { LogEntryModal } from '@/components/modals/LogEntryModal'
 export default function HomePage() {
   const { data: session, status } = useSession()
 
-  const [refreshKey, setRefreshKey] = useState(0)
-  const refresh = () => setRefreshKey((k) => k + 1)
+  // To nøkler i stedet for én. Å logge en kontakt kan umulig endre hvem som
+  // finnes på kartet eller hvordan de henger sammen, men bumpet før hentet
+  // hele grafen på nytt — fire ekstra databaseturer for ingenting.
+  const [graphKey, setGraphKey] = useState(0)
+  const [activityKey, setActivityKey] = useState(0)
+
+  // Nye personer og relasjoner endrer grafen, og påvirker også påminnelser.
+  const refreshGraph = () => {
+    setGraphKey((k) => k + 1)
+    setActivityKey((k) => k + 1)
+  }
+
+  // En loggført kontakt endrer tidslinjen og kan fjerne en påminnelse.
+  const refreshActivity = () => setActivityKey((k) => k + 1)
 
   const [addPersonOpen, setAddPersonOpen] = useState(false)
   const [addRelationshipOpen, setAddRelationshipOpen] = useState(false)
@@ -53,7 +65,7 @@ export default function HomePage() {
   return (
     <>
       <TimelineStripe
-        refreshKey={refreshKey}
+        refreshKey={activityKey}
         onAddLog={() => handleAddLog(undefined)}
       />
 
@@ -62,25 +74,25 @@ export default function HomePage() {
           onAddPerson={() => setAddPersonOpen(true)}
           onAddRelationship={() => setAddRelationshipOpen(true)}
           onAddLog={handleAddLog}
-          refreshKey={refreshKey}
+          refreshKey={graphKey}
         />
-        <RemindersSidebar refreshKey={refreshKey} />
+        <RemindersSidebar refreshKey={activityKey} />
       </div>
 
       <AddPersonModal
         isOpen={addPersonOpen}
         onClose={() => setAddPersonOpen(false)}
-        onSuccess={refresh}
+        onSuccess={refreshGraph}
       />
       <AddRelationshipModal
         isOpen={addRelationshipOpen}
         onClose={() => setAddRelationshipOpen(false)}
-        onSuccess={refresh}
+        onSuccess={refreshGraph}
       />
       <LogEntryModal
         isOpen={logEntryOpen}
         onClose={() => setLogEntryOpen(false)}
-        onSuccess={refresh}
+        onSuccess={refreshActivity}
         defaultPersonId={logEntryPersonId}
       />
     </>

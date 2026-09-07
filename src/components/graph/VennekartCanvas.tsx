@@ -47,17 +47,11 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
 
   useEffect(() => {
     async function fetchData() {
-      const [personsRes, relationshipsRes] = await Promise.all([
-        fetch('/api/persons'),
-        fetch('/api/relationships'),
-      ])
-      if (!personsRes.ok || !relationshipsRes.ok) return
-      const [personsData, relData] = await Promise.all([
-        personsRes.json() as Promise<Person[]>,
-        relationshipsRes.json() as Promise<Relationship[]>,
-      ])
-      setPersons(personsData)
-      setRelationships(relData)
+      const res = await fetch('/api/graph')
+      if (!res.ok) return
+      const data = (await res.json()) as { persons: Person[]; relationships: Relationship[] }
+      setPersons(data.persons)
+      setRelationships(data.relationships)
     }
     fetchData()
   }, [refreshKey])

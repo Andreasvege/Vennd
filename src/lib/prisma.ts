@@ -11,7 +11,12 @@ function createPrismaClient() {
   const adapter = new PrismaPg(pool)
   return new PrismaClient({
     adapter,
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    // 'query' logget hver eneste spørring til dev-loggen. Sett PRISMA_LOG_QUERIES=1
+    // når du faktisk skal telle rundturer.
+    log:
+      process.env.NODE_ENV === 'development' && process.env.PRISMA_LOG_QUERIES
+        ? ['query', 'error', 'warn']
+        : ['error'],
   })
 }
 
