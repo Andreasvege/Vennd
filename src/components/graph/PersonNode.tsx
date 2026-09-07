@@ -34,14 +34,28 @@ export function PersonNode({ data, selected }: NodeProps) {
               React Flow snapper geometrisk via connectionRadius i stedet.
               connectableStart hindrer at en kobling kan starte herfra — den
               skal bare starte fra knotten under. */}
+          {/* Anker for strektegning: dekker hele sirkelen, så React Flow regner
+              midtpunktet som feste. Uten pointer-events, ellers kan ikke noden
+              flyttes. isConnectableStart hindrer at en kobling starter her. */}
           <Handle
+            id="center"
             type="target"
             position={Position.Top}
             isConnectableStart={false}
             className="!w-full !h-full !rounded-full !border-0 !bg-transparent !left-0 !top-0 !transform-none !pointer-events-none"
           />
-          {initials}
           <Handle
+            id="center"
+            type="source"
+            position={Position.Top}
+            isConnectableStart={false}
+            className="!w-full !h-full !rounded-full !border-0 !bg-transparent !left-0 !top-0 !transform-none !pointer-events-none"
+          />
+          {initials}
+          {/* Selve dra-punktet. Kun herfra kan en relasjon starte — dette er
+              det eneste håndtaket som tar imot mus. */}
+          <Handle
+            id="knob"
             type="source"
             position={Position.Bottom}
             className="!w-3 !h-3 !border-2 !border-white/70 !bg-Accent !-bottom-1 opacity-0 group-hover/node:opacity-100 transition-opacity"

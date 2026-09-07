@@ -2,6 +2,8 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { PersonHeaderActions } from '@/components/PersonHeaderActions'
+import { RELATIONSHIP_LABELS } from '@/lib/relationship-colors'
 import type { Reminder, LogEntry } from '@/types'
 
 type Params = { params: Promise<{ id: string }> }
@@ -67,7 +69,18 @@ export default async function PersonPage({ params }: Params) {
           {initials}
         </div>
         <div className="flex-1 min-w-0">
-          <h1 className="text-3xl font-bold text-Text mb-1">{person.name}</h1>
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="text-3xl font-bold text-Text mb-1">{person.name}</h1>
+            <PersonHeaderActions person={person} />
+          </div>
+          <p className="text-sm text-Text/60 mb-1">
+            {RELATIONSHIP_LABELS[person.type]}
+            {person.cadenceWeeks === null
+              ? ' · ingen påminnelser'
+              : person.cadenceWeeks === 1
+                ? ' · påminnelse hver uke'
+                : ` · påminnelse hver ${person.cadenceWeeks}. uke`}
+          </p>
           {person.birthday && (
             <p className="text-sm text-Text/50">
               Bursdag: {formatDate(person.birthday)}

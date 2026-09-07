@@ -112,6 +112,7 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
       id: `me:${p.id}`,
       source: ME_ID,
       target: p.id,
+      targetHandle: 'center',
       type: 'relationship',
       data: { color: RELATIONSHIP_COLORS[p.type], label: undefined, variant: 'spoke' },
     }))
@@ -120,6 +121,9 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
       id: r.id,
       source: r.fromPersonId,
       target: r.toPersonId,
+      // Fest alltid i sentrum av ikonene, ikke i dra-knotten.
+      sourceHandle: 'center',
+      targetHandle: 'center',
       type: 'relationship',
       data: { color: r.color, label: undefined, variant: 'between' },
     }))
