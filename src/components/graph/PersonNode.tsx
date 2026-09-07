@@ -29,13 +29,16 @@ export function PersonNode({ data, selected }: NodeProps) {
           className="relative w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-black/40"
           style={{ backgroundColor: d.color }}
         >
-          {/* Målhåndtaket dekker hele sirkelen, så du kan slippe hvor som helst
-              på personen. Kilden er en synlig knott nederst som dukker opp ved
-              hover — uten den var drag-for-å-koble umulig å oppdage. */}
+          {/* Målhåndtaket dekker sirkelen, men uten pointer-events: ellers
+              fanger det musetrykk på avataren og du kan ikke flytte personen.
+              React Flow snapper geometrisk via connectionRadius i stedet.
+              connectableStart hindrer at en kobling kan starte herfra — den
+              skal bare starte fra knotten under. */}
           <Handle
             type="target"
             position={Position.Top}
-            className="!w-full !h-full !rounded-full !border-0 !bg-transparent !left-0 !top-0 !transform-none"
+            isConnectableStart={false}
+            className="!w-full !h-full !rounded-full !border-0 !bg-transparent !left-0 !top-0 !transform-none !pointer-events-none"
           />
           {initials}
           <Handle

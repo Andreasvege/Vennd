@@ -113,7 +113,7 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
       source: ME_ID,
       target: p.id,
       type: 'relationship',
-      data: { color: RELATIONSHIP_COLORS[p.type], label: undefined },
+      data: { color: RELATIONSHIP_COLORS[p.type], label: undefined, variant: 'spoke' },
     }))
 
     const between: Edge[] = relationships.map((r: Relationship) => ({
@@ -121,7 +121,7 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
       source: r.fromPersonId,
       target: r.toPersonId,
       type: 'relationship',
-      data: { color: r.color, label: undefined, dimmed: true },
+      data: { color: r.color, label: undefined, variant: 'between' },
     }))
 
     setEdges(persons.length ? [...spokes, ...between] : between)
@@ -174,6 +174,9 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
         proOptions={{ hideAttribution: true }}
         fitView
         fitViewOptions={{ padding: 0.3 }}
+        // Målhåndtaket tar ikke pointer-events (ellers kunne man ikke dra
+        // noden), så vi lar React Flow snappe geometrisk i stedet.
+        connectionRadius={60}
         minZoom={0.3}
         maxZoom={2}
       >
