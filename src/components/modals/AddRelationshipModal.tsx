@@ -1,5 +1,6 @@
 'use client'
 
+import { settle } from '@/server/actions/result'
 import { useState } from 'react'
 import { Button, ChipGroup, Select, Sheet } from '@/components/ui'
 import { TYPE_OPTIONS } from '@/components/person/type-options'
@@ -36,10 +37,7 @@ export function AddRelationshipModal({ isOpen, onClose, persons }: Props) {
 
     setSaving(true)
     setError('')
-    const result = await createRelationship({ fromPersonId: fromId, toPersonId: toId, type }).catch(() => ({
-      ok: false as const,
-      error: 'failed' as const,
-    }))
+    const result = await settle(createRelationship({ fromPersonId: fromId, toPersonId: toId, type }))
     setSaving(false)
 
     if (!result.ok) {

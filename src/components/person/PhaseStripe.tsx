@@ -12,7 +12,7 @@ export function PhaseStripe({ phases, current }: { phases: PersonProfileData['ph
   const currentIndex = current ? ROMANCE_ORDER.indexOf(current) : -1
 
   return (
-    <div className="flex flex-col gap-2" aria-label={t.phase.label}>
+    <div role="group" aria-label={t.phase.label} className="flex flex-col gap-2">
       <ol className="grid grid-cols-4 gap-1.5">
         {ROMANCE_ORDER.map((phase, i) => {
           const done = current === 'ENDED' ? reachedAt.has(phase) : i <= currentIndex

@@ -4,7 +4,8 @@ import { prisma } from '@/lib/prisma'
 /** De siste loggene, nyeste først, med alle som var med. */
 export async function getRecentLogs(userId: string, limit = 10) {
   const entries = await prisma.logEntry.findMany({
-    where: { userId },
+    // En logg uten deltakere (alle er slettet) hører ikke hjemme i tidslinjen.
+    where: { userId, participants: { some: {} } },
     orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
     take: limit,
     select: {

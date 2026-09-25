@@ -6,6 +6,7 @@ import { Bell } from 'lucide-react'
 import { Avatar, Button, SectionHeading, Sheet } from '@/components/ui'
 import { closeThread } from '@/server/actions/thread'
 import { snoozePerson } from '@/server/actions/person'
+import { settle } from '@/server/actions/result'
 import type { ReminderItem } from '@/server/queries/reminders'
 import { t } from '@/i18n'
 
@@ -63,18 +64,31 @@ function ReminderList({ reminders, onDismiss, busy }: ListProps) {
 export function RemindersPanel({ reminders }: { reminders: ReminderItem[] }) {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
+  const [error, setError] = useState('')
   const [, startTransition] = useTransition()
 
   const dismiss = (r: ReminderItem) => {
     setBusy(r.id)
+    setError('')
     startTransition(async () => {
-      if (r.kind === 'cadence') await snoozePerson(r.personId, SNOOZE_WEEKS)
-      else await closeThread({ threadId: r.id })
+      const result = await settle(
+        r.kind === 'cadence' ? snoozePerson(r.personId, SNOOZE_WEEKS) : closeThread({ threadId: r.id }),
+      )
+      if (!result.ok) setError(t.errors[result.error])
       setBusy(null)
     })
   }
 
-  const list = <ReminderList reminders={reminders} onDismiss={dismiss} busy={busy} />
+  const list = (
+    <>
+      {error && (
+        <p role="alert" className="mb-2 text-[14px] text-redpencil">
+          {error}
+        </p>
+      )}
+      <ReminderList reminders={reminders} onDismiss={dismiss} busy={busy} />
+    </>
+  )
   return (
     <>
       <aside

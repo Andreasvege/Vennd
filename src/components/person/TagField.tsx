@@ -36,6 +36,7 @@ const colorOf = (tag: TagOption): TagColor => (isTagColor(tag.color) ? tag.color
 export function TagField({ allTags, value, primaryTagId, onChange, onCreate }: Props) {
   const labelId = useId()
   const [input, setInput] = useState('')
+  const [error, setError] = useState('')
   const [known, setKnown] = useState<TagOption[]>(allTags)
   const byId = new Map(known.map((tag) => [tag.id, tag]))
   const selected = value.map((id) => byId.get(id)).filter((tag): tag is TagOption => Boolean(tag))
@@ -63,7 +64,9 @@ export function TagField({ allTags, value, primaryTagId, onChange, onCreate }: P
   const choose = async (key: string | number | null) => {
     if (key === null) return
     if (key === CREATE_KEY) {
-      const created = await onCreate(query)
+      setError('')
+      const created = await onCreate(query).catch(() => null)
+      if (!created) setError(t.errors.failed)
       if (created) {
         setKnown((prev) => (prev.some((tag) => tag.id === created.id) ? prev : [...prev, created]))
         if (!value.includes(created.id)) add(created.id)
@@ -129,6 +132,11 @@ export function TagField({ allTags, value, primaryTagId, onChange, onCreate }: P
         <Text slot="description" className="mt-1.5 text-[13px] text-ink-muted">
           {t.tags.hint}
         </Text>
+        {error && (
+          <Text slot="errorMessage" className="mt-1.5 text-[13px] text-redpencil">
+            {error}
+          </Text>
+        )}
 
         <Popover
           offset={6}

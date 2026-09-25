@@ -1,5 +1,6 @@
 'use client'
 
+import { settle } from '@/server/actions/result'
 import { useState } from 'react'
 import { Button, ChipGroup, Select, Sheet, TextField } from '@/components/ui'
 import {
@@ -56,14 +57,14 @@ export function AddPersonModal({ isOpen, onClose, tags }: Props) {
 
     setSaving(true)
     setError('')
-    const result = await createPerson({
+    const result = await settle(createPerson({
       name,
       notes,
       type,
       cadenceWeeks: cadenceFromOption(cadence),
       tagIds,
       primaryTagId,
-    }).catch(() => ({ ok: false as const, error: 'failed' as const }))
+    }))
     setSaving(false)
 
     if (!result.ok) {

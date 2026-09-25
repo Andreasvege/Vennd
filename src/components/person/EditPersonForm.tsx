@@ -1,5 +1,6 @@
 'use client'
 
+import { settle } from '@/server/actions/result'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, ChipGroup, Select, TextField } from '@/components/ui'
@@ -46,7 +47,7 @@ export function EditPersonForm({ person, allTags }: PersonEditData) {
 
     setSaving(true)
     setError('')
-    const result = await updatePerson(person.id, {
+    const result = await settle(updatePerson(person.id, {
       name,
       notes,
       type,
@@ -54,7 +55,7 @@ export function EditPersonForm({ person, allTags }: PersonEditData) {
       primaryTagId,
       birthday: birthday || null,
       ...(cadenceTouched && { cadenceWeeks: cadenceFromOption(cadence) }),
-    }).catch(() => ({ ok: false as const, error: 'failed' as const }))
+    }))
     setSaving(false)
 
     if (!result.ok) {
@@ -66,7 +67,7 @@ export function EditPersonForm({ person, allTags }: PersonEditData) {
 
   const remove = async () => {
     setSaving(true)
-    const result = await deletePerson(person.id).catch(() => ({ ok: false as const, error: 'failed' as const }))
+    const result = await settle(deletePerson(person.id))
     setSaving(false)
 
     if (!result.ok) {

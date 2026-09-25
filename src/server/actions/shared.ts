@@ -2,6 +2,17 @@ import 'server-only'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { assertAllOwned } from '@/server/ownership'
+import { id as idSchema } from '@/server/schemas'
+
+/**
+ * Argumentene til en server action kommer fra nettverket og kan være hva
+ * som helst — også objekter som Prisma ville tolket som filtre
+ * ({ not: '' }). Alle id-er går derfor gjennom skjemaet først.
+ */
+export function parseId(raw: unknown): string | null {
+  const parsed = idSchema.safeParse(raw)
+  return parsed.success ? parsed.data : null
+}
 
 /** Alle sider leser fra de samme dataene, så en endring friskes opp overalt. */
 export function refreshAll() {

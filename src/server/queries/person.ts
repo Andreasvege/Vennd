@@ -14,7 +14,7 @@ export async function getPersonProfile(userId: string, id: string) {
       facts: { orderBy: { createdAt: 'asc' }, select: { id: true, label: true, value: true } },
       phases: { orderBy: { at: 'asc' }, select: { phase: true, at: true } },
       participations: {
-        orderBy: { logEntry: { date: 'desc' } },
+        orderBy: [{ logEntry: { date: 'desc' } }, { logEntry: { createdAt: 'desc' } }],
         select: {
           logEntry: {
             select: {

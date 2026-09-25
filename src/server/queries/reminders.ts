@@ -1,8 +1,11 @@
 import 'server-only'
 import { prisma } from '@/lib/prisma'
-import { lastContactByPerson } from '@/domain/cadence'
 import { computeAutoReminders } from '@/domain/reminders'
 import { personTint, type TagColor } from '@/lib/palette'
+
+function endOfUtcDay(d: Date): Date {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999))
+}
 
 export type ReminderItem = {
   /** «cadence:<personId>» eller trådens id. Bare en React-nøkkel for kadens. */
@@ -39,12 +42,19 @@ export async function getReminders(userId: string, now: Date = new Date()): Prom
         },
       },
     }),
-    prisma.logEntry.findMany({
-      where: { userId },
-      select: { date: true, participants: { select: { personId: true } } },
-    }),
+    // Siste kontakt per person, regnet ut i databasen: å laste hver logg
+    // du noensinne har skrevet, bare for å finne den nyeste, skalerer dårlig.
+    prisma.$queryRaw<{ personId: string; last: Date }[]>`
+      SELECT lp."personId", max(le."date") AS "last"
+      FROM "LogParticipant" lp
+      JOIN "LogEntry" le ON le."id" = lp."logEntryId"
+      WHERE le."userId" = ${userId}
+      GROUP BY lp."personId"
+    `,
     prisma.thread.findMany({
-      where: { userId, status: 'OPEN', dueDate: { lte: now } },
+      // Datoer lagres kl. 12 UTC. «I dag» betyr hele dagen, ikke bare fram
+      // til nå — ellers dukket dagens tråder først opp klokka 14 norsk tid.
+      where: { userId, status: 'OPEN', dueDate: { lte: endOfUtcDay(now) } },
       orderBy: { dueDate: 'asc' },
       select: {
         id: true,
@@ -57,9 +67,7 @@ export async function getReminders(userId: string, now: Date = new Date()): Prom
     }),
   ])
 
-  const lastContact = lastContactByPerson(
-    logs.map((l) => ({ date: l.date, personIds: l.participants.map((p) => p.personId) })),
-  )
+  const lastContact = new Map(logs.map((l) => [l.personId, l.last]))
   const byId = new Map(persons.map((p) => [p.id, p]))
 
   const threads: ReminderItem[] = dueThreads.flatMap((th) => {

@@ -1,5 +1,6 @@
 'use client'
 
+import { settle } from '@/server/actions/result'
 import { useState } from 'react'
 import { PenLine } from 'lucide-react'
 import { Button, ChipGroup, SectionHeading, TextField } from '@/components/ui'
@@ -22,10 +23,7 @@ export function LogContactPanel({ personId, personName }: { personId: string; pe
     setSaving(true)
     setError('')
 
-    const result = await createLog({ personIds: [personId], type, body: notes, date }).catch(() => ({
-      ok: false as const,
-      error: 'failed' as const,
-    }))
+    const result = await settle(createLog({ personIds: [personId], type, body: notes, date }))
     setSaving(false)
 
     if (!result.ok) {

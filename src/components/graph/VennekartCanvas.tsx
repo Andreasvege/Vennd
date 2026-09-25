@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   ReactFlow,
   Background,
@@ -20,6 +20,7 @@ import { isTagColor, tagFill, tagStroke, type TagColor } from '@/lib/palette'
 import { t } from '@/i18n'
 import { createRelationship } from '@/server/actions/relationship'
 import { movePerson } from '@/server/actions/person'
+import { settle } from '@/server/actions/result'
 import type { MapPerson, MapRelationship } from '@/server/queries/graph'
 import { PersonNode, type PersonNodeData } from './PersonNode'
 import { MeNode } from './MeNode'
@@ -117,19 +118,26 @@ export function VennekartCanvas({ persons, relationships, onAddPerson, onAddLog,
 
   // Dra fra knotten under én person til en annen for å lage en relasjon.
   // Typen settes til venn; den kan endres fra profilen.
+  const [error, setError] = useState('')
+
   const onConnect = async (connection: Connection) => {
-    if (!connection.source || !connection.target) return
-    if (connection.source === connection.target) return
-    await createRelationship({
-      fromPersonId: connection.source,
-      toPersonId: connection.target,
-      type: 'FRIEND',
-    })
+    const { source, target } = connection
+    if (!source || !target || source === target) return
+    // Finnes relasjonen allerede (i en av retningene), lager vi ikke en til.
+    const exists = relationships.some(
+      (r) =>
+        (r.fromPersonId === source && r.toPersonId === target) ||
+        (r.fromPersonId === target && r.toPersonId === source),
+    )
+    if (exists) return
+    const result = await settle(createRelationship({ fromPersonId: source, toPersonId: target, type: 'FRIEND' }))
+    setError(result.ok ? '' : t.errors[result.error])
   }
 
-  const onNodeDragStop = (_event: React.MouseEvent, node: Node) => {
+  const onNodeDragStop = async (_event: React.MouseEvent, node: Node) => {
     if (node.id === ME_ID) return
-    void movePerson(node.id, node.position.x, node.position.y)
+    const result = await settle(movePerson(node.id, node.position.x, node.position.y))
+    setError(result.ok ? '' : t.errors[result.error])
   }
 
   // Forklaringen viser hovedtaggene som faktisk er i bruk.
@@ -179,6 +187,15 @@ export function VennekartCanvas({ persons, relationships, onAddPerson, onAddLog,
           {t.map.newPerson}
         </Button>
       </div>
+
+      {error && (
+        <p
+          role="alert"
+          className="absolute left-1/2 top-5 z-10 -translate-x-1/2 rounded-[10px] border border-rule bg-paper-raised px-4 py-2 text-[14px] text-redpencil"
+        >
+          {error}
+        </p>
+      )}
 
       {legend.length > 0 && (
         <ul

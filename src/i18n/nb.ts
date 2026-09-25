@@ -73,6 +73,7 @@ export const nb = {
   errors: {
     invalid: 'Noe i skjemaet er ikke fylt ut riktig.',
     'not-found': 'Fant det ikke lenger. Last siden på nytt.',
+    taken: 'Du har allerede en tagg med det navnet.',
     failed: 'Det ble ikke lagret. Sjekk nettforbindelsen og prøv igjen.',
   },
 
@@ -213,6 +214,12 @@ export const nb = {
     themeDark: 'Mørk',
     tags: 'Tagger',
   },
+  appError: {
+    title: 'Noe gikk galt',
+    body: 'Siden kunne ikke vises. Det du har lagret er trygt.',
+    retry: 'Prøv igjen',
+  },
+
   notFound: {
     title: 'Den siden finnes ikke',
     body: 'Kanskje personen er slettet, eller lenken er gammel.',

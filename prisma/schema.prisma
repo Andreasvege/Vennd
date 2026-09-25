@@ -94,7 +94,9 @@ model Tag {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   // Lagres slik den først ble skrevet. Unik per bruker uten hensyn til store
-  // og små bokstaver — håndhevet av en indeks på lower(name) i migreringen.
+  // og små bokstaver: håndhevet av indeksen «Tag_userId_lower_name_key» på
+  // (userId, lower(name)), laget i v2_foundation-migreringen. Prisma kan
+  // ikke uttrykke uttrykksindekser, så den står bare der — ikke fjern den.
   name      String
   // Palettnøkkel (src/lib/palette.ts), aldri hex.
   color     String

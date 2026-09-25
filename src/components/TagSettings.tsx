@@ -6,6 +6,7 @@ import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { TAG_COLORS, tagFill, tagStroke, type TagColor } from '@/lib/palette'
 import { deleteTag, recolorTag, renameTag } from '@/server/actions/tag'
+import { settle } from '@/server/actions/result'
 import type { TagSummary } from '@/server/queries/tags'
 import { t } from '@/i18n'
 
@@ -22,16 +23,21 @@ function TagRow({ tag }: { tag: TagSummary }) {
       return
     }
     startTransition(async () => {
-      const result = await renameTag(tag.id, next)
+      const result = await settle(renameTag(tag.id, next))
       if (!result.ok) {
-        setError(result.error === 'invalid' ? t.tags.nameTaken : t.errors[result.error])
+        setError(t.errors[result.error])
         setName(tag.name)
       } else setError('')
     })
   }
 
-  const recolor = (color: TagColor) => startTransition(async () => void (await recolorTag(tag.id, color)))
-  const remove = () => startTransition(async () => void (await deleteTag(tag.id)))
+  const run = (action: () => Promise<{ ok: boolean; error?: keyof typeof t.errors }>) =>
+    startTransition(async () => {
+      const result = await settle(action())
+      setError(result.ok ? '' : t.errors[result.error ?? 'failed'])
+    })
+  const recolor = (color: TagColor) => run(() => recolorTag(tag.id, color))
+  const remove = () => run(() => deleteTag(tag.id))
 
   return (
     <li className="flex flex-col gap-1 py-3">
@@ -95,9 +101,14 @@ function TagRow({ tag }: { tag: TagSummary }) {
         <span className="hidden shrink-0 text-[13px] text-ink-muted sm:inline">{t.tags.count(tag.personCount)}</span>
 
         {confirming ? (
-          <Button variant="danger" size="sm" onPress={remove}>
-            {t.common.delete}
-          </Button>
+          <>
+            <Button variant="quiet" size="sm" onPress={() => setConfirming(false)}>
+              {t.common.cancel}
+            </Button>
+            <Button variant="danger" size="sm" onPress={remove}>
+              {t.common.delete}
+            </Button>
+          </>
         ) : (
           <Button variant="quiet" size="sm" aria-label={`${t.common.delete} ${tag.name}`} onPress={() => setConfirming(true)}>
             <Trash2 aria-hidden size={16} strokeWidth={1.75} />

@@ -5,7 +5,8 @@ import { placeNewPerson } from '@/domain/placement'
 import { requireUserId } from '@/server/session'
 import { NotOwnedError } from '@/server/ownership'
 import { personInput, personPatch, type PersonInput, type PersonPatch } from '@/server/schemas'
-import { assertTagsOwned, fromDateInput, refreshAll } from './shared'
+import { revalidatePath } from 'next/cache'
+import { assertTagsOwned, fromDateInput, parseId, refreshAll } from './shared'
 import { fail, type ActionResult } from './result'
 
 // Hovedtaggen må være en av personens tagger. Har personen tagger, men ingen
@@ -51,10 +52,11 @@ export async function createPerson(raw: PersonInput): Promise<ActionResult<{ id:
   return { ok: true, data: { id: person.id } }
 }
 
-export async function updatePerson(id: string, raw: PersonPatch): Promise<ActionResult> {
+export async function updatePerson(rawId: string, raw: PersonPatch): Promise<ActionResult> {
   const userId = await requireUserId()
+  const id = parseId(rawId)
   const parsed = personPatch.safeParse(raw)
-  if (!parsed.success) return fail('invalid')
+  if (!id || !parsed.success) return fail('invalid')
   const { tagIds, primaryTagId, birthday, cadenceWeeks, ...fields } = parsed.data
 
   const owned = await prisma.person.findFirst({ where: { id, userId }, select: { id: true } })
@@ -87,18 +89,38 @@ export async function updatePerson(id: string, raw: PersonPatch): Promise<Action
   return { ok: true }
 }
 
-export async function deletePerson(id: string): Promise<ActionResult> {
+/**
+ * Slett en person, og det som bare handlet om dem: logger og tråder der de
+ * var den eneste. En middag med Ingrid og Martin blir stående når Martin
+ * slettes — den handler fortsatt om Ingrid.
+ */
+export async function deletePerson(rawId: string): Promise<ActionResult> {
   const userId = await requireUserId()
-  const { count } = await prisma.person.deleteMany({ where: { id, userId } })
-  if (count === 0) return fail('not-found')
-  refreshAll()
+  const id = parseId(rawId)
+  if (!id) return fail('invalid')
+
+  const onlyThem = { every: { personId: id }, some: { personId: id } }
+  const [, , deleted] = await prisma.$transaction([
+    prisma.logEntry.deleteMany({ where: { userId, participants: onlyThem } }),
+    prisma.thread.deleteMany({ where: { userId, persons: onlyThem } }),
+    prisma.person.deleteMany({ where: { id, userId } }),
+  ])
+  if (deleted.count === 0) return fail('not-found')
+
+  // Bare forsiden og innstillingene: å friske opp ruta vi står på ville
+  // rendret en profil som ikke finnes lenger (404) før klienten navigerer.
+  revalidatePath('/')
+  revalidatePath('/settings')
   return { ok: true }
 }
 
 /** Lagrer hvor du dro noen på kartet. Friskes ikke opp: klienten har allerede plassen. */
-export async function movePerson(id: string, x: number, y: number): Promise<ActionResult> {
+export async function movePerson(rawId: string, x: number, y: number): Promise<ActionResult> {
   const userId = await requireUserId()
-  if (!Number.isFinite(x) || !Number.isFinite(y)) return fail('invalid')
+  const id = parseId(rawId)
+  if (!id || typeof x !== 'number' || typeof y !== 'number' || !Number.isFinite(x) || !Number.isFinite(y)) {
+    return fail('invalid')
+  }
   const { count } = await prisma.person.updateMany({
     where: { id, userId },
     data: { positionX: x, positionY: y },
@@ -107,9 +129,10 @@ export async function movePerson(id: string, x: number, y: number): Promise<Acti
 }
 
 /** «Ikke nå»: skyver kadens-påminnelsen noen uker fram. */
-export async function snoozePerson(id: string, weeks = 1): Promise<ActionResult> {
+export async function snoozePerson(rawId: string, weeks = 1): Promise<ActionResult> {
   const userId = await requireUserId()
-  if (!Number.isInteger(weeks) || weeks < 1 || weeks > 52) return fail('invalid')
+  const id = parseId(rawId)
+  if (!id || !Number.isInteger(weeks) || weeks < 1 || weeks > 52) return fail('invalid')
   const until = new Date()
   until.setDate(until.getDate() + weeks * 7)
   const { count } = await prisma.person.updateMany({ where: { id, userId }, data: { snoozedUntil: until } })

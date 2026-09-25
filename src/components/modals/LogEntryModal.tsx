@@ -1,5 +1,6 @@
 'use client'
 
+import { settle } from '@/server/actions/result'
 import { useState } from 'react'
 import { Button, ChipGroup, Select, Sheet, TextField } from '@/components/ui'
 import { todayISO } from '@/domain/format'
@@ -46,10 +47,7 @@ export function LogEntryModal({ isOpen, onClose, persons, defaultPersonId }: Pro
 
     setSaving(true)
     setError('')
-    const result = await createLog({ personIds: [personId], type, body: notes, date }).catch(() => ({
-      ok: false as const,
-      error: 'failed' as const,
-    }))
+    const result = await settle(createLog({ personIds: [personId], type, body: notes, date }))
     setSaving(false)
 
     if (!result.ok) {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { DEFAULT_CADENCE_WEEKS, defaultCadenceFor, lastContactByPerson } from './cadence'
+import { DEFAULT_CADENCE_WEEKS, defaultCadenceFor } from './cadence'
 import type { RelationshipType } from '@/types'
 
 describe('kadens-standardverdier', () => {
@@ -33,25 +33,3 @@ describe('kadens-standardverdier', () => {
   })
 })
 
-describe('lastContactByPerson', () => {
-  it('gir hver deltaker loggens dato, og beholder den nyeste', () => {
-    const m = lastContactByPerson([
-      { date: new Date('2026-09-01'), personIds: ['a', 'b'] },
-      { date: new Date('2026-09-20'), personIds: ['a'] },
-    ])
-    expect(m.get('a')).toEqual(new Date('2026-09-20'))
-    expect(m.get('b')).toEqual(new Date('2026-09-01'))
-  })
-
-  it('er uavhengig av rekkefølgen loggene kommer i', () => {
-    const m = lastContactByPerson([
-      { date: new Date('2026-09-20'), personIds: ['a'] },
-      { date: new Date('2026-09-01'), personIds: ['a'] },
-    ])
-    expect(m.get('a')).toEqual(new Date('2026-09-20'))
-  })
-
-  it('gir tomt kart for ingen logger', () => {
-    expect(lastContactByPerson([]).size).toBe(0)
-  })
-})

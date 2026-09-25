@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { requireUserId } from '@/server/session'
 import { NotOwnedError } from '@/server/ownership'
 import { logInput, type LogInput } from '@/server/schemas'
-import { assertPersonsOwned, fromDateInput, refreshAll } from './shared'
+import { assertPersonsOwned, fromDateInput, parseId, refreshAll } from './shared'
 import { fail, type ActionResult } from './result'
 
 export async function createLog(raw: LogInput): Promise<ActionResult<{ id: string }>> {
@@ -35,8 +35,10 @@ export async function createLog(raw: LogInput): Promise<ActionResult<{ id: strin
   return { ok: true, data: { id: entry.id } }
 }
 
-export async function deleteLog(id: string): Promise<ActionResult> {
+export async function deleteLog(rawId: string): Promise<ActionResult> {
   const userId = await requireUserId()
+  const id = parseId(rawId)
+  if (!id) return fail('invalid')
   const { count } = await prisma.logEntry.deleteMany({ where: { id, userId } })
   if (count === 0) return fail('not-found')
   refreshAll()

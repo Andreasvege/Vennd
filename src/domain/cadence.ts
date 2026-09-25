@@ -20,19 +20,3 @@ export function defaultCadenceFor(type: RelationshipType): number {
   return DEFAULT_CADENCE_WEEKS[type]
 }
 
-/**
- * Siste kontakt per person, fra logger som kan ha flere deltakere. En
- * middag med Ingrid og Martin teller for begge.
- */
-export function lastContactByPerson(
-  entries: { date: Date; personIds: string[] }[],
-): Map<string, Date> {
-  const out = new Map<string, Date>()
-  for (const entry of entries) {
-    for (const id of entry.personIds) {
-      const prev = out.get(id)
-      if (!prev || entry.date > prev) out.set(id, entry.date)
-    }
-  }
-  return out
-}

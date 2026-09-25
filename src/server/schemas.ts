@@ -8,7 +8,7 @@ const RELATIONSHIP_TYPES = ['FRIEND', 'FAMILY', 'COLLEAGUE', 'ROMANTIC', 'ACQUAI
 const LOG_TYPES = ['MET', 'CALLED', 'MESSAGE', 'DATE', 'OTHER'] as const
 const PHASES = ['FIRST_DATE', 'SEEING', 'EXCLUSIVE', 'PARTNER', 'ENDED'] as const
 
-const id = z.string().min(1).max(64)
+export const id = z.string().min(1).max(64)
 
 /** YYYY-MM-DD som faktisk finnes i kalenderen (ikke 31. februar). */
 export const isoDate = z
