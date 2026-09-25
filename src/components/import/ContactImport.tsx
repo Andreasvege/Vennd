@@ -58,7 +58,14 @@ export function ContactImport({ persons, tags }: { persons: KnownPerson[]; tags:
     startTransition(async () => {
       const res = await settle(
         importContacts({
-          contacts: chosen.map(({ name, birthday, phone, email, note }) => ({ name, birthday, phone, email, note })),
+          // Kuttes til grensene serveren godtar, så én lang notat ikke stopper hele importen.
+          contacts: chosen.map(({ name, birthday, phone, email, note }) => ({
+            name: name.slice(0, 120),
+            birthday,
+            phone: phone?.slice(0, 200) ?? null,
+            email: email?.slice(0, 200) ?? null,
+            note: note?.slice(0, 10_000) ?? null,
+          })),
           tagIds,
           remind,
         }),

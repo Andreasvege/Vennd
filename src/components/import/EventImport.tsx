@@ -65,8 +65,9 @@ export function EventImport({ persons, existing }: { persons: KnownPerson[]; exi
         importEvents({
           events: chosen.map((r) => ({
             kind: r.status.kind,
-            title: r.title,
-            description: r.description,
+            // Kuttes til grensene serveren godtar, så én lang beskrivelse ikke stopper hele importen.
+            title: r.title.slice(0, 500),
+            description: r.description?.slice(0, 10_000) ?? null,
             personIds: r.personIds,
             date: dayOf(r),
             at: r.allDay ? null : r.start.toISOString(),
