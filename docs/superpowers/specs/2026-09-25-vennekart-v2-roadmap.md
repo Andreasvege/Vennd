@@ -1,7 +1,7 @@
 # Vennekart V2 — Veikart
 
 **Dato:** 2026-09-25
-**Status:** Utkast — mål og delprosjekter avklart, visuell retning ikke valgt
+**Status:** Utkast — mål, delprosjekter og visuell retning (A · Dagbok) avklart
 
 ---
 
@@ -88,7 +88,23 @@ halvferdig. Tre retninger er skissert på lerretet
 - **C · Atlas:** Presis og kartografisk. Radial kantbunting med tagger som buer,
   datatett profil.
 
-Valget (eller en blanding) tas før delprosjekt 2 bygges.
+**Valgt: A · Dagbok.** Den er mest attraktiv og lettest å vise frem, hvis appen en
+dag skal spres videre. B og C lever videre som karttyper (se under), tegnet i
+Dagbok-stil.
+
+### Tre syn på samme kart
+
+Kartet får tre syn over de samme dataene og det samme tagfilteret. Bare plasseringen
+endres, og personene glir til nye plasser når du bytter syn.
+
+| Syn | Oppsett | Svarer på |
+|---|---|---|
+| **Nettverk** (fra A) | Fritt, kraftbasert oppsett med klynger | Hvem kjenner hvem? |
+| **Nærhet** (fra B) | Ringer rundt meg, avstand = nærhet og hvor fersk kontakten er | Hvem står meg nær, og hvem glipper? |
+| **Kretser** (fra C) | Radial hierarkisk kantbunting, gruppert på hovedtagg | Hvordan henger miljøene sammen? |
+
+Valg av renderer (React Flow eller et eget SVG/d3-lag for alle tre) tas i
+spesifikasjonen for delprosjekt 5.
 
 ## Utenfor V2
 
