@@ -178,3 +178,30 @@ h1, h2, h3, h4, h5, h6 {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* React Flow tegnes som resten av papiret. Biblioteket styres med egne
+   variabler; overstyrer vi klassene direkte, vinner dets mørk-modus-regler. */
+.react-flow {
+  --xy-controls-button-background-color: var(--paper-raised);
+  --xy-controls-button-background-color-hover: var(--pen-wash);
+  --xy-controls-button-color: var(--ink);
+  --xy-controls-button-color-hover: var(--ink);
+  --xy-controls-button-border-color: var(--rule);
+  --xy-controls-box-shadow: none;
+  --xy-connectionline-stroke-default: var(--pen);
+}
+.react-flow__controls {
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* En papirfarget glorie rundt tekst som står rett på kartet, så den er
+   lesbar selv der en strek går bak. */
+.ink-halo {
+  text-shadow:
+    0 0 2px var(--paper),
+    0 0 2px var(--paper),
+    0 0 4px var(--paper),
+    0 0 6px var(--paper);
+}
