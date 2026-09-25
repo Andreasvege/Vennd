@@ -33,6 +33,7 @@ export type ReminderResponse = {
   id: string
   personId: string
   personName: string
+  personType: RelationshipType
   type: ReminderType
   message: string
   dueDate: string | null

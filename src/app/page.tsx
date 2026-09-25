@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { Landing } from '@/components/Landing'
 import { VennekartCanvas } from '@/components/graph/VennekartCanvas'
 import { TimelineStripe } from '@/components/TimelineStripe'
-import { RemindersSidebar } from '@/components/RemindersSidebar'
+import { RemindersPanel } from '@/components/RemindersPanel'
 import { AddPersonModal } from '@/components/modals/AddPersonModal'
 import { AddRelationshipModal } from '@/components/modals/AddRelationshipModal'
 import { LogEntryModal } from '@/components/modals/LogEntryModal'
@@ -46,19 +46,20 @@ export default function HomePage() {
 
   return (
     <>
-      <TimelineStripe
-        refreshKey={activityKey}
-        onAddLog={() => handleAddLog(undefined)}
-      />
-
-      <div className="flex mx-4 mt-2 gap-0" style={{ height: 'calc(100vh - 140px)' }}>
-        <VennekartCanvas
-          onAddPerson={() => setAddPersonOpen(true)}
-          onAddRelationship={() => setAddRelationshipOpen(true)}
-          onAddLog={handleAddLog}
-          refreshKey={graphKey}
-        />
-        <RemindersSidebar refreshKey={activityKey} />
+      {/* Skjermen minus headeren (64 px). Tidslinjen tar det den trenger, og
+          kartet fyller resten — også når tidslinjen brettes ut, så siden
+          aldri scroller. */}
+      <div className="flex h-[calc(100dvh-64px)] flex-col">
+        <TimelineStripe refreshKey={activityKey} onAddLog={() => handleAddLog(undefined)} />
+        <div className="relative flex min-h-0 flex-1">
+          <VennekartCanvas
+            onAddPerson={() => setAddPersonOpen(true)}
+            onAddRelationship={() => setAddRelationshipOpen(true)}
+            onAddLog={handleAddLog}
+            refreshKey={graphKey}
+          />
+          <RemindersPanel refreshKey={activityKey} />
+        </div>
       </div>
 
       <AddPersonModal

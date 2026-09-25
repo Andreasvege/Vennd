@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import type { PersonWithCadence, ComputedReminder } from '@/types'
 
 const MS_PER_WEEK = 1000 * 60 * 60 * 24 * 7
@@ -34,9 +35,7 @@ export function computeAutoReminders(
         personName: p.name,
         type: 'AUTO' as const,
         message:
-          weeks === null
-            ? `Du har aldri logget kontakt med ${p.name}`
-            : `Du har ikke hatt kontakt med ${p.name} på ${weeks} uker`,
+          weeks === null ? t.reminders.neverContacted : t.reminders.weeksSince(weeks),
         weeksSinceContact: weeks,
       }
     })

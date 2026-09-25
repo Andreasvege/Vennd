@@ -136,9 +136,8 @@ export const nb = {
     empty: 'Ingen du bør ta kontakt med akkurat nå.',
     snooze: 'Utsett en uke',
     dismiss: 'Avvis',
-    neverContacted: (name: string) => `Du har aldri logget kontakt med ${name}`,
-    weeksSince: (name: string, weeks: number) =>
-      `${weeks === 1 ? 'En uke' : `${weeks} uker`} siden sist med ${name}`,
+    neverContacted: 'Ingen kontakt logget ennå',
+    weeksSince: (weeks: number) => `${weeks === 1 ? 'En uke' : `${weeks} uker`} siden sist`,
   },
 
   settings: {
