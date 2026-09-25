@@ -39,8 +39,20 @@ describe('findMentions', () => {
   it('håndterer norske bokstaver', () => {
     expect(findMentions('Ringte Øyvind', P).sure).toEqual(['oyv'])
   })
-  it('ettordsnavn som «Mamma» treffes med stor eller liten forbokstav', () => {
-    expect(findMentions('ringte mamma', P).sure).toEqual(['mamma'])
+  it('ettordsnavn treffes bare med stor forbokstav', () => {
+    expect(findMentions('Ringte Mamma', P).sure).toEqual(['mamma'])
+    expect(findMentions('ringte mamma', P).sure).toEqual([])
+  })
+  it('ettordsnavn som også er vanlige ord blir ikke lagt til', () => {
+    const people = [{ id: 'vaar', name: 'Vår' }, { id: 'mai', name: 'Mai' }]
+    expect(findMentions('vår tur i mai', people)).toEqual({ sure: [], maybe: [] })
+  })
+  it('to med samme fulle navn legges ikke til, men foreslås', () => {
+    const twins = [{ id: 'a', name: 'Ola Nordmann' }, { id: 'b', name: 'Ola Nordmann' }]
+    expect(findMentions('Traff Ola Nordmann', twins)).toEqual({
+      sure: [],
+      maybe: [{ word: 'Ola Nordmann', ids: ['a', 'b'] }],
+    })
   })
   it('gir hver person bare én gang, i rekkefølgen de nevnes', () => {
     expect(findMentions('Martin, så Øyvind, så Martin igjen', P).sure).toEqual(['martin', 'oyv'])

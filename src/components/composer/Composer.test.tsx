@@ -85,3 +85,35 @@ it('gjenoppretter en kladd, og lar deg forkaste den', async () => {
   expect(screen.getByRole('textbox', { name: 'Hva skjedde?' })).toHaveValue('')
   expect(localStorage.getItem('composer-draft')).toBeNull()
 })
+
+it('lukker ikke en avkrysset tråd når personen den gjaldt er fjernet', async () => {
+  createLog.mockResolvedValue({ ok: true, data: { id: 'l1', closed: 0, opened: 0 } })
+  const { user } = setup()
+  await user.type(screen.getByRole('textbox', { name: 'Hva skjedde?' }), 'Middag med Martin og Ingrid Aas')
+  await user.click(screen.getByRole('checkbox', { name: /Fjellturen/ }))
+  await user.click(screen.getByRole('button', { name: 'Fjern Martin Nilsen' }))
+  await user.click(screen.getByRole('button', { name: 'Lagre' }))
+  await waitFor(() => expect(createLog).toHaveBeenCalled())
+  expect(createLog.mock.calls[0][0].closeThreads).toEqual([])
+})
+
+it('rører ikke kladden når loggen skrives fra en profil', async () => {
+  createLog.mockResolvedValue({ ok: true, data: { id: 'l1', closed: 0, opened: 0 } })
+  localStorage.setItem('composer-draft', JSON.stringify({ text: 'Halvskrevet', personIds: [], newThreads: [] }))
+  const onClose = vi.fn()
+  render(
+    <ToastProvider>
+      <Composer isOpen onClose={onClose} data={data} presetPersonIds={['ingrid']} />
+    </ToastProvider>,
+  )
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Lagre' }))
+  await waitFor(() => expect(onClose).toHaveBeenCalled())
+  expect(localStorage.getItem('composer-draft')).toContain('Halvskrevet')
+})
+
+it('hopper over slettede personer i en gjenopprettet kladd', () => {
+  localStorage.setItem('composer-draft', JSON.stringify({ text: '', personIds: ['slettet', 'martin'], newThreads: [] }))
+  setup()
+  expect(screen.getByRole('button', { name: 'Fjern Martin Nilsen' })).toBeInTheDocument()
+  expect(screen.getAllByRole('button', { name: /^Fjern / })).toHaveLength(1)
+})

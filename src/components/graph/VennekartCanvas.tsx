@@ -12,7 +12,7 @@ import {
   type Edge,
   type Node,
 } from '@xyflow/react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { Link2, UserPlus } from 'lucide-react'
 import { Button, EmptyState } from '@/components/ui'
@@ -47,6 +47,7 @@ type Props = {
 
 export function VennekartCanvas({ persons, relationships, highlight = [], onAddPerson, onAddLog, onAddRelationship }: Props) {
   const router = useRouter()
+  const pathname = usePathname()
   const { data: session } = useSession()
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
@@ -206,7 +207,7 @@ export function VennekartCanvas({ persons, relationships, highlight = [], onAddP
               highlight.map((id) => persons.find((p) => p.id === id)?.name.split(' ')[0] ?? '').join(' → '),
             )}
           </span>
-          <Link href="/" className="rounded-[8px] px-2 py-1 text-ink-muted outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-pen">
+          <Link href={pathname} className="rounded-[8px] px-2 py-1 text-ink-muted outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-pen">
             {t.smallWorld.hidePath}
           </Link>
         </div>

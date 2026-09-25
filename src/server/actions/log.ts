@@ -36,7 +36,9 @@ export async function createLog(raw: LogInput): Promise<ActionResult<LogSaved>> 
   const resolutions = new Map(closeThreads.map((c) => [c.id, c.resolution?.trim() || null]))
   const now = new Date()
 
-  const entry = await prisma.$transaction(async (tx) => {
+  let entry: { id: string }
+  try {
+    entry = await prisma.$transaction(async (tx) => {
     const created = await tx.logEntry.create({
       data: {
         userId,
@@ -48,10 +50,13 @@ export async function createLog(raw: LogInput): Promise<ActionResult<LogSaved>> 
       select: { id: true },
     })
     for (const threadId of closeIds) {
-      await tx.thread.update({
-        where: { id: threadId },
+      // Vakten gjentas her: ble tråden lukket et annet sted i mellomtiden,
+      // rulles hele loggen tilbake i stedet for å skrive over den.
+      const { count } = await tx.thread.updateMany({
+        where: { id: threadId, userId, status: 'OPEN' },
         data: { status: 'CLOSED', closedAt: now, closedById: created.id, resolution: resolutions.get(threadId) },
       })
+      if (count !== 1) throw new NotOwnedError()
     }
     for (const th of newThreads) {
       await tx.thread.create({
@@ -65,7 +70,11 @@ export async function createLog(raw: LogInput): Promise<ActionResult<LogSaved>> 
       })
     }
     return created
-  })
+    })
+  } catch (e) {
+    if (e instanceof NotOwnedError) return fail('not-found')
+    throw e
+  }
 
   refreshAll()
   return { ok: true, data: { id: entry.id, closed: closeIds.length, opened: newThreads.length } }

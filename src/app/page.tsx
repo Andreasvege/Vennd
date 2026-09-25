@@ -5,6 +5,7 @@ import { getUserId } from '@/server/session'
 import { getGraph } from '@/server/queries/graph'
 import { getTags } from '@/server/queries/tags'
 import { getToday } from '@/server/queries/today'
+import { parsePath } from './kart/sti'
 
 // Forsiden er «I dag» på mobil og kartet på PC (der «I dag» står i
 // panelet ved siden av). Samme rute; bredden avgjør hva som vises.
@@ -20,9 +21,7 @@ export default async function HomePage({ searchParams }: Props) {
     getToday(userId),
     searchParams,
   ])
-  // «Se stien»: bare id-er som faktisk er brukerens personer.
-  const known = new Set(graph.persons.map((p) => p.id))
-  const highlight = sti?.split(',').filter((id) => known.has(id)) ?? []
+  const highlight = parsePath(sti, graph.persons)
 
   return (
     <>

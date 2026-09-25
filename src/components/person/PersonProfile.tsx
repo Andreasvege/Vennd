@@ -13,6 +13,7 @@ import { LogWithButton } from './LogWithButton'
 import { FactList } from './FactList'
 import { PhaseControl } from './PhaseControl'
 import { RelationshipList } from './RelationshipList'
+import { pathHref } from '@/app/kart/sti'
 import { PhaseStripe } from './PhaseStripe'
 import { ThreadList } from './ThreadList'
 
@@ -194,7 +195,7 @@ export function PersonProfile({ person }: { person: PersonProfileData }) {
                   <span className="text-[13px] text-ink-muted">· {t.smallWorld.steps(p.path.length - 1)}</span>
                 </span>
                 <Link
-                  href={`/?sti=${p.path.map((s) => s.id).join(',')}`}
+                  href={pathHref(p.path.map((s) => s.id))}
                   className="inline-flex min-h-11 items-center rounded-sm text-[14px] text-redpencil outline-none hover:underline focus-visible:ring-2 focus-visible:ring-pen desk:min-h-0"
                 >
                   {t.smallWorld.showOnMap}

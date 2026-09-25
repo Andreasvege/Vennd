@@ -7,6 +7,7 @@ import { buttonClass, type ButtonSize, type ButtonVariant } from './button-style
 export type ButtonProps = AriaButtonProps & {
   variant?: ButtonVariant
   size?: ButtonSize
+  ref?: React.Ref<HTMLButtonElement>
 }
 
 export function Button({ variant = 'secondary', size = 'md', className, ...props }: ButtonProps) {

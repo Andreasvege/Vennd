@@ -21,6 +21,7 @@ type Props = {
 /** Søk opp en du kjenner, eller skriv et nytt navn og legg dem til på stedet. */
 export function ParticipantPicker({ persons, selected, onAdd, onCreate }: Props) {
   const [input, setInput] = useState('')
+  const [creating, setCreating] = useState(false)
   const query = input.trim()
   const q = query.toLocaleLowerCase('nb')
 
@@ -34,7 +35,10 @@ export function ParticipantPicker({ persons, selected, onAdd, onCreate }: Props)
   const choose = async (key: string | number | null) => {
     if (key === null) return
     if (key === CREATE_KEY) {
+      if (creating) return
+      setCreating(true)
       const id = await onCreate(query)
+      setCreating(false)
       if (id) onAdd(id)
     } else {
       onAdd(String(key))
@@ -60,7 +64,11 @@ export function ParticipantPicker({ persons, selected, onAdd, onCreate }: Props)
           strokeWidth={1.75}
           className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted"
         />
-        <Input placeholder={t.composer.addPerson} className={`${fieldControl} min-h-11 pl-9 desk:min-h-9`} />
+        <Input
+          placeholder={t.composer.addPerson}
+          disabled={creating}
+          className={`${fieldControl} min-h-11 pl-9 desk:min-h-9`}
+        />
       </div>
       <Popover
         offset={6}

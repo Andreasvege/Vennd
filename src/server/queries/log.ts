@@ -6,7 +6,8 @@ export async function getRecentLogs(userId: string, limit = 10) {
   const entries = await prisma.logEntry.findMany({
     // En logg uten deltakere (alle er slettet) hører ikke hjemme i tidslinjen.
     where: { userId, participants: { some: {} } },
-    orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
+    // Samme rekkefølge som dagboken (/logg), så «Sist logget» og loggen er enige.
+    orderBy: [{ date: 'desc' }, { id: 'desc' }],
     take: limit,
     select: {
       id: true,

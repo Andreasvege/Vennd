@@ -27,7 +27,7 @@ import { ParticipantPicker } from './ParticipantPicker'
 import { useDraft } from './useDraft'
 
 type When = 'today' | 'yesterday' | 'other'
-type NewThread = { key: number; title: string; personIds: string[] }
+type NewThread = { key: number; title: string; personIds: string[]; autoFocus: boolean }
 
 const LOG_TYPES: LogEntryType[] = ['MET', 'CALLED', 'MESSAGE', 'DATE', 'OTHER']
 const WHEN_OPTIONS: { value: When; label: string }[] = [
@@ -72,14 +72,17 @@ export function Composer({ isOpen, onClose, data, presetPersonIds }: Props) {
   const [type, setType] = useState<LogEntryType | null>(null)
   const [text, setText] = useState(restored?.text ?? '')
   // Personer du selv har valgt (eller som var forhåndsvalgt).
-  const [chosen, setChosen] = useState<string[]>(
-    presetPersonIds?.length ? presetPersonIds : (restored?.personIds ?? []),
-  )
+  const [chosen, setChosen] = useState<string[]>(() => {
+    // En kladd kan nevne noen som er slettet siden; de ville verken vises
+    // eller kunne lagres.
+    const exists = new Set(data.persons.map((p) => p.id))
+    return (presetPersonIds?.length ? presetPersonIds : (restored?.personIds ?? [])).filter((id) => exists.has(id))
+  })
   // Folk du selv har fjernet, legges ikke til igjen fra den samme teksten.
   const [dismissed, setDismissed] = useState<Set<string>>(new Set())
   const [closing, setClosing] = useState<Map<string, string>>(new Map())
   const [newThreads, setNewThreads] = useState<NewThread[]>(
-    (restored?.newThreads ?? []).map((th, i) => ({ ...th, key: i })),
+    (restored?.newThreads ?? []).map((th, i) => ({ ...th, key: i, autoFocus: false })),
   )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -144,7 +147,7 @@ export function Composer({ isOpen, onClose, data, presetPersonIds }: Props) {
     })
 
   const addFollowUp = () =>
-    setNewThreads((prev) => [...prev, { key: Date.now(), title: '', personIds: [...personIds] }])
+    setNewThreads((prev) => [...prev, { key: Date.now(), title: '', personIds: [...personIds], autoFocus: true }])
 
   const submit = async () => {
     if (saving) return
@@ -170,7 +173,11 @@ export function Composer({ isOpen, onClose, data, presetPersonIds }: Props) {
         date: dateFor(when, otherDate),
         type,
         body: text,
-        closeThreads: [...closing].map(([id, resolution]) => ({ id, resolution })),
+        // Bare tråder som faktisk vises: fjerner du personen en avkrysset
+        // tråd gjaldt, skal den ikke lukkes i det skjulte.
+        closeThreads: [...closing]
+          .filter(([id]) => threadsWithThem.some((th) => th.id === id))
+          .map(([id, resolution]) => ({ id, resolution })),
         newThreads: lines,
       }),
     )
@@ -180,7 +187,8 @@ export function Composer({ isOpen, onClose, data, presetPersonIds }: Props) {
       setError(t.errors[result.error])
       return
     }
-    draft.clear()
+    // En logg fra en profil har ikke rørt kladden; den skal ligge der til neste gang.
+    if (!presetPersonIds?.length) draft.clear()
     toast(t.composer.saved(result.data.closed, result.data.opened))
     onClose()
   }
@@ -345,7 +353,9 @@ export function Composer({ isOpen, onClose, data, presetPersonIds }: Props) {
                   }
                   placeholder={t.composer.followUpPlaceholder}
                   className="flex-1"
-                  autoFocus
+                  // Bare linjer du nettopp la til: en gjenopprettet kladd skal
+                  // starte i tekstfeltet, ikke i siste linje.
+                  autoFocus={line.autoFocus}
                 />
                 <Button
                   variant="quiet"
@@ -361,6 +371,8 @@ export function Composer({ isOpen, onClose, data, presetPersonIds }: Props) {
                   aria-label={t.composer.followUpAbout}
                   selectionMode="multiple"
                   selectedKeys={line.personIds.filter((id) => personIds.includes(id))}
+                  // Minst én: en linje uten personer ville havnet på alle i det skjulte.
+                  disallowEmptySelection
                   onSelectionChange={(keys) =>
                     setNewThreads((prev) =>
                       prev.map((l) => (l.key === line.key ? { ...l, personIds: [...keys].map(String) } : l)),

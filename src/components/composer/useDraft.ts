@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 
 const KEY = 'composer-draft'
 
@@ -37,5 +37,6 @@ export function useDraft() {
     } catch {}
   }, [])
 
-  return { load, save, clear }
+  // Stabil identitet, så effekter som bruker kladden ikke kjører hver render.
+  return useMemo(() => ({ load, save, clear }), [load, save, clear])
 }

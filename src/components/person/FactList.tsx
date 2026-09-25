@@ -21,6 +21,15 @@ function FactRow({ fact, onError }: { fact: Fact; onError: (msg: string) => void
   const [value, setValue] = useState(fact.value)
   const [, startTransition] = useTransition()
 
+  // Nye verdier fra serveren (lagret her, eller et annet sted) tas inn —
+  // uten å remounte raden, så fokus i neste felt ikke går tapt.
+  const [seen, setSeen] = useState(fact)
+  if (seen.label !== fact.label || seen.value !== fact.value) {
+    setSeen(fact)
+    setLabel(fact.label)
+    setValue(fact.value)
+  }
+
   const save = () => {
     if (label.trim() === fact.label && value.trim() === fact.value) return
     startTransition(async () => {
@@ -38,10 +47,10 @@ function FactRow({ fact, onError }: { fact: Fact; onError: (msg: string) => void
 
   return (
     <div className="group relative -mx-2 flex flex-col">
-      <AriaTextField aria-label={t.facts.edit(fact.label)} value={label} onChange={setLabel} onBlur={save} onKeyDown={blurOnEnter}>
+      <AriaTextField aria-label={t.facts.editLabel(fact.label)} value={label} onChange={setLabel} onBlur={save} onKeyDown={blurOnEnter}>
         <Input className={`${inline} text-[13px] text-ink-muted`} />
       </AriaTextField>
-      <AriaTextField aria-label={t.facts.edit(fact.label)} value={value} onChange={setValue} onBlur={save} onKeyDown={blurOnEnter}>
+      <AriaTextField aria-label={t.facts.editValue(fact.label)} value={value} onChange={setValue} onBlur={save} onKeyDown={blurOnEnter}>
         <Input className={`${inline} text-[16px]`} />
       </AriaTextField>
       <AriaButton
@@ -93,7 +102,7 @@ export function FactList({ personId, facts, labels }: { personId: string; facts:
       {facts.length > 0 && (
         <div className="grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2">
           {facts.map((fact) => (
-            <FactRow key={`${fact.id}:${fact.label}:${fact.value}`} fact={fact} onError={setError} />
+            <FactRow key={fact.id} fact={fact} onError={setError} />
           ))}
         </div>
       )}

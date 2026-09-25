@@ -4,6 +4,7 @@ import { useCallback } from 'react'
 import type { Proximity } from '@/server/queries/proximity'
 import { t } from '@/i18n'
 import { useToast } from './ToastProvider'
+import { pathHref } from '@/app/kart/sti'
 
 const first = (name: string) => name.split(' ')[0]
 
@@ -18,7 +19,7 @@ export function useProximityNotice() {
       const b = p.path.at(-1)!.name
       toast(t.smallWorld.notice(first(a), first(b), t.smallWorld.steps(p.path.length - 1)), {
         label: t.smallWorld.showPath,
-        href: `/?sti=${p.path.map((x) => x.id).join(',')}`,
+        href: pathHref(p.path.map((x) => x.id)),
       })
     },
     [toast],

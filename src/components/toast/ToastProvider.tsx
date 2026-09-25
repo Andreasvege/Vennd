@@ -24,7 +24,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const show = useCallback<Show>((message, action) => {
     clearTimeout(timer.current)
     setToast({ id: Date.now(), message, action })
-    timer.current = setTimeout(() => setToast(null), SHOW_MS)
+    // En beskjed med en handling blir stående til den lukkes: seks sekunder
+    // er for kort til å nå lenken med tastatur eller skjermleser.
+    if (!action) timer.current = setTimeout(() => setToast(null), SHOW_MS)
   }, [])
 
   useEffect(() => () => clearTimeout(timer.current), [])
