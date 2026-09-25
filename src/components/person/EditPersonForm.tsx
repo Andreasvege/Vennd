@@ -4,18 +4,16 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, ChipGroup, Select, TextField } from '@/components/ui'
 import { DEFAULT_CADENCE_WEEKS } from '@/domain/cadence'
-import { TYPE_TINT } from '@/lib/palette'
+import { deletePerson, updatePerson } from '@/server/actions/person'
+import type { PersonEditData } from '@/server/queries/person'
 import { t } from '@/i18n'
-import type { Person, RelationshipType } from '@/types'
+import type { RelationshipType } from '@/types'
 import { CADENCE_OPTIONS, cadenceFromOption, cadenceToOption, type CadenceOption } from './cadence-options'
+import { TagField } from './TagField'
+import { createTagOption } from './tag-actions'
+import { TYPE_OPTIONS } from './type-options'
 
-const TYPE_OPTIONS = (Object.keys(TYPE_TINT) as RelationshipType[]).map((value) => ({
-  value,
-  label: t.relationType[value],
-  tint: TYPE_TINT[value],
-}))
-
-export function EditPersonForm({ person }: { person: Person }) {
+export function EditPersonForm({ person, allTags }: PersonEditData) {
   const router = useRouter()
   const [name, setName] = useState(person.name)
   const [notes, setNotes] = useState(person.notes ?? '')
@@ -24,6 +22,8 @@ export function EditPersonForm({ person }: { person: Person }) {
   // Velgeren runder kadenser som ikke finnes i lista. Sendes den bare når
   // du har endret den, blir en uvanlig kadens stående urørt.
   const [cadenceTouched, setCadenceTouched] = useState(false)
+  const [tagIds, setTagIds] = useState(person.tagIds)
+  const [primaryTagId, setPrimaryTagId] = useState(person.primaryTagId)
   const [birthday, setBirthday] = useState(
     person.birthday ? new Date(person.birthday).toISOString().slice(0, 10) : '',
   )
@@ -46,44 +46,33 @@ export function EditPersonForm({ person }: { person: Person }) {
 
     setSaving(true)
     setError('')
-
-    const res = await fetch(`/api/persons/${person.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: name.trim(),
-        notes,
-        type,
-        ...(cadenceTouched && {
-          cadenceWeeks: cadenceFromOption(cadence),
-          // Endrer du kadensen, er en gammel utsettelse ikke lenger relevant.
-          snoozedUntil: null,
-        }),
-        birthday: birthday || null,
-      }),
-    })
-
+    const result = await updatePerson(person.id, {
+      name,
+      notes,
+      type,
+      tagIds,
+      primaryTagId,
+      birthday: birthday || null,
+      ...(cadenceTouched && { cadenceWeeks: cadenceFromOption(cadence) }),
+    }).catch(() => ({ ok: false as const, error: 'failed' as const }))
     setSaving(false)
 
-    if (!res.ok) {
-      setError(t.person.saveFailed)
+    if (!result.ok) {
+      setError(t.errors[result.error])
       return
     }
-
     router.push(`/person/${person.id}`)
-    router.refresh()
   }
 
   const remove = async () => {
     setSaving(true)
-    const res = await fetch(`/api/persons/${person.id}`, { method: 'DELETE' })
+    const result = await deletePerson(person.id).catch(() => ({ ok: false as const, error: 'failed' as const }))
     setSaving(false)
 
-    if (!res.ok) {
-      setError(t.person.deleteFailed)
+    if (!result.ok) {
+      setError(t.errors[result.error])
       return
     }
-
     router.push('/')
   }
 
@@ -91,6 +80,16 @@ export function EditPersonForm({ person }: { person: Person }) {
     <form onSubmit={save} className="flex flex-col gap-5">
       <TextField label={t.person.name} isRequired value={name} onChange={setName} />
       <ChipGroup label={t.person.relationship} value={type} onChange={chooseType} options={TYPE_OPTIONS} />
+      <TagField
+        allTags={allTags}
+        value={tagIds}
+        primaryTagId={primaryTagId}
+        onChange={(ids, primary) => {
+          setTagIds(ids)
+          setPrimaryTagId(primary)
+        }}
+        onCreate={createTagOption}
+      />
       <Select
         label={t.cadence.label}
         value={cadence}

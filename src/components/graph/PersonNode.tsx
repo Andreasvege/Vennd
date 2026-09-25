@@ -3,9 +3,17 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { PenLine, UserRound } from 'lucide-react'
 import { Avatar } from '@/components/ui'
-import { TYPE_TINT } from '@/lib/palette'
+import type { TagColor } from '@/lib/palette'
 import { t } from '@/i18n'
-import type { PersonNodeData } from '@/types'
+
+export type PersonNodeData = {
+  id: string
+  name: string
+  tint: TagColor
+  photoUrl: string | null
+  onAddLog: (personId: string) => void
+  onViewProfile: (personId: string) => void
+}
 
 // Midtpunktsankeret: dekker hele sirkelen, så React Flow regner midten som
 // feste for strekene. Uten pointer-events, ellers kan ikke noden flyttes.
@@ -26,7 +34,7 @@ export function PersonNode({ data, selected }: NodeProps) {
       >
         <Handle id="center" type="target" position={Position.Top} isConnectableStart={false} className={centerHandle} />
         <Handle id="center" type="source" position={Position.Top} isConnectableStart={false} className={centerHandle} />
-        <Avatar name={d.name} tint={TYPE_TINT[d.type]} size="lg" />
+        <Avatar name={d.name} tint={d.tint} src={d.photoUrl} size="lg" />
         {/* Selve dra-punktet. Kun herfra kan en relasjon starte. */}
         <Handle
           id="knob"

@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Button, ChipGroup, Select, Sheet, TextField } from '@/components/ui'
 import { todayISO } from '@/domain/format'
+import { createLog } from '@/server/actions/log'
 import { t } from '@/i18n'
-import type { LogEntryType, Person } from '@/types'
+import type { LogEntryType } from '@/types'
 
-const LOG_TYPES = (['MET', 'CALLED', 'MESSAGE', 'OTHER'] as const).map((value) => ({
+export const LOG_TYPE_OPTIONS = (['MET', 'CALLED', 'MESSAGE', 'DATE', 'OTHER'] as const).map((value) => ({
   value,
   label: t.logType[value],
 }))
@@ -14,23 +15,22 @@ const LOG_TYPES = (['MET', 'CALLED', 'MESSAGE', 'OTHER'] as const).map((value) =
 type Props = {
   isOpen: boolean
   onClose: () => void
-  onSuccess: () => void
+  persons: { id: string; name: string }[]
   defaultPersonId?: string
 }
 
-export function LogEntryModal({ isOpen, onClose, onSuccess, defaultPersonId }: Props) {
-  const [persons, setPersons] = useState<Person[]>([])
+export function LogEntryModal({ isOpen, onClose, persons, defaultPersonId }: Props) {
   const [personId, setPersonId] = useState<string | null>(defaultPersonId ?? null)
   const [type, setType] = useState<LogEntryType>('MET')
   const [notes, setNotes] = useState('')
   const [date, setDate] = useState(todayISO())
-  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
   // Arket holdes montert mellom åpninger, så state må synkes mot props når
   // det åpnes på nytt (React-mønsteret «juster state under render»).
-  const [prevKey, setPrevKey] = useState(`${isOpen}-${defaultPersonId ?? ''}`)
   const key = `${isOpen}-${defaultPersonId ?? ''}`
+  const [prevKey, setPrevKey] = useState(key)
   if (key !== prevKey) {
     setPrevKey(key)
     if (isOpen) {
@@ -40,37 +40,24 @@ export function LogEntryModal({ isOpen, onClose, onSuccess, defaultPersonId }: P
     }
   }
 
-  useEffect(() => {
-    if (!isOpen) return
-    fetch('/api/persons')
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then(setPersons)
-      .catch(() => setError(t.log.loadPersonsFailed))
-  }, [isOpen])
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!personId) return
 
-    setLoading(true)
+    setSaving(true)
     setError('')
+    const result = await createLog({ personIds: [personId], type, body: notes, date }).catch(() => ({
+      ok: false as const,
+      error: 'failed' as const,
+    }))
+    setSaving(false)
 
-    const res = await fetch('/api/log', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ personId, type, notes, date }),
-    })
-
-    setLoading(false)
-
-    if (!res.ok) {
-      setError(t.log.failed)
+    if (!result.ok) {
+      setError(t.errors[result.error])
       return
     }
-
     setNotes('')
     setType('MET')
-    onSuccess()
     onClose()
   }
 
@@ -93,7 +80,7 @@ export function LogEntryModal({ isOpen, onClose, onSuccess, defaultPersonId }: P
           // Uten valgt person er det første du må gjøre; ellers er det å skrive.
           autoFocus={!defaultPersonId}
         />
-        <ChipGroup label={t.log.type} value={type} onChange={setType} options={LOG_TYPES} />
+        <ChipGroup label={t.log.type} value={type} onChange={setType} options={LOG_TYPE_OPTIONS} />
         <TextField label={t.log.date} type="date" value={date} onChange={setDate} />
         <TextField
           label={t.log.note}
@@ -113,8 +100,8 @@ export function LogEntryModal({ isOpen, onClose, onSuccess, defaultPersonId }: P
           </p>
         )}
 
-        <Button variant="primary" size="lg" type="submit" isDisabled={loading || !personId}>
-          {loading ? t.common.saving : t.log.save}
+        <Button variant="primary" size="lg" type="submit" isDisabled={saving || !personId}>
+          {saving ? t.common.saving : t.log.save}
         </Button>
       </form>
     </Sheet>

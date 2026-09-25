@@ -18,7 +18,8 @@ export function placeNewPerson(existing: Point[], rng: () => number = Math.rando
   // Tilfeldig startvinkel, så nye personer ikke alltid havner i samme retning.
   const offset = rng() * Math.PI * 2
 
-  for (let ring = 1; ring <= MAX_RINGS; ring++) {
+  // Fra andre ring: i tyngdepunktet står «Deg», og første ring er for tett på.
+  for (let ring = 2; ring <= MAX_RINGS; ring++) {
     const r = ring * RING_STEP
     for (let i = 0; i < SLOTS_PER_RING; i++) {
       const a = offset + (i / SLOTS_PER_RING) * Math.PI * 2

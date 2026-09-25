@@ -20,6 +20,12 @@ describe('placeNewPerson', () => {
     expect(dist(p, { x: 40, y: -20 })).toBeGreaterThanOrEqual(MIN_GAP)
   })
 
+  it('holder avstand til «Deg» i tyngdepunktet', () => {
+    const existing = [{ x: -200, y: 0 }, { x: 200, y: 0 }]
+    const p = placeNewPerson(existing, () => 0.5)
+    expect(Math.hypot(p.x, p.y)).toBeGreaterThanOrEqual(2 * 110)
+  })
+
   it('er deterministisk gitt samme rng', () => {
     const existing = [{ x: 0, y: 0 }, { x: 100, y: 0 }]
     expect(placeNewPerson(existing, () => 0.25)).toEqual(placeNewPerson(existing, () => 0.25))

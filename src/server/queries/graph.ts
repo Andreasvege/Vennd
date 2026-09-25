@@ -15,7 +15,7 @@ export async function getGraph(userId: string) {
         photoUrl: true,
         positionX: true,
         positionY: true,
-        primaryTag: { select: { color: true } },
+        primaryTag: { select: { id: true, name: true, color: true } },
       },
     }),
     // Begge ender må eies av brukeren, ellers kunne en relasjon lekke en
@@ -27,7 +27,7 @@ export async function getGraph(userId: string) {
   ])
 
   return {
-    persons: persons.map(({ primaryTag, ...p }) => ({ ...p, tint: personTint({ primaryTag }) })),
+    persons: persons.map((p) => ({ ...p, tint: personTint(p) })),
     relationships,
   }
 }

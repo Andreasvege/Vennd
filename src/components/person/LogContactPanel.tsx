@@ -1,20 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { PenLine } from 'lucide-react'
 import { Button, ChipGroup, SectionHeading, TextField } from '@/components/ui'
+import { LOG_TYPE_OPTIONS } from '@/components/modals/LogEntryModal'
 import { todayISO } from '@/domain/format'
+import { createLog } from '@/server/actions/log'
 import { t } from '@/i18n'
 import type { LogEntryType } from '@/types'
 
-const LOG_TYPES = (['MET', 'CALLED', 'MESSAGE', 'OTHER'] as const).map((value) => ({
-  value,
-  label: t.logType[value],
-}))
-
 export function LogContactPanel({ personId, personName }: { personId: string; personName: string }) {
-  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [type, setType] = useState<LogEntryType>('MET')
   const [date, setDate] = useState(todayISO())
@@ -27,26 +22,23 @@ export function LogContactPanel({ personId, personName }: { personId: string; pe
     setSaving(true)
     setError('')
 
-    const res = await fetch('/api/log', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ personId, type, notes, date }),
-    })
-
+    const result = await createLog({ personIds: [personId], type, body: notes, date }).catch(() => ({
+      ok: false as const,
+      error: 'failed' as const,
+    }))
     setSaving(false)
 
-    if (!res.ok) {
-      setError(t.log.failed)
+    if (!result.ok) {
+      setError(t.errors[result.error])
       return
     }
 
     setNotes('')
     setType('MET')
     setDate(todayISO())
+    // Handlingen frisker opp siden: loggen dukker opp, og en påminnelse
+    // om personen kan forsvinne.
     setOpen(false)
-    // Loggen ligger i en server-komponent, og en ny kontakt kan fjerne en
-    // auto-påminnelse — begge deler krever at serveren rendrer på nytt.
-    router.refresh()
   }
 
   return (
@@ -69,7 +61,7 @@ export function LogContactPanel({ personId, personName }: { personId: string; pe
           onSubmit={submit}
           className="mb-6 flex flex-col gap-4 rounded-[16px] border border-rule bg-paper-raised p-4"
         >
-          <ChipGroup label={t.log.what(personName)} value={type} onChange={setType} options={LOG_TYPES} />
+          <ChipGroup label={t.log.what(personName)} value={type} onChange={setType} options={LOG_TYPE_OPTIONS} />
           <TextField label={t.log.date} type="date" value={date} onChange={setDate} />
           <TextField
             label={t.log.note}
