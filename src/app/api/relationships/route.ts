@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { getRelationshipColor } from '@/lib/relationship-colors'
 import type { RelationshipType } from '@/types'
+
+const LEGACY_EDGE_COLOR = '#27231E'
 
 export async function GET() {
   const session = await auth()
@@ -48,7 +49,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Personene ble ikke funnet' }, { status: 404 })
   }
 
-  const color = getRelationshipColor(type as RelationshipType)
+  // Kolonnen fjernes i delprosjekt 1; fargen utledes nå av typen i
+  // presentasjonslaget, så verdien her leses aldri.
+  const color = LEGACY_EDGE_COLOR
 
   const relationship = await prisma.relationship.create({
     data: {

@@ -2,8 +2,9 @@ import type { Metadata, Viewport } from 'next'
 import { Fraunces, Instrument_Sans } from 'next/font/google'
 import './globals.css'
 import { AppHeader } from '@/components/AppHeader'
-import { SessionProvider } from '@/components/providers/SessionProvider'
+import { Providers } from '@/components/providers/Providers'
 import { themeScript } from '@/components/theme'
+import { TOKENS } from '@/styles/tokens'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 
@@ -29,8 +30,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#F3EEE4' },
-    { media: '(prefers-color-scheme: dark)', color: '#1B1916' },
+    // Nettleserens ramme (adresselinje, statuslinje) får papirfargen.
+    { media: '(prefers-color-scheme: light)', color: TOKENS.light.paper },
+    { media: '(prefers-color-scheme: dark)', color: TOKENS.dark.paper },
   ],
 }
 
@@ -53,13 +55,13 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="bg-paper text-ink font-sans antialiased">
-        <SessionProvider>
+        <Providers>
           <div className="min-h-screen">
             <AppHeader />
             {children}
             {modal}
           </div>
-        </SessionProvider>
+        </Providers>
         <Analytics />
         <SpeedInsights />
       </body>
