@@ -1,16 +1,24 @@
 import 'server-only'
 import { prisma } from '@/lib/prisma'
-import { splitPlans } from '@/domain/plans'
 import { upcomingBirthdays } from '@/domain/birthdays'
 import { personTint } from '@/lib/palette'
 
 const personSelect = { select: { id: true, name: true, primaryTag: { select: { color: true } } } } as const
 
-/** Planer som kommer, planer som venter på «hvordan gikk det?», og bursdager. */
+// Planene deles i «kommende» og «hvordan gikk det?» i nettleseren, etter
+// leserens klokke. Serveren henter litt lenger fram enn uka som vises, så
+// ingen mangler når tidssonene er uenige om hvilken dag det er.
+const FETCH_DAYS = 9
+
+/**
+ * Planer (alle som har vært, og de neste dagene), og bursdager. `now` følger
+ * med, så første tegning i nettleseren deler planene likt som serveren.
+ */
 export async function getAhead(userId: string, now: Date = new Date()) {
+  const until = new Date(now.getTime() + FETCH_DAYS * 86_400_000)
   const [plans, withBirthday] = await Promise.all([
     prisma.plan.findMany({
-      where: { userId, status: 'PLANNED' },
+      where: { userId, status: 'PLANNED', at: { lt: until } },
       orderBy: { at: 'asc' },
       select: {
         id: true,
@@ -32,7 +40,6 @@ export async function getAhead(userId: string, now: Date = new Date()) {
     ...p,
     persons: persons.map(({ person }) => ({ id: person.id, name: person.name, tint: personTint(person) })),
   }))
-  const { upcoming, awaiting } = splitPlans(shaped, now)
   // Et døgns slingringsmonn: serveren regner i UTC; nettleseren regner
   // «i dag»/«i morgen» på nytt i lokal tid.
   const birthdays = upcomingBirthdays(withBirthday, now, 15).map((p) => ({
@@ -45,12 +52,13 @@ export async function getAhead(userId: string, now: Date = new Date()) {
     turns: p.next.turns,
   }))
 
-  const briefs = await getBriefs(userId, [...new Set(upcoming.flatMap((p) => p.persons.map((x) => x.id)))])
-  return { upcoming, awaiting, birthdays, briefs }
+  const coming = shaped.filter((p) => p.at >= new Date(now.getTime() - 86_400_000))
+  const briefs = await getBriefs(userId, [...new Set(coming.flatMap((p) => p.persons.map((x) => x.id)))])
+  return { plans: shaped, now: now.toISOString(), birthdays, briefs }
 }
 
 export type Ahead = Awaited<ReturnType<typeof getAhead>>
-export type PlanItem = Ahead['upcoming'][number]
+export type PlanItem = Ahead['plans'][number]
 export type BirthdayItem = Ahead['birthdays'][number]
 
 /**

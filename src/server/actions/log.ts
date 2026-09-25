@@ -96,7 +96,13 @@ export async function deleteLog(rawId: string): Promise<ActionResult> {
   const userId = await requireUserId()
   const id = parseId(rawId)
   if (!id) return fail('invalid')
-  const { count } = await prisma.logEntry.deleteMany({ where: { id, userId } })
+  const count = await prisma.$transaction(async (tx) => {
+    // Loggen som avsluttet en plan: planen venter igjen på «hvordan gikk
+    // det?», i stedet for å bli stående som gjort uten noe å vise til.
+    await tx.plan.updateMany({ where: { logEntryId: id, userId }, data: { status: 'PLANNED', logEntryId: null } })
+    const { count } = await tx.logEntry.deleteMany({ where: { id, userId } })
+    return count
+  })
   if (count === 0) return fail('not-found')
   refreshAll()
   return { ok: true }
