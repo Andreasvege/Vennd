@@ -13,11 +13,14 @@ type Props = {
   isOpen: boolean
   onClose: () => void
   persons: { id: string; name: string }[]
+  /** Forhåndsvalgt, f.eks. fra en «ofte sammen»-kant på kartet. */
+  defaultFrom?: string
+  defaultTo?: string
 }
 
-export function AddRelationshipModal({ isOpen, onClose, persons }: Props) {
-  const [fromId, setFromId] = useState<string | null>(null)
-  const [toId, setToId] = useState<string | null>(null)
+export function AddRelationshipModal({ isOpen, onClose, persons, defaultFrom, defaultTo }: Props) {
+  const [fromId, setFromId] = useState<string | null>(defaultFrom ?? null)
+  const [toId, setToId] = useState<string | null>(defaultTo ?? null)
   const [type, setType] = useState<RelationshipType>('FRIEND')
   const [saving, setSaving] = useState(false)
   const notice = useProximityNotice()

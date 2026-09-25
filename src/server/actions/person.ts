@@ -114,7 +114,11 @@ export async function deletePerson(rawId: string): Promise<ActionResult> {
   return { ok: true }
 }
 
-/** Lagrer hvor du dro noen på kartet. Friskes ikke opp: klienten har allerede plassen. */
+/**
+ * Lagrer hvor du dro noen på kartet. Friskes opp: kartet regner ut plassene
+ * på nytt fra dataene når du bytter syn eller filter, og da må den nye
+ * plassen være med — ellers glir personen tilbake dit den sto.
+ */
 export async function movePerson(rawId: string, x: number, y: number): Promise<ActionResult> {
   const userId = await requireUserId()
   const id = parseId(rawId)
@@ -125,7 +129,9 @@ export async function movePerson(rawId: string, x: number, y: number): Promise<A
     where: { id, userId },
     data: { positionX: x, positionY: y },
   })
-  return count === 0 ? fail('not-found') : { ok: true }
+  if (count === 0) return fail('not-found')
+  refreshAll()
+  return { ok: true }
 }
 
 /** «Ikke nå»: skyver kadens-påminnelsen noen uker fram. */

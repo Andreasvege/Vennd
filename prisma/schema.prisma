@@ -54,6 +54,7 @@ model User {
   logEntries    LogEntry[]
   threads       Thread[]
   tags          Tag[]
+  mapViews      MapView[]
 }
 
 model Person {
@@ -248,4 +249,20 @@ model RomanticPhaseEntry {
   at       DateTime
 
   @@index([personId, at])
+}
+
+// En lagret visning av kartet: syn og filter under et navn, som «Vis til
+// andre». Filteret er JSON (src/domain/mapFilter.ts) og normaliseres ved
+// lesing, så en slettet tagg aldri ødelegger en visning.
+model MapView {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  mode      String
+  filter    Json
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, name])
 }

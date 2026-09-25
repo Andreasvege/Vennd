@@ -18,7 +18,8 @@ export type RelationshipEdgeData = {
   dimmed?: boolean
 }
 
-function strokeFor(edge: RelationshipEdgeData): React.CSSProperties {
+/** Delt med de buntede kantene i Kretser, så en relasjon ser lik ut i alle syn. */
+export function edgeStroke(edge: RelationshipEdgeData): React.CSSProperties {
   if (edge.path) return { stroke: 'var(--redpencil)', strokeWidth: 2.6 }
   const base = baseStroke(edge)
   return edge.dimmed ? { ...base, strokeOpacity: 0.18 } : base
@@ -47,7 +48,7 @@ export function RelationshipEdge({ id, sourceX, sourceY, targetX, targetY, data 
 
   return (
     <>
-      <BaseEdge id={id} path={path} style={{ ...strokeFor(edge), strokeLinecap: 'round' }} />
+      <BaseEdge id={id} path={path} style={{ ...edgeStroke(edge), strokeLinecap: 'round' }} />
       {edge.label && (
         <EdgeLabelRenderer>
           <span

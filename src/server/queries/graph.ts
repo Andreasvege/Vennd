@@ -1,10 +1,21 @@
 import 'server-only'
+import { cache } from 'react'
 import { prisma } from '@/lib/prisma'
-import { personTint } from '@/lib/palette'
+import { derivePairs } from '@/domain/derivePairs'
+import { isTagColor, personTint } from '@/lib/palette'
+import { getLastContact } from './lastContact'
 
-/** Alt kartet trenger: personene med farge og plass, og relasjonene mellom dem. */
-export async function getGraph(userId: string) {
-  const [persons, relationships] = await Promise.all([
+// Nok til å se hvem som ofte er sammen, uten å lese hele dagboken for hvert kart.
+const DERIVED_FROM_LAST = 1000
+const MAX_DERIVED = 40
+
+/**
+ * Alt kartet trenger: personene med farge, tagger og siste kontakt,
+ * relasjonene, taggene i rekkefølge og hvem som ofte er med i samme logg.
+ * cache(): forsiden og panelet kan spørre i samme forespørsel.
+ */
+export const getGraph = cache(async function getGraph(userId: string) {
+  const [persons, relationships, tags, lastContact, sharedLogs] = await Promise.all([
     prisma.person.findMany({
       where: { userId },
       orderBy: { name: 'asc' },
@@ -15,7 +26,9 @@ export async function getGraph(userId: string) {
         photoUrl: true,
         positionX: true,
         positionY: true,
+        cadenceWeeks: true,
         primaryTag: { select: { id: true, name: true, color: true } },
+        tags: { select: { tagId: true } },
       },
     }),
     // Begge ender må eies av brukeren, ellers kunne en relasjon lekke en
@@ -24,14 +37,44 @@ export async function getGraph(userId: string) {
       where: { fromPerson: { userId }, toPerson: { userId } },
       select: { id: true, fromPersonId: true, toPersonId: true, type: true, label: true, until: true },
     }),
+    prisma.tag.findMany({
+      where: { userId },
+      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+      select: { id: true, name: true, color: true },
+    }),
+    getLastContact(userId),
+    prisma.logEntry.findMany({
+      where: { userId, participants: { some: {} } },
+      orderBy: { date: 'desc' },
+      take: DERIVED_FROM_LAST,
+      select: { participants: { select: { personId: true } } },
+    }),
   ])
 
+  // Bare logger med flere personer kan si noe om hvem som er sammen; de
+  // tydeligste parene først, og ikke flere enn kartet tåler å vise.
+  const derived = derivePairs(
+    sharedLogs
+      .map((l) => ({ personIds: l.participants.map((p) => p.personId) }))
+      .filter((l) => l.personIds.length > 1),
+    relationships.map((r) => [r.fromPersonId, r.toPersonId] as [string, string]),
+  ).slice(0, MAX_DERIVED)
+
   return {
-    persons: persons.map((p) => ({ ...p, tint: personTint(p) })),
+    persons: persons.map(({ tags: personTags, ...p }) => ({
+      ...p,
+      tint: personTint(p),
+      tagIds: personTags.map((t) => t.tagId),
+      lastContact: lastContact.get(p.id) ?? null,
+    })),
     relationships,
+    tags: tags.map((t) => ({ ...t, color: isTagColor(t.color) ? t.color : ('stone' as const) })),
+    derived,
   }
-}
+})
 
 export type Graph = Awaited<ReturnType<typeof getGraph>>
 export type MapPerson = Graph['persons'][number]
 export type MapRelationship = Graph['relationships'][number]
+export type MapTag = Graph['tags'][number]
+export type DerivedPair = Graph['derived'][number]

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { TAG_COLORS } from '@/lib/palette'
+import { MAP_MODES } from '@/domain/mapMode'
 
 // Alt som kommer inn i en server action, valideres her. Skjemaene er rene
 // og testes direkte; handlingene bare kaller safeParse.
@@ -98,6 +99,18 @@ export const relationshipPatch = z
   .partial()
   .refine((r) => !r.since || !r.until || r.since <= r.until, { path: ['until'] })
 
+export const mapViewInput = z.object({
+  name: z.string().trim().min(1).max(40),
+  mode: z.enum(MAP_MODES),
+  filter: z.object({
+    hiddenTags: z.array(id).max(200),
+    showUntagged: z.boolean(),
+    hideRomanticEdges: z.boolean(),
+    showHistorical: z.boolean(),
+    showDerived: z.boolean(),
+  }),
+})
+
 export const phaseInput = z.object({
   personId: id,
   phase: z.enum(PHASES),
@@ -112,4 +125,5 @@ export type ThreadCloseInput = z.infer<typeof threadCloseInput>
 export type TagInput = z.infer<typeof tagInput>
 export type PhaseInput = z.infer<typeof phaseInput>
 export type FactInput = z.infer<typeof factInput>
+export type MapViewInput = z.infer<typeof mapViewInput>
 export type RelationshipPatch = z.infer<typeof relationshipPatch>
