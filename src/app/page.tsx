@@ -6,6 +6,7 @@ import { getGraph } from '@/server/queries/graph'
 import { getTags } from '@/server/queries/tags'
 import { getToday } from '@/server/queries/today'
 import { parsePath } from './kart/sti'
+import { getViews } from '@/server/queries/views'
 
 // Forsiden er «I dag» på mobil og kartet på PC (der «I dag» står i
 // panelet ved siden av). Samme rute; bredden avgjør hva som vises.
@@ -22,6 +23,7 @@ export default async function HomePage({ searchParams }: Props) {
     searchParams,
   ])
   const highlight = parsePath(sti, graph.persons)
+  const views = await getViews(userId, graph.tags.map((tag) => tag.id))
 
   return (
     <>
@@ -29,7 +31,7 @@ export default async function HomePage({ searchParams }: Props) {
         <TodayView data={today} />
       </div>
       <div className="hidden h-full desk:block">
-        <MapScreen graph={graph} tags={tags} highlight={highlight} />
+        <MapScreen graph={graph} tags={tags} views={views} highlight={highlight} />
       </div>
     </>
   )

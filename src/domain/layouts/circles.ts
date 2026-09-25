@@ -53,10 +53,16 @@ export function sameGroupPath(from: Point, to: Point, control: Point): string {
   return `M ${fmt(from.x)} ${fmt(from.y)} Q ${fmt(control.x)} ${fmt(control.y)} ${fmt(to.x)} ${fmt(to.y)}`
 }
 
-/** SVG-bue for en gruppe utenfor sirkelen, til gruppenavnet. */
-export function arcPath(radius: number, start: number, end: number): string {
-  const a = polar(radius, start)
-  const b = polar(radius, end)
+/**
+ * SVG-bue for en gruppe utenfor sirkelen, til gruppenavnet. `readable`
+ * snur buene på nedre halvdel, så teksten langs dem ikke står på hodet.
+ */
+export function arcPath(radius: number, start: number, end: number, readable = false): string {
+  const mid = (start + end) / 2
+  const flip = readable && mid > Math.PI / 2 && mid < (3 * Math.PI) / 2
+  const [from, to] = flip ? [end, start] : [start, end]
+  const a = polar(radius, from)
+  const b = polar(radius, to)
   const large = end - start > Math.PI ? 1 : 0
-  return `M ${fmt(a.x)} ${fmt(a.y)} A ${radius} ${radius} 0 ${large} 1 ${fmt(b.x)} ${fmt(b.y)}`
+  return `M ${fmt(a.x)} ${fmt(a.y)} A ${radius} ${radius} 0 ${large} ${flip ? 0 : 1} ${fmt(b.x)} ${fmt(b.y)}`
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import {
   ReactFlow,
   Background,
@@ -8,255 +8,269 @@ import {
   Controls,
   useEdgesState,
   useNodesState,
+  useReactFlow,
   type Connection,
   type Edge,
   type Node,
 } from '@xyflow/react'
-import { usePathname, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { Link2, UserPlus } from 'lucide-react'
-import { Button, EmptyState } from '@/components/ui'
-import { isTagColor, tagFill, tagStroke, type TagColor } from '@/lib/palette'
-import { t } from '@/i18n'
+import { fadeFor } from '@/domain/freshness'
+import { easeInOut, interpolate } from '@/domain/interpolate'
+import type { MapMode } from '@/domain/mapMode'
+import type { Point } from '@/domain/layouts/types'
 import { createRelationship } from '@/server/actions/relationship'
 import { movePerson } from '@/server/actions/person'
 import { settle } from '@/server/actions/result'
-import { useProximityNotice } from '@/components/toast/useProximityNotice'
-import Link from 'next/link'
-import type { MapPerson, MapRelationship } from '@/server/queries/graph'
+import type { Proximity } from '@/server/queries/proximity'
+import { t } from '@/i18n'
 import { PersonNode, type PersonNodeData } from './PersonNode'
 import { MeNode } from './MeNode'
 import { RelationshipEdge, type RelationshipEdgeData } from './RelationshipEdge'
+import { BundledEdge, type BundledEdgeData } from './BundledEdge'
+import { DerivedEdge, type DerivedEdgeData } from './DerivedEdge'
+import { MapBackdrop } from './MapBackdrop'
+import type { useMapModel } from './useMapModel'
 
-// Syntetisk id. «Meg» er ingen databaserad, så den kan ikke kollidere med
-// en cuid fra Person.
+// Syntetisk id. «Meg» er ingen databaserad, så den kan ikke kollidere med en cuid.
 const ME_ID = 'me'
+const TRANSITION_MS = 450
+// Avstand fra nodens topp til midten av avataren: layoutene regner i
+// avatarens sentrum, React Flow plasserer etter toppen.
+const PERSON_TOP = 28
+const ME_TOP = 36
 
 const nodeTypes = { person: PersonNode, me: MeNode }
-const edgeTypes = { relationship: RelationshipEdge }
+const edgeTypes = { relationship: RelationshipEdge, bundled: BundledEdge, derived: DerivedEdge }
 
-type Props = {
-  persons: MapPerson[]
-  relationships: MapRelationship[]
-  /** En sti å vise (fra «Se stien»): personer i rekkefølge. */
-  highlight?: string[]
-  onAddPerson: () => void
-  onAddLog: (personId: string) => void
-  onAddRelationship: () => void
+const pairKey = (a: string, b: string) => [a, b].sort().join('|')
+
+const reducedMotionQuery = '(prefers-reduced-motion: reduce)'
+function usePrefersReducedMotion() {
+  return useSyncExternalStore(
+    (fn) => {
+      const mq = window.matchMedia(reducedMotionQuery)
+      mq.addEventListener('change', fn)
+      return () => mq.removeEventListener('change', fn)
+    },
+    () => window.matchMedia(reducedMotionQuery).matches,
+    () => false,
+  )
 }
 
-export function VennekartCanvas({ persons, relationships, highlight = [], onAddPerson, onAddLog, onAddRelationship }: Props) {
+type Props = {
+  model: ReturnType<typeof useMapModel>
+  mode: MapMode
+  /** En sti å vise (fra «Se stien»): personer i rekkefølge. */
+  highlight: string[]
+  onAddLog: (personId: string) => void
+  onDerivedClick: (a: string, b: string) => void
+  onProximities: (p: Proximity[]) => void
+  onError: (message: string) => void
+}
+
+/**
+ * Selve kartet: samme personer og relasjoner i tre syn. Synet bestemmer
+ * bare hvor folk står; når det byttes, glir de til nye plasser, så du ser
+ * at det er det samme kartet fra en annen vinkel.
+ */
+export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedClick, onProximities, onError }: Props) {
   const router = useRouter()
-  const pathname = usePathname()
   const { data: session } = useSession()
+  const flow = useReactFlow()
+  const reducedMotion = usePrefersReducedMotion()
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
+  // Buntede kanter i Kretser beregnes for sluttposisjonene; de tones inn
+  // når overgangen er ferdig.
+  const [settled, setSettled] = useState(true)
+  const lastMode = useRef<MapMode | null>(null)
 
-  // Noder bygges fra serverdataene. Etter en handling friskes siden opp, og
-  // nye props bygger kartet på nytt — ingen lokal kopi å holde i synk.
+  const { visible, targets, fresh, relationships, derived, edgePath } = model
+
+  // Noder: plasser, data og overgangen mellom syn.
   useEffect(() => {
-    const personNodes: Node[] = persons.map((p) => ({
-      id: p.id,
-      type: 'person',
-      position: { x: p.positionX, y: p.positionY },
-      data: {
-        id: p.id,
-        name: p.name,
-        tint: p.tint,
-        photoUrl: p.photoUrl,
-        onAddLog,
-        onViewProfile: (id: string) => router.push(`/person/${id}`),
-      } satisfies PersonNodeData,
-    }))
+    const centers = [...targets.values()]
+    const meCenter: Point =
+      mode === 'network' && centers.length
+        ? {
+            x: centers.reduce((s, p) => s + p.x, 0) / centers.length,
+            y: centers.reduce((s, p) => s + p.y, 0) / centers.length,
+          }
+        : { x: 0, y: 0 }
 
-    // «Meg» står i tyngdepunktet av personene, så noden faktisk er midt i
-    // kartet uansett hvor de er dratt hen.
-    const center = persons.length
-      ? {
-          x: persons.reduce((sum, p) => sum + p.positionX, 0) / persons.length,
-          y: persons.reduce((sum, p) => sum + p.positionY, 0) / persons.length,
+    const current = new Map(flow.getNodes().map((n) => [n.id, n]))
+    const target: Node[] = [
+      ...(visible.length
+        ? [
+            {
+              id: ME_ID,
+              type: 'me',
+              position: { x: meCenter.x, y: meCenter.y - ME_TOP },
+              draggable: false,
+              selectable: false,
+              data: { name: session?.user?.name ?? t.common.you, image: session?.user?.image ?? null },
+            },
+          ]
+        : []),
+      ...visible.map((p) => {
+        const c = targets.get(p.id) ?? { x: 0, y: 0 }
+        return {
+          id: p.id,
+          type: 'person',
+          position: { x: c.x, y: c.y - PERSON_TOP },
+          selected: current.get(p.id)?.selected ?? false,
+          data: {
+            id: p.id,
+            name: p.name,
+            tint: p.tint,
+            photoUrl: p.photoUrl,
+            fade: fadeFor(fresh.get(p.id) ?? 0),
+            onAddLog,
+            onViewProfile: (id: string) => router.push(`/person/${id}`),
+          } satisfies PersonNodeData,
         }
-      : { x: 0, y: 0 }
+      }),
+    ]
 
-    const meNode: Node = {
-      id: ME_ID,
-      type: 'me',
-      position: center,
-      // Noden har ingen lagret posisjon, så den skal ikke kunne dras ut av midten.
-      draggable: false,
-      selectable: false,
-      data: { name: session?.user?.name ?? t.common.you, image: session?.user?.image ?? null },
+    const modeChanged = lastMode.current !== null && lastMode.current !== mode
+    lastMode.current = mode
+    const from = new Map([...current].map(([id, n]) => [id, n.position]))
+    const to = new Map(target.map((n) => [n.id, n.position]))
+
+    // Første tegning, eller redusert bevegelse: rett på plass.
+    if (reducedMotion || current.size === 0) {
+      const raf = requestAnimationFrame(() => {
+        setNodes(target)
+        setSettled(true)
+        if (modeChanged) flow.fitView({ padding: 0.2 })
+      })
+      return () => cancelAnimationFrame(raf)
     }
 
-    setNodes(persons.length ? [meNode, ...personNodes] : personNodes)
-  }, [persons, session, onAddLog, router, setNodes])
-
-  // Kanter: én stråle fra deg til hver person, og relasjonene mellom dem.
-  // Vises en sti, tegnes den med rødblyant og alt annet tones ned.
-  useEffect(() => {
-    const onPath = new Set(highlight.slice(1).map((id, i) => [highlight[i], id].sort().join('|')))
-    const pathMode = onPath.size > 0
-    const spokes: Edge[] = persons.map((p) => ({
-      id: `me:${p.id}`,
-      source: ME_ID,
-      target: p.id,
-      targetHandle: 'center',
-      type: 'relationship',
-      data: { type: p.type, variant: 'spoke', dimmed: pathMode } satisfies RelationshipEdgeData,
-    }))
-
-    const between: Edge[] = relationships.map((r) => ({
-      id: r.id,
-      source: r.fromPersonId,
-      target: r.toPersonId,
-      // Fest alltid i sentrum av ikonene, ikke i dra-knotten.
-      sourceHandle: 'center',
-      targetHandle: 'center',
-      type: 'relationship',
-      data: {
-        type: r.type,
-        variant: 'between',
-        label: r.label,
-        historical: r.until !== null,
-        path: onPath.has([r.fromPersonId, r.toPersonId].sort().join('|')),
-        dimmed: pathMode && !onPath.has([r.fromPersonId, r.toPersonId].sort().join('|')),
-      } satisfies RelationshipEdgeData,
-    }))
-
-    setEdges(persons.length ? [...spokes, ...between] : between)
-  }, [persons, relationships, highlight, setEdges])
-
-  // Dra fra knotten under én person til en annen for å lage en relasjon.
-  // Typen settes til venn; den kan endres fra profilen.
-  const [error, setError] = useState('')
-  const notice = useProximityNotice()
-
-  const onConnect = async (connection: Connection) => {
-    const { source, target } = connection
-    if (!source || !target || source === target) return
-    // Finnes relasjonen allerede (i en av retningene), lager vi ikke en til.
-    const exists = relationships.some(
-      (r) =>
-        (r.fromPersonId === source && r.toPersonId === target) ||
-        (r.fromPersonId === target && r.toPersonId === source),
-    )
-    if (exists) return
-    const result = await settle(createRelationship({ fromPersonId: source, toPersonId: target, type: 'FRIEND' }))
-    setError(result.ok ? '' : t.errors[result.error])
-    if (result.ok) notice(result.data.proximities)
-  }
-
-  const onNodeDragStop = async (_event: React.MouseEvent, node: Node) => {
-    if (node.id === ME_ID) return
-    const result = await settle(movePerson(node.id, node.position.x, node.position.y))
-    setError(result.ok ? '' : t.errors[result.error])
-  }
-
-  // Forklaringen viser hovedtaggene som faktisk er i bruk.
-  const legend = useMemo(() => {
-    const seen = new Map<string, { name: string; color: TagColor }>()
-    for (const p of persons) {
-      if (p.primaryTag && isTagColor(p.primaryTag.color) && !seen.has(p.primaryTag.id)) {
-        seen.set(p.primaryTag.id, { name: p.primaryTag.name, color: p.primaryTag.color })
+    // Ellers glir de, fra der nodene står *nå* — også midt i en annen overgang.
+    let raf = 0
+    const start = performance.now()
+    const step = (now: number) => {
+      const progress = Math.min(1, (now - start) / TRANSITION_MS)
+      const at = interpolate(from, to, easeInOut(progress))
+      setNodes(target.map((n) => ({ ...n, position: at.get(n.id) ?? n.position })))
+      if (progress < 1) {
+        raf = requestAnimationFrame(step)
+      } else {
+        setSettled(true)
+        if (modeChanged) flow.fitView({ padding: 0.2, duration: 300 })
       }
     }
-    return [...seen.entries()].sort(([, a], [, b]) => a.name.localeCompare(b.name, 'nb'))
-  }, [persons])
+    raf = requestAnimationFrame((now) => {
+      setSettled(false)
+      step(now)
+    })
+    return () => cancelAnimationFrame(raf)
+  }, [visible, targets, fresh, mode, session, onAddLog, router, flow, setNodes, reducedMotion])
+
+  // Kanter: stråler fra deg (bare i Nettverk), relasjoner og «ofte sammen».
+  // Vises en sti, tegnes den med rødblyant og alt annet tones ned.
+  useEffect(() => {
+    const onPath = new Set(highlight.slice(1).map((id, i) => pairKey(highlight[i], id)))
+    const pathMode = onPath.size > 0
+
+    const spokes: Edge[] =
+      mode === 'network'
+        ? visible.map((p) => ({
+            id: `me:${p.id}`,
+            source: ME_ID,
+            target: p.id,
+            targetHandle: 'center',
+            type: 'relationship',
+            data: { type: p.type, variant: 'spoke', dimmed: pathMode } satisfies RelationshipEdgeData,
+          }))
+        : []
+
+    const between: Edge[] = relationships.map((r) => {
+      const inPath = onPath.has(pairKey(r.fromPersonId, r.toPersonId))
+      const data: RelationshipEdgeData = {
+        type: r.type,
+        variant: 'between',
+        // I Kretser ville etikettene midt på buntene bare lagt seg oppå hverandre.
+        label: mode === 'circles' ? null : r.label,
+        historical: r.until !== null,
+        path: inPath,
+        dimmed: pathMode && !inPath,
+      }
+      const route = mode === 'circles' ? edgePath?.(r.fromPersonId, r.toPersonId) : null
+      const base = {
+        id: r.id,
+        source: r.fromPersonId,
+        target: r.toPersonId,
+        sourceHandle: 'center',
+        targetHandle: 'center',
+      }
+      return route
+        ? { ...base, type: 'bundled', data: { ...data, route, visible: settled } satisfies BundledEdgeData }
+        : { ...base, type: 'relationship', data }
+    })
+
+    const derivedEdges: Edge[] = derived.map((d) => ({
+      id: `derived:${d.a}:${d.b}`,
+      source: d.a,
+      target: d.b,
+      sourceHandle: 'center',
+      targetHandle: 'center',
+      type: 'derived',
+      data: { count: d.count, dimmed: pathMode } satisfies DerivedEdgeData,
+    }))
+
+    setEdges(visible.length ? [...spokes, ...between, ...derivedEdges] : [])
+  }, [visible, relationships, derived, edgePath, mode, highlight, settled, setEdges])
+
+  // Dra fra knotten under én person til en annen for å lage en relasjon.
+  const onConnect = async (connection: Connection) => {
+    const { source, target } = connection
+    if (!source || !target || source === target || source === ME_ID || target === ME_ID) return
+    const exists = relationships.some((r) => pairKey(r.fromPersonId, r.toPersonId) === pairKey(source, target))
+    if (exists) return
+    const result = await settle(createRelationship({ fromPersonId: source, toPersonId: target, type: 'FRIEND' }))
+    if (!result.ok) onError(t.errors[result.error])
+    else onProximities(result.data.proximities)
+  }
+
+  // Bare i Nettverk er plassen din; der lagres den (som avatarens sentrum).
+  const onNodeDragStop = async (_event: React.MouseEvent, node: Node) => {
+    if (node.id === ME_ID || mode !== 'network') return
+    const result = await settle(movePerson(node.id, node.position.x, node.position.y + PERSON_TOP))
+    if (!result.ok) onError(t.errors[result.error])
+  }
 
   return (
-    <div className="relative h-full flex-1">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onNodeDragStop={onNodeDragStop}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        proOptions={{ hideAttribution: true }}
-        fitView
-        fitViewOptions={{ padding: 0.3 }}
-        // Målhåndtaket tar ikke pointer-events (ellers kunne man ikke dra
-        // noden), så vi lar React Flow snappe geometrisk i stedet.
-        connectionRadius={60}
-        connectionLineStyle={{ stroke: 'var(--pen)', strokeWidth: 1.5 }}
-        minZoom={0.3}
-        maxZoom={2}
-      >
-        {/* Svak prikkstruktur, som papir med punktrutenett. */}
-        <Background variant={BackgroundVariant.Dots} gap={28} size={1.2} color="var(--rule)" />
-        <Controls showInteractive={false} position="top-left" />
-      </ReactFlow>
-
-      <div className="absolute bottom-5 right-5 z-10 flex items-center gap-2">
-        <Button variant="secondary" onPress={onAddRelationship}>
-          <Link2 aria-hidden size={16} strokeWidth={1.75} />
-          {t.map.newRelationship}
-        </Button>
-        <Button variant="primary" size="lg" onPress={onAddPerson}>
-          <UserPlus aria-hidden size={18} strokeWidth={1.75} />
-          {t.map.newPerson}
-        </Button>
-      </div>
-
-      {highlight.length > 1 && (
-        <div className="absolute left-1/2 top-5 z-10 flex -translate-x-1/2 items-center gap-3 rounded-[10px] border border-redpencil/40 bg-paper-raised py-1.5 pl-4 pr-1.5 text-[14px]">
-          <span className="text-redpencil">
-            {t.smallWorld.pathLabel(
-              highlight.map((id) => persons.find((p) => p.id === id)?.name.split(' ')[0] ?? '').join(' → '),
-            )}
-          </span>
-          <Link href={pathname} className="rounded-[8px] px-2 py-1 text-ink-muted outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-pen">
-            {t.smallWorld.hidePath}
-          </Link>
-        </div>
-      )}
-
-      {error && (
-        <p
-          role="alert"
-          className="absolute left-1/2 top-5 z-10 -translate-x-1/2 rounded-[10px] border border-rule bg-paper-raised px-4 py-2 text-[14px] text-redpencil"
-        >
-          {error}
-        </p>
-      )}
-
-      {legend.length > 0 && (
-        <ul
-          aria-label={t.map.legend}
-          className="absolute bottom-5 left-5 z-10 hidden max-w-48 flex-col gap-1.5 rounded-[10px] border border-rule bg-paper-raised/90 px-3 py-2.5 sm:flex"
-        >
-          {legend.map(([id, tag]) => (
-            <li key={id} className="flex items-center gap-2 text-[12px] text-ink-muted">
-              <span
-                aria-hidden
-                className="size-3 shrink-0 rounded-full"
-                // Samme fyll som nodene, med taggens strekfarge som ring:
-                // fyllet alene er for lyst til å skille taggene i så liten størrelse.
-                style={{ background: tagFill(tag.color), boxShadow: `inset 0 0 0 1.5px ${tagStroke(tag.color)}` }}
-              />
-              <span className="truncate">{tag.name}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {persons.length === 0 && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
-          <EmptyState
-            title={t.map.emptyTitle}
-            body={t.map.emptyBody}
-            className="pointer-events-auto"
-            action={
-              <Button variant="primary" size="lg" onPress={onAddPerson}>
-                <UserPlus aria-hidden size={18} strokeWidth={1.75} />
-                {t.map.newPerson}
-              </Button>
-            }
-          />
-        </div>
-      )}
-    </div>
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      onConnect={onConnect}
+      onNodeDragStop={onNodeDragStop}
+      onEdgeClick={(_e, edge) => {
+        if (edge.type === 'derived') onDerivedClick(edge.source, edge.target)
+      }}
+      nodeTypes={nodeTypes}
+      edgeTypes={edgeTypes}
+      nodeOrigin={[0.5, 0]}
+      nodesDraggable={mode === 'network'}
+      proOptions={{ hideAttribution: true }}
+      fitView
+      fitViewOptions={{ padding: 0.2 }}
+      // Målhåndtaket tar ikke pointer-events (ellers kunne man ikke dra
+      // noden), så vi lar React Flow snappe geometrisk i stedet.
+      connectionRadius={60}
+      connectionLineStyle={{ stroke: 'var(--pen)', strokeWidth: 1.5 }}
+      minZoom={0.2}
+      maxZoom={2}
+    >
+      {/* Svak prikkstruktur, som papir med punktrutenett. */}
+      <Background variant={BackgroundVariant.Dots} gap={28} size={1.2} color="var(--rule)" />
+      <MapBackdrop backdrop={model.backdrop} />
+      <Controls showInteractive={false} position="top-right" />
+    </ReactFlow>
   )
 }

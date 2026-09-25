@@ -11,6 +11,8 @@ export type PersonNodeData = {
   name: string
   tint: TagColor
   photoUrl: string | null
+  /** 0,35–1: kontakt som er lenge siden, falmer. */
+  fade: number
   onAddLog: (personId: string) => void
   onViewProfile: (personId: string) => void
 }
@@ -28,28 +30,32 @@ export function PersonNode({ data, selected }: NodeProps) {
 
   return (
     <div className="group/node relative flex select-none flex-col items-center gap-2">
+      {/* Falmer med hvor lenge siden det er; valgt person vises alltid fullt. */}
       <div
-        className="relative rounded-full transition-transform duration-150 ease-out group-hover/node:scale-[1.04]"
-        style={selected ? { outline: '1.5px solid var(--pen)', outlineOffset: 5 } : undefined}
+        className="flex flex-col items-center gap-2 transition-opacity duration-300"
+        style={{ opacity: selected ? 1 : d.fade }}
       >
-        <Handle id="center" type="target" position={Position.Top} isConnectableStart={false} className={centerHandle} />
-        <Handle id="center" type="source" position={Position.Top} isConnectableStart={false} className={centerHandle} />
-        <Avatar name={d.name} tint={d.tint} src={d.photoUrl} size="lg" />
-        {/* Selve dra-punktet. Kun herfra kan en relasjon starte. */}
-        <Handle
-          id="knob"
-          type="source"
-          position={Position.Bottom}
-          className="-bottom-1! size-3! border-2! border-paper! bg-pen! opacity-0 transition-opacity group-hover/node:opacity-100"
-        />
-      </div>
+        <div
+          className="relative rounded-full transition-transform duration-150 ease-out group-hover/node:scale-[1.04]"
+          style={selected ? { outline: '1.5px solid var(--pen)', outlineOffset: 5 } : undefined}
+        >
+          <Handle id="center" type="target" position={Position.Top} isConnectableStart={false} className={centerHandle} />
+          <Handle id="center" type="source" position={Position.Top} isConnectableStart={false} className={centerHandle} />
+          <Avatar name={d.name} tint={d.tint} src={d.photoUrl} size="lg" />
+          {/* Selve dra-punktet. Kun herfra kan en relasjon starte. */}
+          <Handle
+            id="knob"
+            type="source"
+            position={Position.Bottom}
+            className="-bottom-1! size-3! border-2! border-paper! bg-pen! opacity-0 transition-opacity group-hover/node:opacity-100"
+          />
+        </div>
 
-      {/* Tekst rett på papiret, med glorie så den er lesbar over streker. */}
-      <span
-        className="ink-halo max-w-[128px] truncate font-display text-[14px] leading-tight text-ink"
-      >
-        {d.name}
-      </span>
+        {/* Tekst rett på papiret, med glorie så den er lesbar over streker. */}
+        <span className="ink-halo max-w-[128px] truncate font-display text-[14px] leading-tight text-ink">
+          {d.name}
+        </span>
+      </div>
 
       {selected && (
         <div className="absolute top-full mt-1 flex gap-1.5">

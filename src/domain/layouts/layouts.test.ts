@@ -94,3 +94,25 @@ describe('hull', () => {
     expect(hull([{ x: 5, y: 5 }, { x: 5, y: 5 }, { x: 5, y: 5 }])).not.toMatch(/NaN/)
   })
 })
+
+describe('relax', () => {
+  it('skyver personer som overlapper fra hverandre, uten å flytte dem langt', async () => {
+    const { relax } = await import('./relax')
+    const start = new Map([
+      ['a', { x: 0, y: 100 }],
+      ['b', { x: 10, y: 100 }],
+      ['c', { x: 500, y: 0 }],
+    ])
+    const out = relax(start, 80)
+    const d = Math.hypot(out.get('a')!.x - out.get('b')!.x, out.get('a')!.y - out.get('b')!.y)
+    expect(d).toBeGreaterThanOrEqual(79)
+    expect(out.get('c')).toEqual({ x: 500, y: 0 })
+    expect(Math.hypot(out.get('a')!.x, out.get('a')!.y - 100)).toBeLessThan(60)
+  })
+  it('tåler personer som står på nøyaktig samme sted', async () => {
+    const { relax } = await import('./relax')
+    const out = relax(new Map([['a', { x: 0, y: 0 }], ['b', { x: 0, y: 0 }]]), 80)
+    expect(Number.isFinite(out.get('a')!.x)).toBe(true)
+    expect(Math.hypot(out.get('a')!.x - out.get('b')!.x, out.get('a')!.y - out.get('b')!.y)).toBeGreaterThanOrEqual(79)
+  })
+})
