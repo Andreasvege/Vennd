@@ -190,3 +190,13 @@ export const suggestionPayload = {
   PARTICIPANT: z.object({ personId: id }),
   PERSON: z.object({ name: z.string().trim().min(1).max(120) }),
 } as const
+
+// Å rette en logg i ettertid: tekst, dag, type og hvem som var med.
+// Trådene den lukket eller åpnet står urørt.
+export const logEdit = z.object({
+  personIds: z.array(id).min(1).max(50),
+  date: isoDate,
+  type: z.enum(LOG_TYPES).nullable(),
+  body: z.string().max(20_000),
+})
+export type LogEdit = z.infer<typeof logEdit>

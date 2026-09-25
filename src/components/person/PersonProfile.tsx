@@ -19,6 +19,7 @@ import { PhaseStripe } from './PhaseStripe'
 import { ThreadList } from './ThreadList'
 import { rhythm } from '@/domain/insight'
 import { SuggestionList } from '@/components/suggestions/SuggestionList'
+import { EditLogButton } from '@/components/composer/EditLogButton'
 
 const section = 'border-t border-rule pt-6'
 
@@ -30,7 +31,7 @@ const section = 'border-t border-rule pt-6'
 type Log = PersonProfileData['logs'][number]
 
 // En logg i margen-tidslinjen, med trådene den lukket og åpnet.
-function LogItem({ entry }: { entry: Log }) {
+function LogItem({ entry, personId }: { entry: Log; personId: string }) {
   const Icon = LOG_ICON[entry.type ?? 'OTHER']
   return (
     // Id-en er målet for søketreff (#logg-…).
@@ -43,6 +44,13 @@ function LogItem({ entry }: { entry: Log }) {
         {entry.others.length > 0 && (
           <span className="text-ink-muted">· {t.person.with(entry.others.map((o) => o.name).join(' og '))}</span>
         )}
+        <EditLogButton
+          id={entry.id}
+          body={entry.body}
+          date={entry.date}
+          type={entry.type}
+          personIds={[personId, ...entry.others.map((o) => o.id)]}
+        />
       </div>
       {entry.body && <p className="mt-1.5 font-display text-[16px] leading-relaxed">{entry.body}</p>}
       {(entry.threadsClosed.length > 0 || entry.threadsOpened.length > 0) && (
@@ -179,7 +187,7 @@ export function PersonProfile({ person }: { person: PersonProfileData }) {
                   </p>
                 </li>
               ) : (
-                <LogItem key={item.id} entry={item.entry} />
+                <LogItem key={item.id} entry={item.entry} personId={person.id} />
               ),
             )}
           </ol>

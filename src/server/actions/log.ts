@@ -3,7 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { requireUserId } from '@/server/session'
 import { assertAllOwned, NotOwnedError } from '@/server/ownership'
-import { logInput, type LogInput } from '@/server/schemas'
+import { logEdit, logInput, type LogEdit, type LogInput } from '@/server/schemas'
 import { assertPersonsOwned, fromDateInput, parseId, refreshAll } from './shared'
 import { fail, type ActionResult } from './result'
 import { after } from 'next/server'
@@ -96,6 +96,34 @@ export async function createLog(raw: LogInput): Promise<ActionResult<LogSaved>> 
   // personer etterpå, så skrivingen aldri venter.
   if (isClaudeEnabled()) after(() => generateSuggestions(userId, entry.id))
   return { ok: true, data: { id: entry.id, closed: closeIds.length, opened: newThreads.length } }
+}
+
+/** Rett en logg: tekst, dag, type og hvem som var med. Trådene står urørt. */
+export async function updateLog(rawId: string, raw: LogEdit): Promise<ActionResult> {
+  const userId = await requireUserId()
+  const id = parseId(rawId)
+  const parsed = logEdit.safeParse(raw)
+  if (!id || !parsed.success) return fail('invalid')
+  const { personIds, date, type, body } = parsed.data
+  const unique = [...new Set(personIds)]
+
+  try {
+    await assertPersonsOwned(userId, unique)
+    await prisma.$transaction(async (tx) => {
+      const { count } = await tx.logEntry.updateMany({
+        where: { id, userId },
+        data: { date: fromDateInput(date), type, body: body.trim() || null },
+      })
+      if (count !== 1) throw new NotOwnedError()
+      await tx.logParticipant.deleteMany({ where: { logEntryId: id, personId: { notIn: unique } } })
+      await tx.logParticipant.createMany({ data: unique.map((personId) => ({ logEntryId: id, personId })), skipDuplicates: true })
+    })
+  } catch (e) {
+    if (e instanceof NotOwnedError) return fail('not-found')
+    throw e
+  }
+  refreshAll()
+  return { ok: true }
 }
 
 export async function deleteLog(rawId: string): Promise<ActionResult> {
