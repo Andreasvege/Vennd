@@ -37,7 +37,7 @@ function MiniMap() {
 
 export function Landing() {
   return (
-    <main className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-md flex-col justify-center gap-8 px-6 pb-16">
+    <div className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-md flex-col justify-center gap-8 px-6 pb-16">
       <MiniMap />
       <div className="flex flex-col gap-5">
         <h1 className="font-display text-[46px] italic leading-[0.95] tracking-tight desk:text-[64px]">
@@ -50,6 +50,6 @@ export function Landing() {
           {t.nav.signIn}
         </Button>
       </div>
-    </main>
+    </div>
   )
 }

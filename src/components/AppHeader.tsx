@@ -4,11 +4,14 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { Menu, MenuItem, MenuTrigger, Popover, Button as AriaButton } from 'react-aria-components'
+import { PenLine } from 'lucide-react'
 import { Avatar, Button } from '@/components/ui'
+import { useComposer } from '@/components/composer/ComposerProvider'
 import { t } from '@/i18n'
 
 const links = [
   { href: '/', label: t.nav.map },
+  { href: '/logg', label: t.nav.log },
   { href: '/settings', label: t.nav.settings },
 ]
 
@@ -19,6 +22,7 @@ export function AppHeader() {
   const pathname = usePathname()
   const { data: session } = useSession()
   const user = session?.user
+  const openComposer = useComposer()
 
   return (
     <header className="flex h-16 items-center gap-8 border-b border-rule px-4 desk:px-8">
@@ -58,6 +62,12 @@ export function AppHeader() {
 
       {user && (
         <div className="flex items-center gap-3">
+          <span className="hidden desk:block">
+            <Button variant="primary" onPress={() => openComposer()}>
+              <PenLine aria-hidden size={15} strokeWidth={1.75} />
+              {t.composer.openHint}
+            </Button>
+          </span>
           {/* Omslaget styrer synligheten: knappens egen inline-flex ville
               ellers vunnet over «hidden». */}
           <span className="hidden desk:block">

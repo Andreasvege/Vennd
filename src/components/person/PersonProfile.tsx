@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Pencil } from 'lucide-react'
+import { ArrowRight, CircleCheck, Pencil } from 'lucide-react'
 import { Avatar } from '@/components/ui/Avatar'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { buttonClass } from '@/components/ui/button-styles'
@@ -9,7 +9,11 @@ import { formatDate } from '@/domain/format'
 import { isTagColor, tagStroke } from '@/lib/palette'
 import type { PersonProfileData } from '@/server/queries/person'
 import { t } from '@/i18n'
-import { LogContactPanel } from './LogContactPanel'
+import { LogWithButton } from './LogWithButton'
+import { FactList } from './FactList'
+import { PhaseControl } from './PhaseControl'
+import { RelationshipList } from './RelationshipList'
+import { pathHref } from '@/app/kart/sti'
 import { PhaseStripe } from './PhaseStripe'
 import { ThreadList } from './ThreadList'
 
@@ -20,7 +24,60 @@ const section = 'border-t border-rule pt-6'
  * bør spørre om, hva du husker om dem, og hva dere har gjort. Delt mellom
  * den fulle siden og arket over kartet.
  */
+type Log = PersonProfileData['logs'][number]
+
+// En logg i margen-tidslinjen, med trådene den lukket og åpnet.
+function LogItem({ entry }: { entry: Log }) {
+  const Icon = LOG_ICON[entry.type ?? 'OTHER']
+  return (
+    <li className="relative border-l border-rule pb-6 pl-6 last:pb-0">
+      <span aria-hidden className="absolute -left-[3.5px] top-[7px] size-1.5 rounded-full bg-ink" />
+      <div className="flex flex-wrap items-center gap-x-2 text-[13px]">
+        <Icon aria-hidden size={14} strokeWidth={1.75} className="text-ink-muted" />
+        {entry.type && <span className="font-medium">{t.logType[entry.type]}</span>}
+        <RelativeDay date={entry.date} className="text-ink-muted" />
+        {entry.others.length > 0 && (
+          <span className="text-ink-muted">· {t.person.with(entry.others.map((o) => o.name).join(' og '))}</span>
+        )}
+      </div>
+      {entry.body && <p className="mt-1.5 font-display text-[16px] leading-relaxed">{entry.body}</p>}
+      {(entry.threadsClosed.length > 0 || entry.threadsOpened.length > 0) && (
+        <ul className="mt-2 flex flex-col gap-1 text-[14px] text-ink-muted">
+          {entry.threadsClosed.map((th) => (
+            <li key={th.id} className="flex flex-wrap items-center gap-1.5">
+              <span className="line-through">{th.title}</span>
+              {th.resolution && (
+                <>
+                  <ArrowRight aria-hidden size={13} strokeWidth={1.75} />
+                  <span className="text-ink">{th.resolution}</span>
+                </>
+              )}
+            </li>
+          ))}
+          {entry.threadsOpened.map((th) => (
+            <li key={th.id} className={th.status === 'CLOSED' ? 'line-through' : ''}>
+              {t.thread.askAbout(th.title)}
+            </li>
+          ))}
+        </ul>
+      )}
+    </li>
+  )
+}
+
 export function PersonProfile({ person }: { person: PersonProfileData }) {
+  // Historikken: logger og tråder lukket for hånd, nyeste først.
+  const history = [
+    ...person.logs.map((entry) => ({ kind: 'log' as const, id: entry.id, date: new Date(entry.date), entry })),
+    ...person.closedByHand.map((th) => ({
+      kind: 'closed' as const,
+      id: th.id,
+      date: new Date(th.closedAt ?? 0),
+      title: th.title,
+      resolution: th.resolution,
+    })),
+  ].sort((a, b) => b.date.getTime() - a.date.getTime())
+
   const meta = [
     t.cadence.summary(person.cadenceWeeks),
     person.birthday && t.person.birthdayLabel(formatDate(new Date(person.birthday))),
@@ -52,9 +109,10 @@ export function PersonProfile({ person }: { person: PersonProfileData }) {
             </ul>
           )}
           <p className="text-[14px] text-ink-muted">{meta.join(' · ')}</p>
-          {person.type === 'ROMANTIC' && person.phase && (
-            <div className="mt-2 max-w-sm">
-              <PhaseStripe phases={person.phases} current={person.phase} />
+          {person.type === 'ROMANTIC' && (
+            <div className="mt-2 flex max-w-sm flex-col gap-3">
+              {person.phase && <PhaseStripe phases={person.phases} current={person.phase} />}
+              <PhaseControl personId={person.id} current={person.phase} />
             </div>
           )}
           <Link href={`/person/${person.id}/edit`} className={`${buttonClass('secondary')} mt-2 self-start`}>
@@ -71,19 +129,10 @@ export function PersonProfile({ person }: { person: PersonProfileData }) {
         </section>
       )}
 
-      {person.facts.length > 0 && (
-        <section className={section}>
-          <SectionHeading>{t.person.facts}</SectionHeading>
-          <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
-            {person.facts.map((fact) => (
-              <div key={fact.id}>
-                <dt className="text-[13px] text-ink-muted">{fact.label}</dt>
-                <dd className="text-[16px]">{fact.value}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      )}
+      <section className={section}>
+        <SectionHeading>{t.person.facts}</SectionHeading>
+        <FactList personId={person.id} facts={person.facts} labels={person.factLabels} />
+      </section>
 
       {person.notes && (
         <section className={section}>
@@ -93,35 +142,73 @@ export function PersonProfile({ person }: { person: PersonProfileData }) {
       )}
 
       <section className={section}>
-        <LogContactPanel personId={person.id} personName={person.name} />
-        {person.logs.length === 0 ? (
+        <SectionHeading action={<LogWithButton personId={person.id} name={person.name} />}>
+          {t.person.log}
+        </SectionHeading>
+        {history.length === 0 ? (
           <p className="text-[14px] text-ink-muted">{t.person.noLog}</p>
         ) : (
           <ol className="flex flex-col">
-            {person.logs.map((entry) => {
-              const Icon = LOG_ICON[entry.type ?? 'OTHER']
-              return (
-                // En tidslinje i margen: strek ned, blekkprikk per hendelse.
-                <li key={entry.id} className="relative border-l border-rule pb-6 pl-6 last:pb-0">
-                  <span aria-hidden className="absolute -left-[3.5px] top-[7px] size-1.5 rounded-full bg-ink" />
-                  <div className="flex flex-wrap items-center gap-x-2 text-[13px]">
-                    <Icon aria-hidden size={14} strokeWidth={1.75} className="text-ink-muted" />
-                    {entry.type && <span className="font-medium">{t.logType[entry.type]}</span>}
-                    <RelativeDay date={entry.date} className="text-ink-muted" />
-                    {entry.others.length > 0 && (
-                      <span className="text-ink-muted">
-                        · {t.person.with(entry.others.map((o) => o.name).join(' og '))}
-                      </span>
+            {history.map((item) =>
+              item.kind === 'closed' ? (
+                <li key={item.id} className="relative border-l border-rule pb-6 pl-6 last:pb-0">
+                  <span aria-hidden className="absolute -left-[3.5px] top-[7px] size-1.5 rounded-full bg-ink-muted" />
+                  <p className="flex flex-wrap items-center gap-x-2 text-[14px] text-ink-muted">
+                    <CircleCheck aria-hidden size={14} strokeWidth={1.75} />
+                    <span className="line-through">{item.title}</span>
+                    {item.resolution && (
+                      <>
+                        <ArrowRight aria-hidden size={13} strokeWidth={1.75} />
+                        <span className="text-ink">{item.resolution}</span>
+                      </>
                     )}
-                  </div>
-                  {entry.body && (
-                    <p className="mt-1.5 font-display text-[16px] leading-relaxed">{entry.body}</p>
-                  )}
+                    <RelativeDay date={item.date} />
+                  </p>
                 </li>
-              )
-            })}
+              ) : (
+                <LogItem key={item.id} entry={item.entry} />
+              ),
+            )}
           </ol>
         )}
+      </section>
+
+      {person.proximities.length > 0 && (
+        <section className={section}>
+          <SectionHeading>{t.smallWorld.title}</SectionHeading>
+          <ul className="flex flex-col gap-3">
+            {person.proximities.map((p) => (
+              <li key={p.b} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+                <span className="flex flex-wrap items-center gap-1.5 text-[15px]">
+                  {p.path.map((step, i) => (
+                    <span key={step.id} className="flex items-center gap-1.5">
+                      {i > 0 && <ArrowRight aria-hidden size={13} strokeWidth={1.75} className="text-redpencil" />}
+                      {i === 0 ? (
+                        <span>{step.name.split(' ')[0]}</span>
+                      ) : (
+                        <Link href={`/person/${step.id}`} className="hover:underline">
+                          {step.name.split(' ')[0]}
+                        </Link>
+                      )}
+                    </span>
+                  ))}
+                  <span className="text-[13px] text-ink-muted">· {t.smallWorld.steps(p.path.length - 1)}</span>
+                </span>
+                <Link
+                  href={pathHref(p.path.map((s) => s.id))}
+                  className="inline-flex min-h-11 items-center rounded-sm text-[14px] text-redpencil outline-none hover:underline focus-visible:ring-2 focus-visible:ring-pen desk:min-h-0"
+                >
+                  {t.smallWorld.showOnMap}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section className={section}>
+        <SectionHeading>{t.relations.title}</SectionHeading>
+        <RelationshipList personId={person.id} relationships={person.relationships} people={person.people} />
       </section>
     </article>
   )

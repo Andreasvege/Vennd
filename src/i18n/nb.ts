@@ -19,6 +19,9 @@ export const nb = {
 
   nav: {
     map: 'Kart',
+    today: 'I dag',
+    log: 'Logg',
+    tabs: 'Faner',
     settings: 'Innstillinger',
     signIn: 'Logg inn med Google',
     signOut: 'Logg ut',
@@ -70,6 +73,41 @@ export const nb = {
     label: 'Fase',
   },
 
+  composer: {
+    title: 'Ny logg',
+    open: 'Skriv',
+    openHint: 'Skriv (N)',
+    prompt: 'Hva skjedde, og med hvem?',
+    text: 'Hva skjedde?',
+    today: 'I dag',
+    yesterday: 'I går',
+    otherDay: 'Annen dag',
+    when: 'Når',
+    type: 'Type',
+    with: 'Med',
+    addPerson: 'Legg til person',
+    newPerson: (name: string) => `Legg til «${name}» som ny person`,
+    removePerson: (name: string) => `Fjern ${name}`,
+    didYouMean: (word: string) => `Hvilken ${word}?`,
+    openThreads: 'Åpne tråder med dem',
+    followedUp: (title: string) => `Fulgt opp: ${title}`,
+    howItWent: 'Hvordan gikk det?',
+    howItWentPlaceholder: 'Fikk jobben',
+    followUp: 'Noe å følge opp?',
+    followUpPlaceholder: 'Første uka i ny jobb',
+    followUpAbout: 'Gjelder',
+    removeFollowUp: 'Fjern linjen',
+    save: 'Lagre',
+    saveHint: '⌘ Enter',
+    draftRestored: 'Fortsetter der du slapp.',
+    discardDraft: 'Forkast kladd',
+    needPerson: 'Velg minst én person loggen gjelder.',
+    saved: (closed: number, opened: number) =>
+      ['Lagret.', closed > 0 && `${closed === 1 ? '1 tråd' : `${closed} tråder`} fulgt opp.`, opened > 0 && `${opened === 1 ? '1 ny tråd' : `${opened} nye tråder`}.`]
+        .filter(Boolean)
+        .join(' '),
+  },
+
   errors: {
     invalid: 'Noe i skjemaet er ikke fylt ut riktig.',
     'not-found': 'Fant det ikke lenger. Last siden på nytt.',
@@ -103,6 +141,53 @@ export const nb = {
     deleteConfirm: (n: number) =>
       n === 0 ? 'Slett taggen?' : `Taggen fjernes fra ${n === 1 ? '1 person' : `${n} personer`}. Slette?`,
     nameTaken: 'Du har allerede en tagg med det navnet.',
+  },
+
+  facts: {
+    add: 'Legg til',
+    label: 'Hva',
+    value: 'Svar',
+    labelPlaceholder: 'Jobb',
+    valuePlaceholder: 'Statkraft, fra november',
+    editLabel: (label: string) => `Navn på opplysningen ${label}`,
+    editValue: (label: string) => `${label}`,
+    remove: (label: string) => `Fjern ${label}`,
+    empty: 'Noe du vil huske om dem? Jobb, partner, hva de liker.',
+    suggestions: ['Jobb', 'Partner', 'Barn', 'Bor', 'Liker', 'Obs'],
+  },
+
+  phaseControl: {
+    start: 'Start: Første date',
+    next: (label: string) => `Neste: ${label}`,
+    end: 'Avslutt',
+    confirmEnd: 'Avslutte? Det blir stående i historikken.',
+  },
+
+  relations: {
+    title: 'Relasjoner',
+    add: 'Legg til relasjon',
+    person: 'Hvem',
+    type: 'Hvordan',
+    label: 'Beskrivelse',
+    labelPlaceholder: 'klatrer sammen',
+    since: 'Siden',
+    until: 'Til',
+    end: 'Avslutt',
+    edit: (name: string) => `Endre relasjonen til ${name}`,
+    remove: 'Fjern',
+    ended: (date: string) => `til ${date}`,
+    since_: (date: string) => `siden ${date}`,
+    empty: 'Ingen registrerte relasjoner til andre.',
+  },
+
+  smallWorld: {
+    title: 'Verden er liten',
+    steps: (n: number) => (n === 2 ? 'to steg' : n === 3 ? 'tre steg' : `${n} steg`),
+    notice: (a: string, b: string, steps: string) => `Verden er liten: ${a} og ${b} er ${steps} fra hverandre.`,
+    showPath: 'Se stien',
+    showOnMap: 'Vis i kartet',
+    hidePath: 'Skjul stien',
+    pathLabel: (names: string) => `Sti: ${names}`,
   },
 
   thread: {
@@ -149,6 +234,8 @@ export const nb = {
     added: (date: string) => `Lagt til ${date}`,
     reminders: 'Påminnelser',
     facts: 'Å huske',
+    history: 'Historikk',
+    closedByHand: 'Fulgt opp',
     with: (names: string) => `med ${names}`,
     log: 'Kontaktlogg',
     noLog: 'Ingen logget kontakt ennå.',
@@ -191,6 +278,26 @@ export const nb = {
     add: 'Legg til relasjon',
     samePerson: 'Velg to forskjellige personer.',
     failed: 'Relasjonen ble ikke lagt til. Prøv igjen.',
+  },
+
+  today: {
+    title: 'I dag',
+    upcoming: 'Kommende',
+    reach: 'Bør ta kontakt',
+    recent: 'Sist logget',
+    seeAll: 'Se alle logger',
+    logWith: (name: string) => `Logg med ${name.split(' ')[0]}`,
+    emptyTitle: 'Kartet ditt er tomt',
+    emptyBody: 'Skriv om noen du har truffet i det siste. Du kan legge dem til mens du skriver.',
+    emptyAction: 'Skriv første logg',
+    quiet: 'Ingen du bør ta kontakt med akkurat nå.',
+    showMore: (n: number) => `Vis ${n} til`,
+  },
+
+  logPage: {
+    title: 'Logg',
+    older: 'Vis eldre',
+    empty: 'Ingen logger ennå.',
   },
 
   reminders: {

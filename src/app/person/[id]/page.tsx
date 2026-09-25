@@ -13,9 +13,9 @@ export default async function PersonPage({ params }: Params) {
   if (!person) notFound()
 
   return (
-    <main className="mx-auto flex max-w-2xl flex-col gap-8 px-5 py-8">
+    <div className="mx-auto flex max-w-2xl flex-col gap-8 px-5 py-8">
       <BackLink href="/">{t.person.backToMap}</BackLink>
       <PersonProfile person={person} />
-    </main>
+    </div>
   )
 }

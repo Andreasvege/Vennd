@@ -15,7 +15,7 @@ export default async function SettingsPage() {
   const user = session!.user
 
   return (
-    <main className="mx-auto flex max-w-2xl flex-col gap-8 px-5 py-10">
+    <div className="mx-auto flex max-w-2xl flex-col gap-8 px-5 py-10">
       <h1 className="font-display text-[34px] leading-tight tracking-tight">{t.settings.title}</h1>
 
       <section className={section}>
@@ -39,6 +39,6 @@ export default async function SettingsPage() {
         <SectionHeading>{t.settings.appearance}</SectionHeading>
         <ThemeToggle />
       </section>
-    </main>
+    </div>
   )
 }

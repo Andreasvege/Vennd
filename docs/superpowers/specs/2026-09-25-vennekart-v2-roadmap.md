@@ -55,6 +55,15 @@ jobbintervjuet hennes. Neste gang jeg skal treffe henne, trykker jeg på henne o
 - **Hierarkisk kantbunting** blir et alternativt syn på kartet. Hver person får da en
   hovedtagg, som bestemmer hvilken gren personen henger på.
 
+## Status (2026-09-25)
+
+| # | Status |
+|---|---|
+| 0 Visuell retning | Ferdig: PR #1 |
+| 1 Fundament | Ferdig: PR #2 (prod-migrering kjøres etter merge) |
+| 2 Kjernesløyfen | Ferdig: PR #3, unntatt bilder (venter på Vercel Blob-lagring) |
+| 3–7 | Ikke startet. 3 trenger `ANTHROPIC_API_KEY`. |
+
 ## Delprosjekter
 
 Hvert delprosjekt får sin egen runde med spesifikasjon, plan og implementasjon.
