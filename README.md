@@ -2,13 +2,15 @@
 
 App for å visualisere vennekretsen din og hjelpe deg med å strukturere sosiallivet ditt.
 
-Interaktivt relasjonskart (React Flow) med personer, relasjoner, kontaktlogg,
-tidslinje og påminnelser. Alt er scoped på `userId` fra dag én.
+En dagbok over menneskene dine: et relasjonskart, logger som kan gjelde
+flere personer, oppfølgingstråder («spør om …»), tagger og påminnelser.
+Alt er scoped på `userId`.
 
 ## Stack
 
-Next.js 16 (App Router, Turbopack) · React 19 · TypeScript · Tailwind CSS v4 ·
-@xyflow/react · Prisma 7 + Neon Postgres · Auth.js v5 (Google) · Vitest
+Next.js 16 (App Router, server actions) · React 19 · TypeScript · Tailwind CSS v4 ·
+react-aria-components · @xyflow/react · Prisma 7 + Postgres · Auth.js v5 (Google) ·
+zod · Vitest
 
 ## Kom i gang
 
@@ -18,6 +20,20 @@ cp .env.example .env.local   # fyll inn Neon- og Google-OAuth-verdier
 npx prisma migrate deploy    # kjør migrasjoner mot databasen
 npm run dev
 ```
+
+## Utvikling uten å røre prod
+
+```bash
+npx prisma dev -n vennekart --detach   # lokal Postgres (skriver ut tilkoblingen)
+# Lag en egen database (ikke bruk template1) og sett DATABASE_URL i .env.local
+npx prisma migrate deploy
+npx prisma db seed                     # realistiske data for dev-brukeren
+node --env-file=.env.local scripts/dev-session.mts
+```
+
+Det siste skriptet skriver ut en sesjonscookie for dev-brukeren. Sett den
+som `authjs.session-token` på localhost i nettleseren, så er du logget inn
+uten Google. Seed-skriptet nekter å kjøre mot noe annet enn localhost.
 
 ## Kommandoer
 
@@ -32,9 +48,11 @@ npm run dev
 ## Struktur
 
 ```
-src/app/api/       REST-endepunkter (persons, relationships, log, reminders)
-src/components/    graph/ (React Flow), modals/, Navbar, TimelineStripe, RemindersSidebar
-src/lib/           prisma, auth, relationship-colors, reminders
-prisma/            schema + migrasjoner
-docs/superpowers/  spec og MVP-plan
+src/app/           sider (serverkomponenter) og auth-ruten
+src/server/        queries/ (lesing) og actions/ (skriving), alltid scopet på innlogget bruker
+src/domain/        ren logikk uten database: kadens, plassering, romanse, datoer
+src/components/    ui/ (primitiver), graph/ (kartet), person/, modals/
+src/i18n/          all synlig tekst
+prisma/            schema, migrasjoner og seed
+docs/superpowers/  veikart, spesifikasjoner og planer
 ```

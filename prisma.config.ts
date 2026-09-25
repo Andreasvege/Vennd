@@ -10,6 +10,8 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
+    // Node 24 kjører TypeScript direkte; ingen tsx eller ts-node trengs.
+    seed: "node prisma/seed.mts",
   },
   datasource: {
     url: process.env["DIRECT_URL"] ?? process.env["DATABASE_URL"]!,
