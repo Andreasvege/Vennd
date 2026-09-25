@@ -174,7 +174,7 @@ export function RelationshipList({
                 variant="quiet"
                 aria-label={t.relations.edit(rel.other.name)}
                 onPress={() => setSheet({ mode: 'edit', rel })}
-                className="size-11 shrink-0 px-0"
+                size="icon"
               >
                 <Pencil aria-hidden size={15} strokeWidth={1.75} />
               </Button>

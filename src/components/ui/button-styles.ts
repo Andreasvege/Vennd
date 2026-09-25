@@ -3,7 +3,7 @@
 // ikke strenger, når en serverkomponent importerer dem.
 
 export type ButtonVariant = 'primary' | 'secondary' | 'quiet' | 'danger'
-export type ButtonSize = 'sm' | 'md' | 'lg'
+export type ButtonSize = 'sm' | 'md' | 'lg' | 'icon'
 
 // Én primærknapp per flate: blekk på papir. Resten er papir med strek
 // eller rene tekstknapper, så øyet alltid vet hva hovedhandlingen er.
@@ -32,6 +32,8 @@ export const buttonSizes: Record<ButtonSize, string> = {
   sm: 'min-h-11 px-2.5 text-[13px] desk:min-h-8',
   md: 'min-h-11 px-4 text-[14px] desk:min-h-10',
   lg: 'min-h-12 px-5 text-[15px]',
+  // Bare et ikon: kvadratisk, uten sidepolstring som ellers ville klemt det.
+  icon: 'size-11 shrink-0',
 }
 
 export function buttonClass(variant: ButtonVariant = 'secondary', size: ButtonSize = 'md'): string {

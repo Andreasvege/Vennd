@@ -1,4 +1,5 @@
 import 'server-only'
+import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 
 /** De siste loggene, nyeste først, med alle som var med. */
@@ -30,15 +31,17 @@ const PAGE = 30
 /**
  * Hele dagboken, nyeste først, i sider på 30. Markøren er den siste loggen
  * på forrige side (dato + id), så sidene tåler at nye logger kommer til.
+ * `filter` er et søk (se `logFilter`), så «Se alle i loggen» bruker samme sider.
  */
-export async function getLogPage(userId: string, before?: { date: Date; id: string }) {
+export async function getLogPage(userId: string, before?: { date: Date; id: string }, filter?: Prisma.LogEntryWhereInput) {
   const entries = await prisma.logEntry.findMany({
     where: {
       userId,
       participants: { some: {} },
-      ...(before && {
-        OR: [{ date: { lt: before.date } }, { date: before.date, id: { lt: before.id } }],
-      }),
+      AND: [
+        ...(before ? [{ OR: [{ date: { lt: before.date } }, { date: before.date, id: { lt: before.id } }] }] : []),
+        ...(filter ? [filter] : []),
+      ],
     },
     orderBy: [{ date: 'desc' }, { id: 'desc' }],
     take: PAGE + 1,

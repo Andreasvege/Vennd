@@ -4,14 +4,16 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { Menu, MenuItem, MenuTrigger, Popover, Button as AriaButton } from 'react-aria-components'
-import { PenLine } from 'lucide-react'
+import { PenLine, Search } from 'lucide-react'
 import { Avatar, Button } from '@/components/ui'
 import { useComposer } from '@/components/composer/ComposerProvider'
+import { useSearch } from '@/components/search/SearchProvider'
 import { t } from '@/i18n'
 
 const links = [
   { href: '/', label: t.nav.map },
   { href: '/logg', label: t.nav.log },
+  { href: '/innsikt', label: t.nav.insight },
   { href: '/settings', label: t.nav.settings },
 ]
 
@@ -23,6 +25,7 @@ export function AppHeader() {
   const { data: session } = useSession()
   const user = session?.user
   const openComposer = useComposer()
+  const openSearch = useSearch()
 
   return (
     <header className="flex h-16 items-center gap-8 border-b border-rule px-4 desk:px-8">
@@ -62,6 +65,18 @@ export function AppHeader() {
 
       {user && (
         <div className="flex items-center gap-3">
+          {/* Ikon på mobil, ikon og snarvei på PC. Omslagene styrer synligheten. */}
+          <span className="desk:hidden">
+            <Button variant="quiet" size="icon" onPress={openSearch} aria-label={t.search.open}>
+              <Search aria-hidden size={20} strokeWidth={1.75} />
+            </Button>
+          </span>
+          <span className="hidden desk:block">
+            <Button variant="quiet" onPress={openSearch} aria-keyshortcuts="Meta+K">
+              <Search aria-hidden size={16} strokeWidth={1.75} />
+              {t.search.openHint}
+            </Button>
+          </span>
           <span className="hidden desk:block">
             <Button variant="primary" onPress={() => openComposer()}>
               <PenLine aria-hidden size={15} strokeWidth={1.75} />

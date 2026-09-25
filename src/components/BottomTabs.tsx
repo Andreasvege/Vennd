@@ -2,14 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { BookOpen, Map, PenLine, Sun } from 'lucide-react'
+import { BookOpen, ChartNoAxesColumn, Map, PenLine, Sun } from 'lucide-react'
 import { useComposer } from '@/components/composer/ComposerProvider'
 import { t } from '@/i18n'
 
 const tab =
   'flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[12px] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-pen'
 
-/** Fanelinjen på mobil: I dag, Kart og Logg, med Skriv tydelig i midten. */
+/** Fanelinjen på mobil: I dag, Kart, Logg og Innsikt, med Skriv tydelig i midten. */
 export function BottomTabs() {
   const pathname = usePathname()
   const openComposer = useComposer()
@@ -42,8 +42,7 @@ export function BottomTabs() {
         </button>
       </div>
       {link('/logg', t.nav.log, BookOpen)}
-      {/* Tom plass, så Skriv står i midten. Innstillinger ligger i avatarmenyen. */}
-      <div className="flex-1" aria-hidden />
+      {link('/innsikt', t.nav.insight, ChartNoAxesColumn)}
     </nav>
   )
 }
