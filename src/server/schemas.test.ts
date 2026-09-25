@@ -62,3 +62,30 @@ describe('phaseInput', () => {
     expect(phaseInput.safeParse({ personId: 'a', phase: 'MARRIED', at: '2026-09-02' }).success).toBe(false)
   })
 })
+
+describe('logInput med tråder', () => {
+  const base = { personIds: ['ingrid', 'martin'], date: '2026-09-25' }
+
+  it('godtar tråder som lukkes med og uten utfall', () => {
+    expect(
+      logInput.safeParse({ ...base, closeThreads: [{ id: 't1', resolution: 'Fikk jobben' }, { id: 't2' }] }).success,
+    ).toBe(true)
+  })
+
+  it('godtar nye tråder for personer som er med i loggen', () => {
+    expect(
+      logInput.safeParse({ ...base, newThreads: [{ title: 'Første uke i ny jobb', personIds: ['ingrid'] }] }).success,
+    ).toBe(true)
+  })
+
+  it('avviser en ny tråd for noen som ikke er med i loggen', () => {
+    expect(
+      logInput.safeParse({ ...base, newThreads: [{ title: 'Fjellturen', personIds: ['ola'] }] }).success,
+    ).toBe(false)
+  })
+
+  it('avviser en ny tråd uten tittel eller uten personer', () => {
+    expect(logInput.safeParse({ ...base, newThreads: [{ title: '  ', personIds: ['ingrid'] }] }).success).toBe(false)
+    expect(logInput.safeParse({ ...base, newThreads: [{ title: 'X', personIds: [] }] }).success).toBe(false)
+  })
+})

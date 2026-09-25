@@ -50,12 +50,33 @@ export const relationshipInput = z
   .refine((r) => r.fromPersonId !== r.toPersonId, { path: ['toPersonId'] })
   .refine((r) => !r.since || !r.until || r.since <= r.until, { path: ['until'] })
 
-export const logInput = z.object({
-  personIds: z.array(id).min(1).max(50),
-  date: isoDate,
-  type: z.enum(LOG_TYPES).nullable().optional(),
-  body: z.string().max(20_000).optional(),
-})
+export const logInput = z
+  .object({
+    personIds: z.array(id).min(1).max(50),
+    date: isoDate,
+    type: z.enum(LOG_TYPES).nullable().optional(),
+    body: z.string().max(20_000).optional(),
+    // Tråder denne loggen følger opp («fikk jobben»)…
+    closeThreads: z
+      .array(z.object({ id, resolution: z.string().trim().max(500).optional() }))
+      .max(50)
+      .optional(),
+    // …og nye den åpner («spør om første uka»).
+    newThreads: z
+      .array(
+        z.object({
+          title: z.string().trim().min(1).max(200),
+          personIds: z.array(id).min(1).max(50),
+          dueDate: isoDate.nullable().optional(),
+        }),
+      )
+      .max(20)
+      .optional(),
+  })
+  // En ny tråd kan bare handle om noen som var med: den oppstod i samtalen.
+  .refine((l) => (l.newThreads ?? []).every((th) => th.personIds.every((p) => l.personIds.includes(p))), {
+    path: ['newThreads'],
+  })
 
 export const threadCloseInput = z.object({
   threadId: id,
