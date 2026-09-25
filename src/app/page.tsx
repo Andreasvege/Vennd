@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useSession, signIn } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
+import { Landing } from '@/components/Landing'
 import { VennekartCanvas } from '@/components/graph/VennekartCanvas'
 import { TimelineStripe } from '@/components/TimelineStripe'
 import { RemindersSidebar } from '@/components/RemindersSidebar'
@@ -37,30 +38,11 @@ export default function HomePage() {
     setLogEntryOpen(true)
   }
 
-  if (status === 'loading') {
-    return (
-      <div className="flex items-center justify-center h-[80vh]">
-        <div className="text-Text/40">Laster...</div>
-      </div>
-    )
-  }
+  // Ingen «Laster …»-tekst: et tomt papir i et halvt sekund er roligere
+  // enn et blink av tekst som straks forsvinner.
+  if (status === 'loading') return null
 
-  if (!session) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[80vh] gap-6 text-center px-4">
-        <h1 className="text-5xl font-bold text-Accent">Vennekart</h1>
-        <p className="text-Text/60 max-w-sm">
-          Din personlige sosiale relasjonsdagbok. Hold oversikt over vennene dine, logg kontakt og få påminnelser.
-        </p>
-        <button
-          onClick={() => signIn('google')}
-          className="bg-Accent text-Primary font-bold px-8 py-4 rounded-2xl text-lg hover:opacity-90 transition-opacity shadow-lg shadow-Accent/30"
-        >
-          Kom i gang med Google
-        </button>
-      </div>
-    )
-  }
+  if (!session) return <Landing />
 
   return (
     <>

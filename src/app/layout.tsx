@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Fraunces, Instrument_Sans } from 'next/font/google'
 import './globals.css'
-import { Navbar } from '@/components/Navbar'
+import { AppHeader } from '@/components/AppHeader'
 import { SessionProvider } from '@/components/providers/SessionProvider'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
@@ -51,7 +51,7 @@ export default function RootLayout({
       <body className="bg-paper text-ink font-sans antialiased">
         <SessionProvider>
           <div className="min-h-screen">
-            <Navbar />
+            <AppHeader />
             {children}
             {modal}
           </div>
