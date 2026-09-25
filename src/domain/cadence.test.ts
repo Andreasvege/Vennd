@@ -4,7 +4,7 @@ import type { RelationshipType } from '@/types'
 
 describe('kadens-standardverdier', () => {
   it('følger «Tett»-profilen', () => {
-    expect(DEFAULT_CADENCE_WEEKS.PARTNER).toBe(1)
+    expect(DEFAULT_CADENCE_WEEKS.ROMANTIC).toBe(1)
     expect(DEFAULT_CADENCE_WEEKS.FAMILY).toBe(3)
     expect(DEFAULT_CADENCE_WEEKS.FRIEND).toBe(4)
     expect(DEFAULT_CADENCE_WEEKS.COLLEAGUE).toBe(8)
@@ -17,13 +17,13 @@ describe('kadens-standardverdier', () => {
   })
 
   it('gir tettere kadens til nærere relasjoner enn til fjernere', () => {
-    expect(DEFAULT_CADENCE_WEEKS.PARTNER).toBeLessThan(DEFAULT_CADENCE_WEEKS.FRIEND)
+    expect(DEFAULT_CADENCE_WEEKS.ROMANTIC).toBeLessThan(DEFAULT_CADENCE_WEEKS.FRIEND)
     expect(DEFAULT_CADENCE_WEEKS.FRIEND).toBeLessThan(DEFAULT_CADENCE_WEEKS.ACQUAINTANCE)
   })
 
   it('defaultCadenceFor slår opp riktig verdi', () => {
     const cases: [RelationshipType, number][] = [
-      ['PARTNER', 1],
+      ['ROMANTIC', 1],
       ['FAMILY', 3],
       ['ACQUAINTANCE', 26],
     ]
@@ -32,3 +32,4 @@ describe('kadens-standardverdier', () => {
     }
   })
 })
+

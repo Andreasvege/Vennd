@@ -1,5 +1,6 @@
 'use client'
 
+import { settle } from '@/server/actions/result'
 import { useState } from 'react'
 import { Button, ChipGroup, Select, Sheet, TextField } from '@/components/ui'
 import {
@@ -8,41 +9,35 @@ import {
   cadenceToOption,
   type CadenceOption,
 } from '@/components/person/cadence-options'
-import { DEFAULT_CADENCE_WEEKS } from '@/lib/cadence'
-import { TYPE_TINT } from '@/lib/palette'
+import { TagField, type TagOption } from '@/components/person/TagField'
+import { createTagOption } from '@/components/person/tag-actions'
+import { TYPE_OPTIONS } from '@/components/person/type-options'
+import { DEFAULT_CADENCE_WEEKS } from '@/domain/cadence'
+import { createPerson } from '@/server/actions/person'
 import { t } from '@/i18n'
 import type { RelationshipType } from '@/types'
-
-const TYPE_OPTIONS = (Object.keys(TYPE_TINT) as RelationshipType[]).map((value) => ({
-  value,
-  label: t.relationType[value],
-  tint: TYPE_TINT[value],
-}))
 
 type Props = {
   isOpen: boolean
   onClose: () => void
-  onSuccess: () => void
+  tags: TagOption[]
 }
 
-export function AddPersonModal({ isOpen, onClose, onSuccess }: Props) {
+export function AddPersonModal({ isOpen, onClose, tags }: Props) {
   const [name, setName] = useState('')
   const [notes, setNotes] = useState('')
   const [type, setType] = useState<RelationshipType>('FRIEND')
   // Følger typens standard til brukeren selv rører feltet.
   const [cadence, setCadence] = useState<CadenceOption>(cadenceToOption(DEFAULT_CADENCE_WEEKS.FRIEND))
   const [cadenceTouched, setCadenceTouched] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [tagIds, setTagIds] = useState<string[]>([])
+  const [primaryTagId, setPrimaryTagId] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
   const chooseType = (next: RelationshipType) => {
     setType(next)
     if (!cadenceTouched) setCadence(cadenceToOption(DEFAULT_CADENCE_WEEKS[next]))
-  }
-
-  const chooseCadence = (next: CadenceOption) => {
-    setCadenceTouched(true)
-    setCadence(next)
   }
 
   const reset = () => {
@@ -51,6 +46,8 @@ export function AddPersonModal({ isOpen, onClose, onSuccess }: Props) {
     setType('FRIEND')
     setCadence(cadenceToOption(DEFAULT_CADENCE_WEEKS.FRIEND))
     setCadenceTouched(false)
+    setTagIds([])
+    setPrimaryTagId(null)
     setError('')
   }
 
@@ -58,29 +55,23 @@ export function AddPersonModal({ isOpen, onClose, onSuccess }: Props) {
     e.preventDefault()
     if (!name.trim()) return
 
-    setLoading(true)
+    setSaving(true)
     setError('')
+    const result = await settle(createPerson({
+      name,
+      notes,
+      type,
+      cadenceWeeks: cadenceFromOption(cadence),
+      tagIds,
+      primaryTagId,
+    }))
+    setSaving(false)
 
-    const res = await fetch('/api/persons', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: name.trim(),
-        notes,
-        type,
-        cadenceWeeks: cadenceFromOption(cadence),
-      }),
-    })
-
-    setLoading(false)
-
-    if (!res.ok) {
-      setError(t.person.addFailed)
+    if (!result.ok) {
+      setError(t.errors[result.error])
       return
     }
-
     reset()
-    onSuccess()
     onClose()
   }
 
@@ -102,8 +93,26 @@ export function AddPersonModal({ isOpen, onClose, onSuccess }: Props) {
           autoFocus
         />
         <ChipGroup label={t.person.relationship} value={type} onChange={chooseType} options={TYPE_OPTIONS} />
+        <TagField
+          allTags={tags}
+          value={tagIds}
+          primaryTagId={primaryTagId}
+          onChange={(ids, primary) => {
+            setTagIds(ids)
+            setPrimaryTagId(primary)
+          }}
+          onCreate={createTagOption}
+        />
         <div className="flex flex-col gap-1.5">
-          <Select label={t.cadence.label} value={cadence} onChange={chooseCadence} options={CADENCE_OPTIONS} />
+          <Select
+            label={t.cadence.label}
+            value={cadence}
+            onChange={(next) => {
+              setCadenceTouched(true)
+              setCadence(next)
+            }}
+            options={CADENCE_OPTIONS}
+          />
           <p className="text-[13px] text-ink-muted">{t.cadence.hint}</p>
         </div>
         <TextField
@@ -122,8 +131,8 @@ export function AddPersonModal({ isOpen, onClose, onSuccess }: Props) {
           </p>
         )}
 
-        <Button variant="primary" size="lg" type="submit" isDisabled={loading || !name.trim()}>
-          {loading ? t.person.adding : t.person.add}
+        <Button variant="primary" size="lg" type="submit" isDisabled={saving || !name.trim()}>
+          {saving ? t.person.adding : t.person.add}
         </Button>
       </form>
     </Sheet>

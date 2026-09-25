@@ -1,6 +1,6 @@
-import { notFound, redirect } from 'next/navigation'
-import { auth } from '@/lib/auth'
-import { getOwnedPerson } from '@/lib/person-query'
+import { notFound } from 'next/navigation'
+import { getPersonProfile } from '@/server/queries/person'
+import { requireUserId } from '@/server/session'
 import { PersonProfile } from '@/components/person/PersonProfile'
 import { BackLink } from '@/components/person/BackLink'
 import { t } from '@/i18n'
@@ -8,11 +8,8 @@ import { t } from '@/i18n'
 type Params = { params: Promise<{ id: string }> }
 
 export default async function PersonPage({ params }: Params) {
-  const session = await auth()
-  if (!session?.user?.id) redirect('/')
-
   const { id } = await params
-  const person = await getOwnedPerson(id)
+  const person = await getPersonProfile(await requireUserId(), id)
   if (!person) notFound()
 
   return (

@@ -1,29 +1,24 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { settle } from '@/server/actions/result'
+import { useState } from 'react'
 import { Button, ChipGroup, Select, Sheet } from '@/components/ui'
-import { TYPE_TINT } from '@/lib/palette'
+import { TYPE_OPTIONS } from '@/components/person/type-options'
+import { createRelationship } from '@/server/actions/relationship'
 import { t } from '@/i18n'
-import type { Person, RelationshipType } from '@/types'
-
-const TYPE_OPTIONS = (Object.keys(TYPE_TINT) as RelationshipType[]).map((value) => ({
-  value,
-  label: t.relationType[value],
-  tint: TYPE_TINT[value],
-}))
+import type { RelationshipType } from '@/types'
 
 type Props = {
   isOpen: boolean
   onClose: () => void
-  onSuccess: () => void
+  persons: { id: string; name: string }[]
 }
 
-export function AddRelationshipModal({ isOpen, onClose, onSuccess }: Props) {
-  const [persons, setPersons] = useState<Person[]>([])
+export function AddRelationshipModal({ isOpen, onClose, persons }: Props) {
   const [fromId, setFromId] = useState<string | null>(null)
   const [toId, setToId] = useState<string | null>(null)
   const [type, setType] = useState<RelationshipType>('FRIEND')
-  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
   // En gammel feilmelding hører ikke hjemme i et nyåpnet ark.
@@ -33,14 +28,6 @@ export function AddRelationshipModal({ isOpen, onClose, onSuccess }: Props) {
     if (isOpen) setError('')
   }
 
-  useEffect(() => {
-    if (!isOpen) return
-    fetch('/api/persons')
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then(setPersons)
-      .catch(() => setError(t.log.loadPersonsFailed))
-  }, [isOpen])
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!fromId || !toId || fromId === toId) {
@@ -48,26 +35,18 @@ export function AddRelationshipModal({ isOpen, onClose, onSuccess }: Props) {
       return
     }
 
-    setLoading(true)
+    setSaving(true)
     setError('')
+    const result = await settle(createRelationship({ fromPersonId: fromId, toPersonId: toId, type }))
+    setSaving(false)
 
-    const res = await fetch('/api/relationships', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fromPersonId: fromId, toPersonId: toId, type }),
-    })
-
-    setLoading(false)
-
-    if (!res.ok) {
-      setError(t.relationship.failed)
+    if (!result.ok) {
+      setError(t.errors[result.error])
       return
     }
-
     setFromId(null)
     setToId(null)
     setType('FRIEND')
-    onSuccess()
     onClose()
   }
 
@@ -89,6 +68,7 @@ export function AddRelationshipModal({ isOpen, onClose, onSuccess }: Props) {
             onChange={setFromId}
             options={options}
             placeholder={t.common.choosePerson}
+            autoFocus
           />
           <Select
             label={t.relationship.to}
@@ -106,8 +86,8 @@ export function AddRelationshipModal({ isOpen, onClose, onSuccess }: Props) {
           </p>
         )}
 
-        <Button variant="primary" size="lg" type="submit" isDisabled={loading || !fromId || !toId}>
-          {loading ? t.common.saving : t.relationship.add}
+        <Button variant="primary" size="lg" type="submit" isDisabled={saving || !fromId || !toId}>
+          {saving ? t.common.saving : t.relationship.add}
         </Button>
       </form>
     </Sheet>

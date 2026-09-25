@@ -8,7 +8,7 @@ import type { RelationshipType } from '@/types'
 // eksplisitt «aldri auto-påminn» — for folk du har kartlagt uten å ha
 // tenkt å holde kontakten.
 export const DEFAULT_CADENCE_WEEKS: Record<RelationshipType, number> = {
-  PARTNER: 1,
+  ROMANTIC: 1,
   FAMILY: 3,
   FRIEND: 4,
   COLLEAGUE: 8,
@@ -19,3 +19,4 @@ export const DEFAULT_CADENCE_WEEKS: Record<RelationshipType, number> = {
 export function defaultCadenceFor(type: RelationshipType): number {
   return DEFAULT_CADENCE_WEEKS[type]
 }
+

@@ -52,33 +52,70 @@ model User {
   sessions      Session[]
   persons       Person[]
   logEntries    LogEntry[]
-  reminders     Reminder[]
+  threads       Thread[]
+  tags          Tag[]
 }
 
 model Person {
-  id            String         @id @default(cuid())
+  id            String   @id @default(cuid())
   userId        String
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name          String
   birthday      DateTime?
-  notes         String?        @db.Text
-  color         String         @default("#6c63ff")
+  // Fritt notat. Faste opplysninger («jobber i Statkraft») hører hjemme i Fact.
+  notes         String?  @db.Text
+  photoUrl      String?
 
   // Din relasjon til personen, og hvor ofte du vil minnes om å ta kontakt.
   // cadenceWeeks = null betyr eksplisitt «aldri auto-påminn».
-  // snoozedUntil erstatter Reminder.dismissed for auto-påminnelser, som nå
-  // beregnes ved lesing i stedet for å lagres.
   type          RelationshipType @default(FRIEND)
-  cadenceWeeks  Int?           @default(4)
+  cadenceWeeks  Int?             @default(4)
   snoozedUntil  DateTime?
 
-  positionX     Float          @default(0)
-  positionY     Float          @default(0)
-  createdAt     DateTime       @default(now())
-  logEntries    LogEntry[]
-  reminders     Reminder[]
-  relationsFrom Relationship[] @relation("FromPerson")
-  relationsTo   Relationship[] @relation("ToPerson")
+  // Hovedtaggen gir personen farge nå, og gren i Kretser-kartet senere.
+  primaryTagId  String?
+  primaryTag    Tag?     @relation("PrimaryTag", fields: [primaryTagId], references: [id], onDelete: SetNull)
+
+  positionX     Float    @default(0)
+  positionY     Float    @default(0)
+  createdAt     DateTime @default(now())
+
+  tags           PersonTag[]
+  facts          Fact[]
+  participations LogParticipant[]
+  threads        ThreadPerson[]
+  phases         RomanticPhaseEntry[]
+  relationsFrom  Relationship[] @relation("FromPerson")
+  relationsTo    Relationship[] @relation("ToPerson")
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Lagres slik den først ble skrevet. Unik per bruker uten hensyn til store
+  // og små bokstaver: håndhevet av indeksen «Tag_userId_lower_name_key» på
+  // (userId, lower(name)), laget i v2_foundation-migreringen. Prisma kan
+  // ikke uttrykke uttrykksindekser, så den står bare der — ikke fjern den.
+  name      String
+  // Palettnøkkel (src/lib/palette.ts), aldri hex.
+  color     String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  persons   PersonTag[]
+  primaryOf Person[] @relation("PrimaryTag")
+
+  @@unique([userId, name])
+}
+
+model PersonTag {
+  personId String
+  tagId    String
+  person   Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+  tag      Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([personId, tagId])
+  @@index([tagId])
 }
 
 model Relationship {
@@ -88,7 +125,11 @@ model Relationship {
   fromPerson   Person           @relation("FromPerson", fields: [fromPersonId], references: [id], onDelete: Cascade)
   toPerson     Person           @relation("ToPerson", fields: [toPersonId], references: [id], onDelete: Cascade)
   type         RelationshipType
-  color        String
+  // «klatrer sammen» — vises på kanten.
+  label        String?
+  since        DateTime?
+  // Satt = historisk, f.eks. et avsluttet forhold.
+  until        DateTime?
   createdAt    DateTime         @default(now())
 }
 
@@ -96,44 +137,115 @@ enum RelationshipType {
   FRIEND
   FAMILY
   COLLEAGUE
-  PARTNER
+  // Alt fra første date til kjæreste og eks. Fasen for dine egne ligger i
+  // RomanticPhaseEntry; mellom andre er det since/until som forteller.
+  ROMANTIC
   ACQUAINTANCE
   OTHER
 }
 
 model LogEntry {
-  id        String       @id @default(cuid())
+  id        String        @id @default(cuid())
   userId    String
-  personId  String
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  person    Person       @relation(fields: [personId], references: [id], onDelete: Cascade)
-  date      DateTime     @default(now())
-  type      LogEntryType
-  notes     String?      @db.Text
-  createdAt DateTime     @default(now())
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime      @default(now())
+  // Valgfri: fritekst er nok til å logge.
+  type      LogEntryType?
+  body      String?       @db.Text
+  createdAt DateTime      @default(now())
+
+  participants  LogParticipant[]
+  threadsOpened Thread[] @relation("OpenedBy")
+  threadsClosed Thread[] @relation("ClosedBy")
+
+  @@index([userId, date])
 }
 
 enum LogEntryType {
   MET
   CALLED
   MESSAGE
+  DATE
   OTHER
 }
 
-model Reminder {
-  id        String       @id @default(cuid())
-  userId    String
-  personId  String
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  person    Person       @relation(fields: [personId], references: [id], onDelete: Cascade)
-  type      ReminderType
-  message   String?      @db.Text
-  dueDate   DateTime?
-  dismissed Boolean      @default(false)
-  createdAt DateTime     @default(now())
+// En logg kan gjelde flere personer: «middag med Ingrid og Martin».
+model LogParticipant {
+  logEntryId String
+  personId   String
+  logEntry   LogEntry @relation(fields: [logEntryId], references: [id], onDelete: Cascade)
+  person     Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@id([logEntryId, personId])
+  @@index([personId])
 }
 
-enum ReminderType {
-  AUTO
-  MANUAL
+// Noe å følge opp: «andre intervjurunde i Statkraft». Erstatter de manuelle
+// påminnelsene — en påminnelse med dato er en tråd med dueDate.
+model Thread {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  status      ThreadStatus @default(OPEN)
+  resolution  String?      @db.Text
+  // Når den blir aktuell. null = aktuell nå.
+  dueDate     DateTime?
+  openedById  String?
+  openedBy    LogEntry?    @relation("OpenedBy", fields: [openedById], references: [id], onDelete: SetNull)
+  closedById  String?
+  closedBy    LogEntry?    @relation("ClosedBy", fields: [closedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime     @default(now())
+  closedAt    DateTime?
+  persons     ThreadPerson[]
+
+  @@index([userId, status])
+}
+
+enum ThreadStatus {
+  OPEN
+  CLOSED
+}
+
+model ThreadPerson {
+  threadId String
+  personId String
+  thread   Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  person   Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@id([threadId, personId])
+  @@index([personId])
+}
+
+// Faste opplysninger om en person: «Jobb» → «Statkraft (fra november)».
+model Fact {
+  id        String   @id @default(cuid())
+  personId  String
+  person    Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  label     String
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([personId])
+}
+
+enum RomanticPhase {
+  FIRST_DATE
+  SEEING
+  EXCLUSIVE
+  PARTNER
+  ENDED
+}
+
+// Når du gikk fra én fase til neste med en du dater. Nyeste rad er
+// gjeldende fase; ENDED betyr at det er over.
+model RomanticPhaseEntry {
+  id       String        @id @default(cuid())
+  personId String
+  person   Person        @relation(fields: [personId], references: [id], onDelete: Cascade)
+  phase    RomanticPhase
+  at       DateTime
+
+  @@index([personId, at])
 }

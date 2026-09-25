@@ -48,7 +48,7 @@ export const nb = {
     FRIEND: 'Venn',
     FAMILY: 'Familie',
     COLLEAGUE: 'Kollega',
-    PARTNER: 'Partner',
+    ROMANTIC: 'Romantisk',
     ACQUAINTANCE: 'Bekjent',
     OTHER: 'Annet',
   },
@@ -57,7 +57,60 @@ export const nb = {
     MET: 'Møttes',
     CALLED: 'Ringte',
     MESSAGE: 'Melding',
+    DATE: 'Date',
     OTHER: 'Annet',
+  },
+
+  phase: {
+    FIRST_DATE: 'Første date',
+    SEEING: 'Ser hverandre',
+    EXCLUSIVE: 'Eksklusive',
+    PARTNER: 'Kjærester',
+    ENDED: 'Avsluttet',
+    label: 'Fase',
+  },
+
+  errors: {
+    invalid: 'Noe i skjemaet er ikke fylt ut riktig.',
+    'not-found': 'Fant det ikke lenger. Last siden på nytt.',
+    taken: 'Du har allerede en tagg med det navnet.',
+    failed: 'Det ble ikke lagret. Sjekk nettforbindelsen og prøv igjen.',
+  },
+
+  colors: {
+    sage: 'Salvie',
+    ochre: 'Oker',
+    slate: 'Skifer',
+    plum: 'Plomme',
+    rose: 'Rose',
+    teal: 'Blågrønn',
+    clay: 'Leire',
+    stone: 'Stein',
+  },
+
+  tags: {
+    label: 'Tagger',
+    add: 'Legg til tagg',
+    create: (name: string) => `Opprett «${name}»`,
+    primary: 'Hovedtagg',
+    makePrimary: (name: string) => `Gjør ${name} til hovedtagg`,
+    remove: (name: string) => `Fjern ${name}`,
+    hint: 'Hovedtaggen gir personen farge på kartet.',
+    empty: 'Du har ingen tagger ennå. De lages når du gir en person en tagg.',
+    count: (n: number) => (n === 1 ? '1 person' : `${n} personer`),
+    rename: (name: string) => `Nytt navn på ${name}`,
+    color: (name: string) => `Farge på ${name}`,
+    deleteConfirm: (n: number) =>
+      n === 0 ? 'Slett taggen?' : `Taggen fjernes fra ${n === 1 ? '1 person' : `${n} personer`}. Slette?`,
+    nameTaken: 'Du har allerede en tagg med det navnet.',
+  },
+
+  thread: {
+    ask: 'Spør om',
+    askAbout: (title: string) => `Spør om: ${title}`,
+    close: (title: string) => `Marker «${title}» som fulgt opp`,
+    since: (date: string) => `fra ${date}`,
+    withOthers: (names: string) => `også ${names}`,
   },
 
   cadence: {
@@ -95,6 +148,8 @@ export const nb = {
     notesPlaceholder: 'Vurderer å flytte til Bergen …',
     added: (date: string) => `Lagt til ${date}`,
     reminders: 'Påminnelser',
+    facts: 'Å huske',
+    with: (names: string) => `med ${names}`,
     log: 'Kontaktlogg',
     noLog: 'Ingen logget kontakt ennå.',
     backToMap: 'Tilbake til kartet',
@@ -157,9 +212,14 @@ export const nb = {
     themeSystem: 'Som systemet',
     themeLight: 'Lys',
     themeDark: 'Mørk',
-    relationTypes: 'Relasjonstyper',
-    relationTypesHint: 'Fargen på en person på kartet kommer fra relasjonstypen.',
+    tags: 'Tagger',
   },
+  appError: {
+    title: 'Noe gikk galt',
+    body: 'Siden kunne ikke vises. Det du har lagret er trygt.',
+    retry: 'Prøv igjen',
+  },
+
   notFound: {
     title: 'Den siden finnes ikke',
     body: 'Kanskje personen er slettet, eller lenken er gammel.',

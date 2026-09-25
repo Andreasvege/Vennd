@@ -1,24 +1,26 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { Bell } from 'lucide-react'
 import { Avatar, Button, SectionHeading, Sheet } from '@/components/ui'
-import { TYPE_TINT } from '@/lib/palette'
+import { closeThread } from '@/server/actions/thread'
+import { snoozePerson } from '@/server/actions/person'
+import { settle } from '@/server/actions/result'
+import type { ReminderItem } from '@/server/queries/reminders'
 import { t } from '@/i18n'
-import type { ReminderResponse } from '@/types'
 
 // Hvor lenge en utsettelse varer. Bevisst kort: poenget er «ikke nå», ikke
 // «aldri» — vil du aldri bli minnet om noen, setter du kadens til av.
 const SNOOZE_WEEKS = 1
 
 type ListProps = {
-  reminders: ReminderResponse[]
+  reminders: ReminderItem[]
+  onDismiss: (r: ReminderItem) => void
   busy: string | null
-  onSnooze: (r: ReminderResponse) => void
 }
 
-function ReminderList({ reminders, busy, onSnooze }: ListProps) {
+function ReminderList({ reminders, onDismiss, busy }: ListProps) {
   if (reminders.length === 0) {
     return <p className="py-2 text-[14px] text-ink-muted">{t.reminders.empty}</p>
   }
@@ -27,7 +29,7 @@ function ReminderList({ reminders, busy, onSnooze }: ListProps) {
     <ul className="flex flex-col divide-y divide-rule">
       {reminders.map((r) => (
         <li key={r.id} className="flex items-start gap-3 py-3.5">
-          <Avatar name={r.personName} tint={TYPE_TINT[r.personType]} size="md" decorative />
+          <Avatar name={r.personName} tint={r.tint} size="md" decorative />
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <Link
               href={`/person/${r.personId}`}
@@ -36,15 +38,16 @@ function ReminderList({ reminders, busy, onSnooze }: ListProps) {
               {r.personName}
             </Link>
             <p className="text-[14px] leading-snug text-ink-muted">{r.message}</p>
+            {r.ask && <p className="text-[14px] leading-snug text-ink">{t.thread.askAbout(r.ask)}</p>}
             {/* Alltid synlig: knapper som bare dukker opp ved hover finnes ikke på touch. */}
             <Button
               variant="quiet"
               size="sm"
-              onPress={() => onSnooze(r)}
+              onPress={() => onDismiss(r)}
               isDisabled={busy === r.id}
               className="-ml-2.5 mt-1 self-start"
             >
-              {r.type === 'AUTO' ? t.reminders.snooze : t.reminders.dismiss}
+              {r.kind === 'cadence' ? t.reminders.snooze : t.reminders.dismiss}
             </Button>
           </div>
         </li>
@@ -55,49 +58,37 @@ function ReminderList({ reminders, busy, onSnooze }: ListProps) {
 
 /**
  * Påminnelsene: et fast sidepanel på store skjermer, og en knapp som åpner
- * dem i et ark på mobil. Samme data og handlinger begge steder.
+ * dem i et ark på mobil. Dataene kommer fra serveren; å utsette eller avvise
+ * er en handling som frisker opp siden.
  */
-export function RemindersPanel({ refreshKey }: { refreshKey: number }) {
-  const [reminders, setReminders] = useState<ReminderResponse[]>([])
-  const [busy, setBusy] = useState<string | null>(null)
+export function RemindersPanel({ reminders }: { reminders: ReminderItem[] }) {
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [busy, setBusy] = useState<string | null>(null)
+  const [error, setError] = useState('')
+  const [, startTransition] = useTransition()
 
-  useEffect(() => {
-    // GET beregner AUTO-påminnelsene selv; ingenting lagres.
-    async function load() {
-      const res = await fetch('/api/reminders')
-      if (res.ok) setReminders(await res.json())
-    }
-    load()
-  }, [refreshKey])
-
-  const snooze = async (r: ReminderResponse) => {
+  const dismiss = (r: ReminderItem) => {
     setBusy(r.id)
-
-    if (r.type === 'AUTO') {
-      // AUTO-påminnelser er utledet, ikke rader. Utsettelsen lagres på
-      // personen, som er det eneste stedet den kan overleve.
-      const until = new Date()
-      until.setDate(until.getDate() + SNOOZE_WEEKS * 7)
-      await fetch(`/api/persons/${r.personId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ snoozedUntil: until.toISOString() }),
-      })
-    } else {
-      await fetch(`/api/reminders/${r.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dismissed: true }),
-      })
-    }
-
-    setReminders((prev) => prev.filter((x) => x.id !== r.id))
-    setBusy(null)
+    setError('')
+    startTransition(async () => {
+      const result = await settle(
+        r.kind === 'cadence' ? snoozePerson(r.personId, SNOOZE_WEEKS) : closeThread({ threadId: r.id }),
+      )
+      if (!result.ok) setError(t.errors[result.error])
+      setBusy(null)
+    })
   }
 
-  const list = <ReminderList reminders={reminders} busy={busy} onSnooze={snooze} />
-
+  const list = (
+    <>
+      {error && (
+        <p role="alert" className="mb-2 text-[14px] text-redpencil">
+          {error}
+        </p>
+      )}
+      <ReminderList reminders={reminders} onDismiss={dismiss} busy={busy} />
+    </>
+  )
   return (
     <>
       <aside
