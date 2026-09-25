@@ -11,6 +11,7 @@
   --paper: #F3EEE4; --paper-raised: #FAF7F1; --ink: #27231E; --ink-muted: #6B6257;
   --rule: #DDD3C3; --pen: #26386E; --pen-wash: #E4E7F1; --redpencil: #B23A2A;
   --float-shadow: 0 12px 32px rgb(39 35 30 / 0.12);
+  --scrim: rgb(39 35 30 / 0.32);
   --tag-sage-fill: #D5DDC8;  --tag-sage-stroke: #6E8559;
   --tag-ochre-fill: #EBD9AE; --tag-ochre-stroke: #9A7426;
   --tag-slate-fill: #CCD7E0; --tag-slate-stroke: #4F6E86;
@@ -27,6 +28,7 @@
     --paper: #1B1916; --paper-raised: #24211D; --ink: #ECE5D8; --ink-muted: #A69D90;
     --rule: #3A352F; --pen: #A9B8EE; --pen-wash: #262B3D; --redpencil: #EE8A78;
     --float-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
+    --scrim: rgb(0 0 0 / 0.6);
     --tag-sage-fill: #2E3628;  --tag-sage-stroke: #A3B98D;
     --tag-ochre-fill: #3A3120; --tag-ochre-stroke: #D9B266;
     --tag-slate-fill: #243039; --tag-slate-stroke: #93B1C8;
@@ -43,6 +45,7 @@
     --paper: #1B1916; --paper-raised: #24211D; --ink: #ECE5D8; --ink-muted: #A69D90;
     --rule: #3A352F; --pen: #A9B8EE; --pen-wash: #262B3D; --redpencil: #EE8A78;
     --float-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
+    --scrim: rgb(0 0 0 / 0.6);
     --tag-sage-fill: #2E3628;  --tag-sage-stroke: #A3B98D;
     --tag-ochre-fill: #3A3120; --tag-ochre-stroke: #D9B266;
     --tag-slate-fill: #243039; --tag-slate-stroke: #93B1C8;
@@ -133,6 +136,7 @@
   --font-display: var(--font-fraunces), Georgia, serif;
   --font-sans: var(--font-instrument), system-ui, sans-serif;
   --shadow-float: var(--float-shadow);
+  --color-scrim: var(--scrim);
   --breakpoint-desk: 1024px;
   --color-Primary: var(--Primary);
   --color-Accent:  var(--Accent);

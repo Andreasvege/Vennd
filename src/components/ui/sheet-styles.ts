@@ -3,7 +3,7 @@
 // skal se og bevege seg identisk.
 
 export const sheetOverlay = [
-  'fixed inset-0 z-50 flex items-end justify-center bg-ink/30 sm:items-center sm:p-6',
+  'fixed inset-0 z-50 flex items-end justify-center bg-scrim sm:items-center sm:p-6',
   'transition-opacity duration-250 ease-out',
   'data-[entering]:opacity-0 data-[exiting]:opacity-0',
 ].join(' ')
