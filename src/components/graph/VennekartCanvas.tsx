@@ -16,7 +16,7 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { Link2, UserPlus } from 'lucide-react'
 import { Button, EmptyState } from '@/components/ui'
-import { isTagColor, tagFill, type TagColor } from '@/lib/palette'
+import { isTagColor, tagFill, tagStroke, type TagColor } from '@/lib/palette'
 import { t } from '@/i18n'
 import { createRelationship } from '@/server/actions/relationship'
 import { movePerson } from '@/server/actions/person'
@@ -189,8 +189,10 @@ export function VennekartCanvas({ persons, relationships, onAddPerson, onAddLog,
             <li key={id} className="flex items-center gap-2 text-[12px] text-ink-muted">
               <span
                 aria-hidden
-                className="size-2.5 shrink-0 rounded-full"
-                style={{ background: tagFill(tag.color), boxShadow: 'inset 0 0 0 1px var(--ink)' }}
+                className="size-3 shrink-0 rounded-full"
+                // Samme fyll som nodene, med taggens strekfarge som ring:
+                // fyllet alene er for lyst til å skille taggene i så liten størrelse.
+                style={{ background: tagFill(tag.color), boxShadow: `inset 0 0 0 1.5px ${tagStroke(tag.color)}` }}
               />
               <span className="truncate">{tag.name}</span>
             </li>
