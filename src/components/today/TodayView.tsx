@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { ArrowRight, PenLine } from 'lucide-react'
+import { ArrowRight, CalendarPlus, Cake, PenLine } from 'lucide-react'
 import { Avatar, Button, EmptyState, SectionHeading } from '@/components/ui'
 import { useComposer, usePlanner } from '@/components/composer/ComposerProvider'
 import { BriefSheet } from './BriefSheet'
@@ -12,7 +12,7 @@ import { cancelPlan } from '@/server/actions/plan'
 import { todayISO } from '@/domain/format'
 import type { BirthdayItem, PlanItem } from '@/server/queries/plans'
 import { nextBirthday } from '@/domain/birthdays'
-import { CalendarPlus, Cake } from 'lucide-react'
+import { splitPlans } from '@/domain/plans'
 import { LOG_ICON } from '@/components/log-icons'
 import { RelativeDay } from '@/components/RelativeDay'
 import { closeThread } from '@/server/actions/thread'
@@ -54,11 +54,6 @@ function ReminderRow({ r, onDismiss, busy }: { r: ReminderItem; onDismiss: () =>
   )
 }
 
-/**
- * «I dag»: det viktigste først. Skriveboksen, så det som har en dato, så
- * hvem du bør ta kontakt med (og hva du kan spørre om), så det siste du
- * skrev. Er startskjermen på mobil og sidepanelet på PC.
- */
 function BirthdayRow({ b }: { b: BirthdayItem }) {
   // I nettleseren: «i dag» og «i morgen» etter din kalender, ikke serverens.
   const next = useIsClient() ? nextBirthday(new Date(b.birthday), new Date()) : { inDays: b.inDays, turns: b.turns }
@@ -97,11 +92,19 @@ function PlanRow({ plan, children }: { plan: PlanItem; children: React.ReactNode
   )
 }
 
+/**
+ * «I dag»: det viktigste først. Skriveboksen, så det som har en dato, så
+ * hvem du bør ta kontakt med (og hva du kan spørre om), så det siste du
+ * skrev. Er startskjermen på mobil og sidepanelet på PC.
+ */
 export function TodayView({ data }: { data: TodayData }) {
   const openComposer = useComposer()
   const openPlanner = usePlanner()
   const [brief, setBrief] = useState<PlanItem | null>(null)
   const { ahead } = data
+  // Når et treff er «passert», avgjøres av din klokke: serveren (UTC) ville
+  // holdt gårsdagens treff som kommende til langt på natt norsk tid.
+  const { upcoming, awaiting } = splitPlans(ahead.plans, useIsClient() ? new Date() : new Date(ahead.now))
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [showAll, setShowAll] = useState(false)
@@ -163,11 +166,11 @@ export function TodayView({ data }: { data: TodayData }) {
         </p>
       )}
 
-      {ahead.awaiting.length > 0 && (
+      {awaiting.length > 0 && (
         <section>
           <SectionHeading>{t.plans.howDidItGo}</SectionHeading>
           <ul className="flex flex-col divide-y divide-rule">
-            {ahead.awaiting.map((plan) => (
+            {awaiting.map((plan) => (
               <PlanRow key={plan.id} plan={plan}>
                 <Button
                   variant="secondary"
@@ -203,11 +206,11 @@ export function TodayView({ data }: { data: TodayData }) {
         </section>
       )}
 
-      {(ahead.upcoming.length > 0 || data.due.length > 0) && (
+      {(upcoming.length > 0 || data.due.length > 0) && (
         <section>
           <SectionHeading>{t.today.upcoming}</SectionHeading>
           <ul className="flex flex-col divide-y divide-rule">
-            {ahead.upcoming.map((plan) => (
+            {upcoming.map((plan) => (
               <PlanRow key={plan.id} plan={plan}>
                 <Button variant="quiet" size="sm" onPress={() => setBrief(plan)}>
                   {t.plans.prepare}
