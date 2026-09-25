@@ -56,6 +56,7 @@ model User {
   tags          Tag[]
   mapViews      MapView[]
   plans         Plan[]
+  suggestions   Suggestion[]
 }
 
 model Person {
@@ -161,6 +162,9 @@ model LogEntry {
   threadsOpened Thread[] @relation("OpenedBy")
   threadsClosed Thread[] @relation("ClosedBy")
   plan          Plan?
+  suggestions   Suggestion[]
+  // Når Claude var ferdig med forslag til loggen (også når det ble ingen).
+  suggestedAt   DateTime?
 
   @@index([userId, date])
 }
@@ -305,4 +309,35 @@ model PlanPerson {
 
   @@id([planId, personId])
   @@index([personId])
+}
+
+// Forslag fra Claude til en logg: en tråd, et faktum, en deltaker eller en
+// ny person. Godtas eller avvises med ett trykk. Innholdet (payload) er
+// validert med zod per type når det leses.
+model Suggestion {
+  id         String           @id @default(cuid())
+  userId     String
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logEntryId String
+  logEntry   LogEntry         @relation(fields: [logEntryId], references: [id], onDelete: Cascade)
+  kind       SuggestionKind
+  payload    Json
+  status     SuggestionStatus @default(PENDING)
+  createdAt  DateTime         @default(now())
+
+  @@index([userId, status, createdAt])
+  @@index([logEntryId])
+}
+
+enum SuggestionKind {
+  THREAD
+  FACT
+  PARTICIPANT
+  PERSON
+}
+
+enum SuggestionStatus {
+  PENDING
+  ACCEPTED
+  DISMISSED
 }

@@ -181,3 +181,12 @@ export const eventImport = z.object({
 
 export type ContactImport = z.infer<typeof contactImport>
 export type EventImport = z.infer<typeof eventImport>
+
+// Innholdet i et forslag fra Claude, per type. Lagres som Json og leses
+// alltid gjennom disse, så en gammel eller ødelagt rad aldri når Prisma.
+export const suggestionPayload = {
+  THREAD: z.object({ title: z.string().trim().min(1).max(120), personIds: z.array(id).min(1).max(50), dueDate: isoDate.nullable() }),
+  FACT: z.object({ personId: id, label: factInput.shape.label, value: factInput.shape.value }),
+  PARTICIPANT: z.object({ personId: id }),
+  PERSON: z.object({ name: z.string().trim().min(1).max(120) }),
+} as const
