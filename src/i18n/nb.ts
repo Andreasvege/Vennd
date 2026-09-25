@@ -177,6 +177,16 @@ export const nb = {
     empty: 'Ingen registrerte relasjoner til andre.',
   },
 
+  smallWorld: {
+    title: 'Verden er liten',
+    steps: (n: number) => (n === 2 ? 'to steg' : n === 3 ? 'tre steg' : `${n} steg`),
+    notice: (a: string, b: string, steps: string) => `Verden er liten: ${a} og ${b} er ${steps} fra hverandre.`,
+    showPath: 'Se stien',
+    showOnMap: 'Vis i kartet',
+    hidePath: 'Skjul stien',
+    pathLabel: (names: string) => `Sti: ${names}`,
+  },
+
   thread: {
     ask: 'Spør om',
     askAbout: (title: string) => `Spør om: ${title}`,

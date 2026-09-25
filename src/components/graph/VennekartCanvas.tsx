@@ -21,6 +21,8 @@ import { t } from '@/i18n'
 import { createRelationship } from '@/server/actions/relationship'
 import { movePerson } from '@/server/actions/person'
 import { settle } from '@/server/actions/result'
+import { useProximityNotice } from '@/components/toast/useProximityNotice'
+import Link from 'next/link'
 import type { MapPerson, MapRelationship } from '@/server/queries/graph'
 import { PersonNode, type PersonNodeData } from './PersonNode'
 import { MeNode } from './MeNode'
@@ -36,12 +38,14 @@ const edgeTypes = { relationship: RelationshipEdge }
 type Props = {
   persons: MapPerson[]
   relationships: MapRelationship[]
+  /** En sti å vise (fra «Se stien»): personer i rekkefølge. */
+  highlight?: string[]
   onAddPerson: () => void
   onAddLog: (personId: string) => void
   onAddRelationship: () => void
 }
 
-export function VennekartCanvas({ persons, relationships, onAddPerson, onAddLog, onAddRelationship }: Props) {
+export function VennekartCanvas({ persons, relationships, highlight = [], onAddPerson, onAddLog, onAddRelationship }: Props) {
   const router = useRouter()
   const { data: session } = useSession()
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
@@ -87,14 +91,17 @@ export function VennekartCanvas({ persons, relationships, onAddPerson, onAddLog,
   }, [persons, session, onAddLog, router, setNodes])
 
   // Kanter: én stråle fra deg til hver person, og relasjonene mellom dem.
+  // Vises en sti, tegnes den med rødblyant og alt annet tones ned.
   useEffect(() => {
+    const onPath = new Set(highlight.slice(1).map((id, i) => [highlight[i], id].sort().join('|')))
+    const pathMode = onPath.size > 0
     const spokes: Edge[] = persons.map((p) => ({
       id: `me:${p.id}`,
       source: ME_ID,
       target: p.id,
       targetHandle: 'center',
       type: 'relationship',
-      data: { type: p.type, variant: 'spoke' } satisfies RelationshipEdgeData,
+      data: { type: p.type, variant: 'spoke', dimmed: pathMode } satisfies RelationshipEdgeData,
     }))
 
     const between: Edge[] = relationships.map((r) => ({
@@ -110,15 +117,18 @@ export function VennekartCanvas({ persons, relationships, onAddPerson, onAddLog,
         variant: 'between',
         label: r.label,
         historical: r.until !== null,
+        path: onPath.has([r.fromPersonId, r.toPersonId].sort().join('|')),
+        dimmed: pathMode && !onPath.has([r.fromPersonId, r.toPersonId].sort().join('|')),
       } satisfies RelationshipEdgeData,
     }))
 
     setEdges(persons.length ? [...spokes, ...between] : between)
-  }, [persons, relationships, setEdges])
+  }, [persons, relationships, highlight, setEdges])
 
   // Dra fra knotten under én person til en annen for å lage en relasjon.
   // Typen settes til venn; den kan endres fra profilen.
   const [error, setError] = useState('')
+  const notice = useProximityNotice()
 
   const onConnect = async (connection: Connection) => {
     const { source, target } = connection
@@ -132,6 +142,7 @@ export function VennekartCanvas({ persons, relationships, onAddPerson, onAddLog,
     if (exists) return
     const result = await settle(createRelationship({ fromPersonId: source, toPersonId: target, type: 'FRIEND' }))
     setError(result.ok ? '' : t.errors[result.error])
+    if (result.ok) notice(result.data.proximities)
   }
 
   const onNodeDragStop = async (_event: React.MouseEvent, node: Node) => {
@@ -187,6 +198,19 @@ export function VennekartCanvas({ persons, relationships, onAddPerson, onAddLog,
           {t.map.newPerson}
         </Button>
       </div>
+
+      {highlight.length > 1 && (
+        <div className="absolute left-1/2 top-5 z-10 flex -translate-x-1/2 items-center gap-3 rounded-[10px] border border-redpencil/40 bg-paper-raised py-1.5 pl-4 pr-1.5 text-[14px]">
+          <span className="text-redpencil">
+            {t.smallWorld.pathLabel(
+              highlight.map((id) => persons.find((p) => p.id === id)?.name.split(' ')[0] ?? '').join(' → '),
+            )}
+          </span>
+          <Link href="/" className="rounded-[8px] px-2 py-1 text-ink-muted outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-pen">
+            {t.smallWorld.hidePath}
+          </Link>
+        </div>
+      )}
 
       {error && (
         <p

@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { Button, ChipGroup, Select, Sheet } from '@/components/ui'
 import { TYPE_OPTIONS } from '@/components/person/type-options'
 import { createRelationship } from '@/server/actions/relationship'
+import { useProximityNotice } from '@/components/toast/useProximityNotice'
 import { t } from '@/i18n'
 import type { RelationshipType } from '@/types'
 
@@ -19,6 +20,7 @@ export function AddRelationshipModal({ isOpen, onClose, persons }: Props) {
   const [toId, setToId] = useState<string | null>(null)
   const [type, setType] = useState<RelationshipType>('FRIEND')
   const [saving, setSaving] = useState(false)
+  const notice = useProximityNotice()
   const [error, setError] = useState('')
 
   // En gammel feilmelding hører ikke hjemme i et nyåpnet ark.
@@ -44,6 +46,7 @@ export function AddRelationshipModal({ isOpen, onClose, persons }: Props) {
       setError(t.errors[result.error])
       return
     }
+    notice(result.data.proximities)
     setFromId(null)
     setToId(null)
     setType('FRIEND')

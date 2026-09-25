@@ -4,10 +4,13 @@ import { prisma } from '@/lib/prisma'
 import { requireUserId } from '@/server/session'
 import { NotOwnedError } from '@/server/ownership'
 import { relationshipInput, relationshipPatch, type RelationshipInput, type RelationshipPatch } from '@/server/schemas'
+import { proximitiesAfterNew, type Proximity } from '@/server/queries/proximity'
 import { assertPersonsOwned, fromDateInput, parseId, refreshAll } from './shared'
 import { fail, type ActionResult } from './result'
 
-export async function createRelationship(raw: RelationshipInput): Promise<ActionResult<{ id: string }>> {
+export async function createRelationship(
+  raw: RelationshipInput,
+): Promise<ActionResult<{ id: string; proximities: Proximity[] }>> {
   const userId = await requireUserId()
   const parsed = relationshipInput.safeParse(raw)
   if (!parsed.success) return fail('invalid')
@@ -31,8 +34,10 @@ export async function createRelationship(raw: RelationshipInput): Promise<Action
     },
     select: { id: true },
   })
+  // Gjorde dette verden mindre? Klienten sier fra om det.
+  const proximities = await proximitiesAfterNew(userId, rel.id)
   refreshAll()
-  return { ok: true, data: { id: rel.id } }
+  return { ok: true, data: { id: rel.id, proximities } }
 }
 
 /** Endre type, etikett eller tid. `until` satt til i dag avslutter relasjonen. */

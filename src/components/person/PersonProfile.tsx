@@ -172,6 +172,39 @@ export function PersonProfile({ person }: { person: PersonProfileData }) {
         )}
       </section>
 
+      {person.proximities.length > 0 && (
+        <section className={section}>
+          <SectionHeading>{t.smallWorld.title}</SectionHeading>
+          <ul className="flex flex-col gap-3">
+            {person.proximities.map((p) => (
+              <li key={p.b} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+                <span className="flex flex-wrap items-center gap-1.5 text-[15px]">
+                  {p.path.map((step, i) => (
+                    <span key={step.id} className="flex items-center gap-1.5">
+                      {i > 0 && <ArrowRight aria-hidden size={13} strokeWidth={1.75} className="text-redpencil" />}
+                      {i === 0 ? (
+                        <span>{step.name.split(' ')[0]}</span>
+                      ) : (
+                        <Link href={`/person/${step.id}`} className="hover:underline">
+                          {step.name.split(' ')[0]}
+                        </Link>
+                      )}
+                    </span>
+                  ))}
+                  <span className="text-[13px] text-ink-muted">· {t.smallWorld.steps(p.path.length - 1)}</span>
+                </span>
+                <Link
+                  href={`/?sti=${p.path.map((s) => s.id).join(',')}`}
+                  className="inline-flex min-h-11 items-center rounded-sm text-[14px] text-redpencil outline-none hover:underline focus-visible:ring-2 focus-visible:ring-pen desk:min-h-0"
+                >
+                  {t.smallWorld.showOnMap}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className={section}>
         <SectionHeading>{t.relations.title}</SectionHeading>
         <RelationshipList personId={person.id} relationships={person.relationships} people={person.people} />

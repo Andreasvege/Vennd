@@ -9,7 +9,7 @@ import type { Graph } from '@/server/queries/graph'
 import type { TagSummary } from '@/server/queries/tags'
 
 /** Kartet med arkene som hører til det: ny person og ny relasjon. */
-export function MapScreen({ graph, tags }: { graph: Graph; tags: TagSummary[] }) {
+export function MapScreen({ graph, tags, highlight }: { graph: Graph; tags: TagSummary[]; highlight?: string[] }) {
   const [sheet, setSheet] = useState<'person' | 'relationship' | null>(null)
   const openComposer = useComposer()
   const close = () => setSheet(null)
@@ -19,6 +19,7 @@ export function MapScreen({ graph, tags }: { graph: Graph; tags: TagSummary[] })
       <VennekartCanvas
         persons={graph.persons}
         relationships={graph.relationships}
+        highlight={highlight}
         onAddPerson={() => setSheet('person')}
         onAddRelationship={() => setSheet('relationship')}
         onAddLog={(personId) => openComposer({ personIds: [personId] })}

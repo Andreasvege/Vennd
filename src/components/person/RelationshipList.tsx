@@ -7,6 +7,7 @@ import { Button, ChipGroup, Select, Sheet, TextField } from '@/components/ui'
 import { formatDate, todayISO } from '@/domain/format'
 import { createRelationship, deleteRelationship, updateRelationship } from '@/server/actions/relationship'
 import { settle } from '@/server/actions/result'
+import { useProximityNotice } from '@/components/toast/useProximityNotice'
 import type { PersonProfileData } from '@/server/queries/person'
 import type { RelationshipType } from '@/types'
 import { t } from '@/i18n'
@@ -37,18 +38,19 @@ function RelationshipSheet({
   const [until, setUntil] = useState(isoOf(rel?.until ?? null))
   const [error, setError] = useState('')
   const [pending, startTransition] = useTransition()
+  const notice = useProximityNotice()
 
   const save = () =>
     startTransition(async () => {
       const fields = { type, label: label || null, since: since || null, until: until || null }
-      const result = rel
-        ? await settle(updateRelationship(rel.id, fields))
-        : other
-          ? await settle(createRelationship({ fromPersonId: personId, toPersonId: other, ...fields }))
-          : ({ ok: false, error: 'invalid' } as const)
-      if (!result.ok) {
-        setError(t.errors[result.error])
-        return
+      if (rel) {
+        const result = await settle(updateRelationship(rel.id, fields))
+        if (!result.ok) return setError(t.errors[result.error])
+      } else {
+        if (!other) return setError(t.errors.invalid)
+        const result = await settle(createRelationship({ fromPersonId: personId, toPersonId: other, ...fields }))
+        if (!result.ok) return setError(t.errors[result.error])
+        notice(result.data.proximities)
       }
       onClose()
     })

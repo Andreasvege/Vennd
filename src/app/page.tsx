@@ -8,11 +8,21 @@ import { getToday } from '@/server/queries/today'
 
 // Forsiden er «I dag» på mobil og kartet på PC (der «I dag» står i
 // panelet ved siden av). Samme rute; bredden avgjør hva som vises.
-export default async function HomePage() {
+type Props = { searchParams: Promise<{ sti?: string }> }
+
+export default async function HomePage({ searchParams }: Props) {
   const userId = await getUserId()
   if (!userId) return <Landing />
 
-  const [graph, tags, today] = await Promise.all([getGraph(userId), getTags(userId), getToday(userId)])
+  const [graph, tags, today, { sti }] = await Promise.all([
+    getGraph(userId),
+    getTags(userId),
+    getToday(userId),
+    searchParams,
+  ])
+  // «Se stien»: bare id-er som faktisk er brukerens personer.
+  const known = new Set(graph.persons.map((p) => p.id))
+  const highlight = sti?.split(',').filter((id) => known.has(id)) ?? []
 
   return (
     <>
@@ -20,7 +30,7 @@ export default async function HomePage() {
         <TodayView data={today} />
       </div>
       <div className="hidden h-full desk:block">
-        <MapScreen graph={graph} tags={tags} />
+        <MapScreen graph={graph} tags={tags} highlight={highlight} />
       </div>
     </>
   )

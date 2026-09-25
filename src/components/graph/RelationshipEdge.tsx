@@ -12,9 +12,19 @@ export type RelationshipEdgeData = {
   variant: 'spoke' | 'between'
   /** Relasjonen er over (until er satt): tegnes som en svak prikkelinje. */
   historical?: boolean
+  /** Del av en sti som vises: rødblyant. */
+  path?: boolean
+  /** En sti vises, og denne er ikke med: tones ned. */
+  dimmed?: boolean
 }
 
-function strokeFor({ type, variant, historical }: RelationshipEdgeData): React.CSSProperties {
+function strokeFor(edge: RelationshipEdgeData): React.CSSProperties {
+  if (edge.path) return { stroke: 'var(--redpencil)', strokeWidth: 2.6 }
+  const base = baseStroke(edge)
+  return edge.dimmed ? { ...base, strokeOpacity: 0.18 } : base
+}
+
+function baseStroke({ type, variant, historical }: RelationshipEdgeData): React.CSSProperties {
   // Romantiske bånd mellom andre er den ene relasjonen som får farge —
   // det er informasjonen du oftest leter etter i en vennekrets.
   const romantic = variant === 'between' && type === 'ROMANTIC'
