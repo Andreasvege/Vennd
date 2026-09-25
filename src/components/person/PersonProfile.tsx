@@ -1,131 +1,101 @@
 import Link from 'next/link'
-import { RELATIONSHIP_LABELS } from '@/lib/relationship-colors'
+import { Bell, Pencil } from 'lucide-react'
+import { Avatar } from '@/components/ui/Avatar'
+import { SectionHeading } from '@/components/ui/SectionHeading'
+import { buttonClass } from '@/components/ui/button-styles'
+import { LOG_ICON } from '@/components/log-icons'
+import { formatDate, relativeDay } from '@/domain/format'
+import { TYPE_TINT } from '@/lib/palette'
+import { t } from '@/i18n'
 import { LogContactPanel } from './LogContactPanel'
 import type { Person, Reminder, LogEntry } from '@/types'
-
-const LOG_EMOJI: Record<string, string> = {
-  MET: '☕',
-  CALLED: '📞',
-  MESSAGE: '💬',
-  OTHER: '📝',
-}
-
-const LOG_LABELS: Record<string, string> = {
-  MET: 'Møttes',
-  CALLED: 'Ringte',
-  MESSAGE: 'Melding',
-  OTHER: 'Annet',
-}
 
 export type PersonWithHistory = Person & {
   logEntries: LogEntry[]
   reminders: Reminder[]
 }
 
-const formatDate = (d: Date) =>
-  new Date(d).toLocaleDateString('no-NO', { day: 'numeric', month: 'long', year: 'numeric' })
-
-function cadenceLabel(weeks: number | null): string {
-  if (weeks === null) return 'ingen påminnelser'
-  if (weeks === 1) return 'påminnelse hver uke'
-  return `påminnelse hver ${weeks}. uke`
-}
+const section = 'border-t border-rule pt-6'
 
 /**
- * Profilinnholdet, delt mellom den fulle siden og modalen som avskjærer
+ * Profilinnholdet, delt mellom den fulle siden og arket som avskjærer
  * navigasjonen fra kartet. Server-komponent — den henter ingenting selv,
  * begge rutene sender inn ferdig data.
  */
 export function PersonProfile({ person }: { person: PersonWithHistory }) {
-  const initials = person.name
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+  const meta = [
+    t.cadence.summary(person.cadenceWeeks),
+    person.birthday && t.person.birthdayLabel(formatDate(new Date(person.birthday))),
+  ].filter(Boolean)
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="glass-card p-6 flex items-start gap-5">
-        <div
-          className="w-20 h-20 rounded-full flex items-center justify-center text-white font-bold text-2xl shrink-0"
-          style={{ backgroundColor: person.color }}
-        >
-          {initials}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-3">
-            <h1 className="text-3xl font-bold text-Text mb-1">{person.name}</h1>
-            <Link
-              href={`/person/${person.id}/edit`}
-              className="shrink-0 glass-card px-3 py-1.5 text-sm text-Text/80 hover:text-Text transition-colors"
-            >
-              Rediger
-            </Link>
-          </div>
-          <p className="text-sm text-Text/60 mb-1">
-            {RELATIONSHIP_LABELS[person.type]} · {cadenceLabel(person.cadenceWeeks)}
+    <article className="flex flex-col gap-8">
+      <header className="flex flex-col gap-5 sm:flex-row sm:items-start">
+        <Avatar name={person.name} tint={TYPE_TINT[person.type]} size="xl" />
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <p className="text-[12px] uppercase tracking-[0.14em] text-ink-muted">
+            {t.relationType[person.type]}
           </p>
-          {person.birthday && (
-            <p className="text-sm text-Text/50">Bursdag: {formatDate(person.birthday)}</p>
-          )}
-          <p className="text-xs text-Text/30 mt-1">Lagt til {formatDate(person.createdAt)}</p>
+          <h1 className="font-display text-[34px] leading-[1.05] tracking-tight text-balance sm:text-[46px]">
+            {person.name}
+          </h1>
+          <p className="text-[14px] text-ink-muted">{meta.join(' · ')}</p>
+          <Link href={`/person/${person.id}/edit`} className={`${buttonClass('secondary')} mt-2 self-start`}>
+            <Pencil aria-hidden size={15} strokeWidth={1.75} />
+            {t.common.edit}
+          </Link>
         </div>
-      </div>
+      </header>
 
       {person.notes && (
-        <div className="glass-card p-5">
-          <h2 className="text-sm font-semibold text-Text/60 uppercase tracking-wider mb-3">
-            Notat
-          </h2>
-          <p className="text-Text/80 leading-relaxed whitespace-pre-wrap">{person.notes}</p>
-        </div>
+        <section className={section}>
+          <SectionHeading>{t.person.notes}</SectionHeading>
+          <p className="whitespace-pre-wrap font-display text-[17px] leading-relaxed">{person.notes}</p>
+        </section>
       )}
 
       {person.reminders.length > 0 && (
-        <div className="glass-card p-5">
-          <h2 className="text-sm font-semibold text-Text/60 uppercase tracking-wider mb-3">
-            Påminnelser
-          </h2>
-          <div className="flex flex-col gap-2">
+        <section className={section}>
+          <SectionHeading>{t.person.reminders}</SectionHeading>
+          <ul className="flex flex-col gap-2.5">
             {person.reminders.map((r) => (
-              <div key={r.id} className="flex items-start gap-2 text-sm text-Text/70">
-                <span>{r.type === 'AUTO' ? '⏰' : '📌'}</span>
+              <li key={r.id} className="flex items-start gap-3 text-[15px]">
+                <Bell aria-hidden size={16} strokeWidth={1.75} className="mt-0.5 shrink-0 text-ink-muted" />
                 <span>{r.message}</span>
-              </div>
+              </li>
             ))}
-          </div>
-        </div>
+          </ul>
+        </section>
       )}
 
-      <div className="glass-card p-5">
+      <section className={section}>
         <LogContactPanel personId={person.id} personName={person.name} />
         {person.logEntries.length === 0 ? (
-          <p className="text-Text/30 text-sm">Ingen loggede kontakter ennå.</p>
+          <p className="text-[14px] text-ink-muted">{t.person.noLog}</p>
         ) : (
-          <div className="flex flex-col gap-3">
-            {person.logEntries.map((entry) => (
-              <div
-                key={entry.id}
-                className="flex items-start gap-3 py-2 border-b border-white/5 last:border-0"
-              >
-                <span className="text-xl mt-0.5">{LOG_EMOJI[entry.type]}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-medium text-Text">
-                      {LOG_LABELS[entry.type]}
-                    </span>
-                    <span className="text-xs text-Text/40">{formatDate(entry.date)}</span>
+          <ol className="flex flex-col">
+            {person.logEntries.map((entry) => {
+              const Icon = LOG_ICON[entry.type]
+              return (
+                // En tidslinje i margen: strek ned, blekkprikk per hendelse.
+                <li key={entry.id} className="relative border-l border-rule pb-6 pl-6 last:pb-0">
+                  <span aria-hidden className="absolute -left-[3.5px] top-[7px] size-1.5 rounded-full bg-ink" />
+                  <div className="flex items-center gap-2 text-[13px]">
+                    <Icon aria-hidden size={14} strokeWidth={1.75} className="text-ink-muted" />
+                    <span className="font-medium">{t.logType[entry.type]}</span>
+                    <time dateTime={new Date(entry.date).toISOString()} className="text-ink-muted">
+                      {relativeDay(new Date(entry.date))}
+                    </time>
                   </div>
                   {entry.notes && (
-                    <p className="text-sm text-Text/60 leading-relaxed">{entry.notes}</p>
+                    <p className="mt-1.5 font-display text-[16px] leading-relaxed">{entry.notes}</p>
                   )}
-                </div>
-              </div>
-            ))}
-          </div>
+                </li>
+              )
+            })}
+          </ol>
         )}
-      </div>
-    </div>
+      </section>
+    </article>
   )
 }

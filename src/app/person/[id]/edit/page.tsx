@@ -1,13 +1,14 @@
 import { notFound, redirect } from 'next/navigation'
-import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { getOwnedPerson } from '@/lib/person-query'
 import { EditPersonForm } from '@/components/person/EditPersonForm'
+import { BackLink } from '@/components/person/BackLink'
+import { t } from '@/i18n'
 
 type Params = { params: Promise<{ id: string }> }
 
-// Bevisst en ekte side, ikke en modal: profilen vises allerede som modal
-// over kartet, og modal oppå modal er en dårlig idé.
+// Bevisst en ekte side, ikke et ark: profilen vises allerede som ark
+// over kartet, og ark oppå ark er en dårlig idé.
 export default async function EditPersonPage({ params }: Params) {
   const session = await auth()
   if (!session?.user?.id) redirect('/')
@@ -17,14 +18,9 @@ export default async function EditPersonPage({ params }: Params) {
   if (!person) notFound()
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-8">
-      <Link
-        href={`/person/${person.id}`}
-        className="text-Text/40 hover:text-Text transition-colors text-sm mb-6 inline-block"
-      >
-        ← Tilbake til {person.name}
-      </Link>
-      <h1 className="text-2xl font-bold text-Text mb-5">Rediger {person.name}</h1>
+    <main className="mx-auto flex max-w-2xl flex-col gap-6 px-5 py-8">
+      <BackLink href={`/person/${person.id}`}>{t.person.backToProfile(person.name)}</BackLink>
+      <h1 className="font-display text-[34px] leading-tight tracking-tight">{t.person.editTitle(person.name)}</h1>
       <EditPersonForm person={person} />
     </main>
   )

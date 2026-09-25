@@ -4,15 +4,19 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Dialog, Heading, Modal, ModalOverlay } from 'react-aria-components'
 import type { ReactNode } from 'react'
+import { X } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
+import { sheetBody, sheetModal, sheetOverlay } from '@/components/ui/sheet-styles'
+import { t } from '@/i18n'
 
-// Må matche transition-varigheten under. Vi venter ut utgangsanimasjonen før
-// ruta avmonteres — router.back() river ellers elementet ut momentant, og
-// data-[exiting] rekker aldri å rendres.
-const EXIT_MS = 200
+// Må matche transition-varigheten i sheet-styles. Vi venter ut
+// utgangsanimasjonen før ruta avmonteres — router.push river ellers
+// elementet ut momentant, og data-[exiting] rekker aldri å rendres.
+const EXIT_MS = 250
 
 /**
  * Skallet rundt alt som vises over kartet. Ligger i en layout, så det
- * overlever navigasjon mellom profil og redigering — modalen blir stående
+ * overlever navigasjon mellom profil og redigering — arket blir stående
  * mens innholdet bytter.
  */
 export function PersonModalShell({ children }: { children: ReactNode }) {
@@ -20,7 +24,7 @@ export function PersonModalShell({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(true)
 
   // Tilbake til kartet, ikke router.back(): står du på redigeringssteget ville
-  // back() bare tatt deg til profilen igjen, ikke lukket modalen. Kartet ligger
+  // back() bare tatt deg til profilen igjen, ikke lukket arket. Kartet ligger
   // allerede montert under, så dette er en myk navigasjon.
   const close = () => {
     setIsOpen(false)
@@ -34,13 +38,22 @@ export function PersonModalShell({ children }: { children: ReactNode }) {
       onOpenChange={(open) => {
         if (!open) close()
       }}
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:p-8 bg-black/60 backdrop-blur-sm transition-opacity duration-200 ease-out data-[entering]:opacity-0 data-[exiting]:opacity-0"
+      className={sheetOverlay}
     >
-      <Modal className="w-full max-w-2xl my-auto transition duration-200 ease-out data-[entering]:opacity-0 data-[entering]:scale-95 data-[entering]:translate-y-3 data-[exiting]:opacity-0 data-[exiting]:scale-95 data-[exiting]:translate-y-3">
-        <Dialog className="outline-none">
+      <Modal className={sheetModal('lg')}>
+        <Dialog className={`${sheetBody} relative outline-none`}>
           <Heading slot="title" className="sr-only">
-            Profil
+            {t.person.profile}
           </Heading>
+          {/* På mobil er arket nesten hele skjermen; da trengs en tydelig vei ut. */}
+          <Button
+            variant="quiet"
+            onPress={close}
+            aria-label={t.common.close}
+            className="absolute right-2 top-2 z-10 size-11 px-0 sm:right-3 sm:top-3"
+          >
+            <X aria-hidden size={20} strokeWidth={1.75} />
+          </Button>
           {children}
         </Dialog>
       </Modal>

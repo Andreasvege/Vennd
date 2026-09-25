@@ -1,8 +1,9 @@
 import { notFound, redirect } from 'next/navigation'
-import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { getOwnedPerson } from '@/lib/person-query'
 import { PersonProfile } from '@/components/person/PersonProfile'
+import { BackLink } from '@/components/person/BackLink'
+import { t } from '@/i18n'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -15,13 +16,8 @@ export default async function PersonPage({ params }: Params) {
   if (!person) notFound()
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-8">
-      <Link
-        href="/"
-        className="text-Text/40 hover:text-Text transition-colors text-sm mb-6 inline-block"
-      >
-        ← Tilbake til kartet
-      </Link>
+    <main className="mx-auto flex max-w-2xl flex-col gap-8 px-5 py-8">
+      <BackLink href="/">{t.person.backToMap}</BackLink>
       <PersonProfile person={person} />
     </main>
   )

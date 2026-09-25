@@ -1,4 +1,5 @@
-export { Button, buttonVariants, buttonSizes } from './Button'
+export { Button } from './Button'
+export { buttonClass } from './button-styles'
 export type { ButtonProps } from './Button'
 export { TextField } from './TextField'
 export type { TextFieldProps } from './TextField'

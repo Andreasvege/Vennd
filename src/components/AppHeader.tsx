@@ -58,9 +58,13 @@ export function AppHeader() {
 
       {user && (
         <div className="flex items-center gap-3">
-          <Button variant="quiet" className="hidden desk:inline-flex" onPress={() => signOut()}>
-            {t.nav.signOut}
-          </Button>
+          {/* Omslaget styrer synligheten: knappens egen inline-flex ville
+              ellers vunnet over «hidden». */}
+          <span className="hidden desk:block">
+            <Button variant="quiet" onPress={() => signOut()}>
+              {t.nav.signOut}
+            </Button>
+          </span>
 
           <span className="hidden desk:inline-flex">
             <Avatar name={user.name ?? t.common.you} src={user.image} size="md" />

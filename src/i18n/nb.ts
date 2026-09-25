@@ -77,6 +77,7 @@ export const nb = {
   },
 
   person: {
+    profile: 'Profil',
     relationship: 'Relasjon',
     name: 'Navn',
     namePlaceholder: 'Ingrid Aas',
