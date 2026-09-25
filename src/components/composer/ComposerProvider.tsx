@@ -3,12 +3,28 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import type { ComposerData } from '@/server/queries/composer'
 import { Composer } from './Composer'
+import { PlanSheet } from './PlanSheet'
 
-type Open = (options?: { personIds?: string[] }) => void
+import type { LogEntryType } from '@/types'
+
+export type ComposerPreset = {
+  personIds?: string[]
+  type?: LogEntryType | null
+  /** YYYY-MM-DD */
+  date?: string
+  text?: string
+  /** Planen loggen følger opp («Hvordan gikk det?»). */
+  planId?: string
+}
+type Open = (options?: ComposerPreset) => void
+type OpenPlanner = (options?: { personIds?: string[] }) => void
 const ComposerContext = createContext<Open>(() => {})
+const PlannerContext = createContext<OpenPlanner>(() => {})
 
 /** Åpne skriv-arket hvor som helst: `useComposer()({ personIds: [id] })`. */
 export const useComposer = () => useContext(ComposerContext)
+/** Åpne planlegg-arket: `usePlanner()({ personIds: [id] })`. */
+export const usePlanner = () => useContext(PlannerContext)
 
 function isTyping(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
@@ -21,34 +37,44 @@ function isTyping(target: EventTarget | null): boolean {
  */
 export function ComposerProvider({ data, children }: { data: ComposerData | null; children: React.ReactNode }) {
   // Ny nøkkel per åpning: arket starter alltid rent (eller fra kladden).
-  const [session, setSession] = useState<{ key: number; personIds?: string[] } | null>(null)
+  const [session, setSession] = useState<{ key: number; preset: ComposerPreset } | null>(null)
 
-  const open = useCallback<Open>((options) => setSession({ key: Date.now(), personIds: options?.personIds }), [])
+  const open = useCallback<Open>((options) => setSession({ key: Date.now(), preset: options ?? {} }), [])
+  const [planning, setPlanning] = useState<{ key: number; personIds?: string[] } | null>(null)
+  const openPlanner = useCallback<OpenPlanner>((options) => setPlanning({ key: Date.now(), personIds: options?.personIds }), [])
 
   useEffect(() => {
     if (!data) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() !== 'n' || e.metaKey || e.ctrlKey || e.altKey) return
+      const key = e.key.toLowerCase()
+      if ((key !== 'n' && key !== 'p') || e.metaKey || e.ctrlKey || e.altKey) return
       if (isTyping(e.target) || document.querySelector('[role="dialog"]')) return
       e.preventDefault()
-      open()
+      // N skriver om noe som har skjedd; P planlegger noe som skal skje.
+      if (key === 'n') open()
+      else openPlanner()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [data, open])
+  }, [data, open, openPlanner])
 
   return (
     <ComposerContext.Provider value={open}>
+      <PlannerContext.Provider value={openPlanner}>
       {children}
+      {data && planning && (
+        <PlanSheet key={planning.key} data={data} personIds={planning.personIds} onClose={() => setPlanning(null)} />
+      )}
       {data && session && (
         <Composer
           key={session.key}
           isOpen
           onClose={() => setSession(null)}
           data={data}
-          presetPersonIds={session.personIds}
+          preset={session.preset}
         />
       )}
+      </PlannerContext.Provider>
     </ComposerContext.Provider>
   )
 }

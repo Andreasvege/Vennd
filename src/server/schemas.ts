@@ -57,6 +57,8 @@ export const logInput = z
     date: isoDate,
     type: z.enum(LOG_TYPES).nullable().optional(),
     body: z.string().max(20_000).optional(),
+    // Planen denne loggen følger opp («Hvordan gikk det?»).
+    planId: id.optional(),
     // Tråder denne loggen følger opp («fikk jobben»)…
     closeThreads: z
       .array(z.object({ id, resolution: z.string().trim().max(500).optional() }))
@@ -99,6 +101,16 @@ export const relationshipPatch = z
   .partial()
   .refine((r) => !r.since || !r.until || r.since <= r.until, { path: ['until'] })
 
+export const planInput = z.object({
+  title: z.string().trim().min(1).max(120),
+  personIds: z.array(id).min(1).max(50),
+  date: isoDate,
+  // Regnet ut i nettleseren (lokal tid → ISO), fordi serveren ikke kjenner
+  // din tidssone. Uten klokkeslett: bare datoen.
+  at: z.string().datetime().nullable().optional(),
+  type: z.enum(LOG_TYPES).nullable().optional(),
+})
+
 export const mapViewInput = z.object({
   name: z.string().trim().min(1).max(40),
   mode: z.enum(MAP_MODES),
@@ -126,4 +138,5 @@ export type TagInput = z.infer<typeof tagInput>
 export type PhaseInput = z.infer<typeof phaseInput>
 export type FactInput = z.infer<typeof factInput>
 export type MapViewInput = z.infer<typeof mapViewInput>
+export type PlanInput = z.infer<typeof planInput>
 export type RelationshipPatch = z.infer<typeof relationshipPatch>

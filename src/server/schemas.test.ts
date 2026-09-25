@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { tagName, tagInput, logInput, personInput, relationshipInput, phaseInput, factInput, relationshipPatch, mapViewInput } from './schemas'
+import { tagName, tagInput, logInput, personInput, relationshipInput, phaseInput, factInput, relationshipPatch, mapViewInput, planInput } from './schemas'
 
 describe('tagName', () => {
   it('trimmer og avviser tomme', () => {
@@ -115,5 +115,18 @@ describe('mapViewInput', () => {
     expect(mapViewInput.safeParse({ name: 'X', mode: 'globe', filter }).success).toBe(false)
     expect(mapViewInput.safeParse({ name: ' ', mode: 'network', filter }).success).toBe(false)
     expect(mapViewInput.safeParse({ name: 'X', mode: 'network', filter: {} }).success).toBe(false)
+  })
+})
+
+describe('planInput', () => {
+  it('godtar plan med og uten klokkeslett', () => {
+    expect(planInput.safeParse({ title: 'Middag', personIds: ['a'], date: '2026-10-03' }).success).toBe(true)
+    expect(
+      planInput.safeParse({ title: 'Date', personIds: ['a'], date: '2026-10-01', at: '2026-10-01T17:30:00.000Z', type: 'DATE' }).success,
+    ).toBe(true)
+  })
+  it('krever tittel og minst én person', () => {
+    expect(planInput.safeParse({ title: ' ', personIds: ['a'], date: '2026-10-03' }).success).toBe(false)
+    expect(planInput.safeParse({ title: 'X', personIds: [], date: '2026-10-03' }).success).toBe(false)
   })
 })

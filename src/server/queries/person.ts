@@ -4,6 +4,7 @@ import { currentPhase } from '@/domain/romance'
 import { personTint } from '@/lib/palette'
 import { getTags } from './tags'
 import { getProximities } from './proximity'
+import { getPersonPlans } from './plans'
 
 /** Alt profilen viser om én person. null hvis den ikke finnes eller er en annens. */
 export async function getPersonProfile(userId: string, id: string) {
@@ -61,7 +62,7 @@ export async function getPersonProfile(userId: string, id: string) {
   })
   if (!person) return null
 
-  const [closedByHand, factLabels, people, proximities] = await Promise.all([
+  const [closedByHand, factLabels, people, proximities, plans] = await Promise.all([
     // Tråder lukket med sirkelen på profilen, ikke av en logg: de hører
     // likevel hjemme i historikken.
     prisma.thread.findMany({
@@ -76,6 +77,7 @@ export async function getPersonProfile(userId: string, id: string) {
     }),
     prisma.person.findMany({ where: { userId, id: { not: id } }, orderBy: { name: 'asc' }, select: { id: true, name: true } }),
     getProximities(userId, id),
+    getPersonPlans(userId, id),
   ])
 
   const { primaryTag, tags, participations, threads, phases, relationsFrom, relationsTo, ...rest } = person
@@ -102,6 +104,7 @@ export async function getPersonProfile(userId: string, id: string) {
     factLabels: factLabels.map((f) => f.label),
     people,
     proximities,
+    plans,
   }
 }
 
