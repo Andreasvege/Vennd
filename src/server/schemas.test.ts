@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { tagName, tagInput, logInput, personInput, relationshipInput, phaseInput, factInput, relationshipPatch, mapViewInput, planInput } from './schemas'
+import { tagName, tagInput, logInput, personInput, relationshipInput, phaseInput, factInput, relationshipPatch, mapViewInput, planInput, contactImport, eventImport, IMPORT_MAX } from './schemas'
 
 describe('tagName', () => {
   it('trimmer og avviser tomme', () => {
@@ -128,5 +128,28 @@ describe('planInput', () => {
   it('krever tittel og minst én person', () => {
     expect(planInput.safeParse({ title: ' ', personIds: ['a'], date: '2026-10-03' }).success).toBe(false)
     expect(planInput.safeParse({ title: 'X', personIds: [], date: '2026-10-03' }).success).toBe(false)
+  })
+})
+
+describe('import', () => {
+  const contact = { name: 'Kari Nordmann', birthday: '1900-02-03', phone: null, email: null, note: null }
+
+  it('godtar kontakter med ukjent år (1900) og tomme felt', () => {
+    expect(contactImport.safeParse({ contacts: [contact], tagIds: [], remind: false }).success).toBe(true)
+  })
+
+  it('avviser tomme navn, ugyldige datoer og for store importer', () => {
+    expect(contactImport.safeParse({ contacts: [{ ...contact, name: '  ' }], tagIds: [], remind: false }).success).toBe(false)
+    expect(contactImport.safeParse({ contacts: [{ ...contact, birthday: '1995-02-30' }], tagIds: [], remind: false }).success).toBe(false)
+    const many = Array.from({ length: IMPORT_MAX + 1 }, () => contact)
+    expect(contactImport.safeParse({ contacts: many, tagIds: [], remind: false }).success).toBe(false)
+  })
+
+  it('krever minst én person per hendelse og et gyldig tidspunkt', () => {
+    const event = { kind: 'log', title: 'Konsert', description: null, personIds: ['p1'], date: '2026-09-20', at: null }
+    expect(eventImport.safeParse({ events: [event] }).success).toBe(true)
+    expect(eventImport.safeParse({ events: [{ ...event, personIds: [] }] }).success).toBe(false)
+    expect(eventImport.safeParse({ events: [{ ...event, at: 'i kveld' }] }).success).toBe(false)
+    expect(eventImport.safeParse({ events: [{ ...event, kind: 'task' }] }).success).toBe(false)
   })
 })
