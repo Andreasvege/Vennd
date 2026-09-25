@@ -6,6 +6,7 @@ import { ArrowRight, CalendarPlus, Cake, PenLine } from 'lucide-react'
 import { Avatar, Button, EmptyState, SectionHeading } from '@/components/ui'
 import { useComposer, usePlanner } from '@/components/composer/ComposerProvider'
 import { BriefSheet } from './BriefSheet'
+import { SuggestionList } from '@/components/suggestions/SuggestionList'
 import { useIsClient } from '@/components/useIsClient'
 import { birthdayLabel, whenLabel } from './when'
 import { cancelPlan } from '@/server/actions/plan'
@@ -165,6 +166,9 @@ export function TodayView({ data }: { data: TodayData }) {
           {error}
         </p>
       )}
+
+      {/* Rett under skriveboksen: forslagene hører til det du nettopp skrev. */}
+      <SuggestionList items={data.suggestions} />
 
       {awaiting.length > 0 && (
         <section>

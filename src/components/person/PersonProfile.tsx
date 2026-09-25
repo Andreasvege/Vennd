@@ -18,6 +18,7 @@ import { pathHref } from '@/app/kart/sti'
 import { PhaseStripe } from './PhaseStripe'
 import { ThreadList } from './ThreadList'
 import { rhythm } from '@/domain/insight'
+import { SuggestionList } from '@/components/suggestions/SuggestionList'
 
 const section = 'border-t border-rule pt-6'
 
@@ -127,6 +128,12 @@ export function PersonProfile({ person }: { person: PersonProfileData }) {
           </Link>
         </div>
       </header>
+
+      {person.suggestions.length > 0 && (
+        <div className={section}>
+          <SuggestionList items={person.suggestions} />
+        </div>
+      )}
 
       {person.openThreads.length > 0 && (
         <section className={section}>
