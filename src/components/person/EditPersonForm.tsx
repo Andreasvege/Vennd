@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, ChipGroup, Select, TextField } from '@/components/ui'
-import { DEFAULT_CADENCE_WEEKS } from '@/lib/cadence'
+import { DEFAULT_CADENCE_WEEKS } from '@/domain/cadence'
 import { TYPE_TINT } from '@/lib/palette'
 import { t } from '@/i18n'
 import type { Person, RelationshipType } from '@/types'

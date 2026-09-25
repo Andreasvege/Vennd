@@ -8,7 +8,7 @@ import {
   cadenceToOption,
   type CadenceOption,
 } from '@/components/person/cadence-options'
-import { DEFAULT_CADENCE_WEEKS } from '@/lib/cadence'
+import { DEFAULT_CADENCE_WEEKS } from '@/domain/cadence'
 import { TYPE_TINT } from '@/lib/palette'
 import { t } from '@/i18n'
 import type { RelationshipType } from '@/types'
