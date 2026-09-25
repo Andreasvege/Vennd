@@ -82,6 +82,59 @@ export const nb = {
     empty: 'Ingen logger i perioden ennå. Innsikten bygger seg opp etter hvert som du skriver.',
   },
 
+  import: {
+    title: 'Importer',
+    lead: 'Hent inn folk fra kontaktene dine og treff fra kalenderen. Filen leses på enheten din; bare det du velger, lagres.',
+    link: 'Importer kontakter og kalender',
+    settingsHint: 'Fra en vCard- eller kalenderfil.',
+    contacts: 'Kontakter',
+    calendar: 'Kalender',
+    dropContacts: 'Slipp en kontaktfil (.vcf) her',
+    dropCalendar: 'Slipp en kalenderfil (.ics) her',
+    choose: 'Velg fil',
+    howContacts: 'På iPhone: Kontakter → Lister → hold på «Alle kontakter» → Eksporter. Google: contacts.google.com → Eksporter → vCard.',
+    howCalendar: 'Google Kalender: Innstillinger → Importer og eksporter → Eksporter. Outlook og Apple Kalender: Fil → Eksporter.',
+    noContacts: 'Fant ingen kontakter i filen. Eksporter som vCard (.vcf) fra Kontakter og prøv igjen.',
+    noEvents: 'Fant ingen hendelser med folk du kjenner. Legg til personene først, eller prøv en annen periode.',
+    readFailed: 'Kunne ikke lese filen. Er det en tekstfil (.vcf eller .ics)?',
+    otherFile: 'Velg en annen fil',
+    selectNew: 'Velg alle nye',
+    allExist: 'Alt i filen finnes allerede.',
+    selectNone: 'Velg ingen',
+    status: { new: 'ny', exists: 'finnes', 'add-birthday': 'legg til bursdag', duplicate: 'finnes' } as Record<string, string>,
+    tags: 'Tagger for de nye',
+    remind: 'Påminnelse hver 4. uke for de nye',
+    remindHint: 'Av som standard, så I dag ikke fylles av purringer. Sett påminnelse på dem som betyr noe.',
+    willBe: { log: 'logg', plan: 'plan' },
+    period: 'Periode',
+    lastYear: 'Siste 12 måneder og framover',
+    everything: 'Alt',
+    skippedRecurring: (n: number) => `${n} gjentakende ${n === 1 ? 'hendelse' : 'hendelser'} er hoppet over.`,
+    importContacts: (n: number) => `Importer ${n} ${n === 1 ? 'kontakt' : 'kontakter'}`,
+    importEvents: (logs: number, plans: number) =>
+      `Importer ${[logs && `${logs} ${logs === 1 ? 'logg' : 'logger'}`, plans && `${plans} ${plans === 1 ? 'plan' : 'planer'}`]
+        .filter(Boolean)
+        .join(' og ') || 'ingenting'}`,
+    doneContacts: (created: number, birthdays: number, skipped: number) =>
+      [
+        `Importerte ${created} ${created === 1 ? 'person' : 'personer'}.`,
+        birthdays ? `La til bursdag på ${birthdays}.` : '',
+        skipped ? `${skipped} fantes fra før.` : '',
+      ]
+        .filter(Boolean)
+        .join(' '),
+    doneEvents: (logs: number, plans: number, skipped: number) =>
+      [`Importerte ${logs} ${logs === 1 ? 'logg' : 'logger'} og ${plans} ${plans === 1 ? 'plan' : 'planer'}.`, skipped ? `${skipped} fantes fra før.` : '']
+        .filter(Boolean)
+        .join(' '),
+    toMap: 'Se kartet',
+    toLog: 'Se loggen',
+    phoneLabel: 'Telefon',
+    emailLabel: 'E-post',
+    untitled: 'Treff',
+    selected: (n: number, total: number) => `${n} av ${total} valgt`,
+  },
+
   rhythm: {
     every: (days: number) => {
       if (days <= 1) return 'hver dag'

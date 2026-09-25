@@ -10,8 +10,8 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from 'react-aria-components'
-import { Check, Plus, X } from 'lucide-react'
-import { Avatar, Button, ChipGroup, Select, Sheet, TextField } from '@/components/ui'
+import { Plus, X } from 'lucide-react'
+import { Avatar, Button, CheckMark, checkRow, ChipGroup, Select, Sheet, TextField } from '@/components/ui'
 import { chipBase } from '@/components/ui/Chip'
 import { fieldControl, fieldLabel } from '@/components/ui/TextField'
 import { useToast } from '@/components/toast/ToastProvider'
@@ -320,11 +320,9 @@ export function Composer({ isOpen, onClose, data, preset = {} }: Props) {
                   <Checkbox
                     isSelected={checked}
                     onChange={(on) => toggleClosing(th.id, on)}
-                    className="group flex min-h-11 cursor-pointer items-center gap-3 text-[15px] outline-none desk:min-h-9"
+                    className={checkRow}
                   >
-                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full border-[1.5px] border-ink group-data-[selected]:bg-ink group-data-[focus-visible]:ring-2 group-data-[focus-visible]:ring-pen group-data-[focus-visible]:ring-offset-2 group-data-[focus-visible]:ring-offset-paper-raised">
-                      <Check aria-hidden size={12} strokeWidth={3} className="hidden text-paper group-data-[selected]:block" />
-                    </span>
+                    <CheckMark shape="round" />
                     <span className="group-data-[selected]:text-ink-muted group-data-[selected]:line-through">
                       {th.title}
                     </span>

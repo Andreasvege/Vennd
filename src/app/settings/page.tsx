@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { requireUserId } from '@/server/session'
 import { getTags } from '@/server/queries/tags'
@@ -33,6 +34,14 @@ export default async function SettingsPage() {
         <SectionHeading>{t.settings.tags}</SectionHeading>
         <p className="mb-2 text-[14px] text-ink-muted">{t.tags.hint}</p>
         <TagSettings tags={tags} />
+      </section>
+
+      <section className={section}>
+        <SectionHeading>{t.import.title}</SectionHeading>
+        <p className="mb-2 text-[14px] text-ink-muted">{t.import.settingsHint}</p>
+        <Link href="/import" className="text-[15px] text-pen underline-offset-4 hover:underline">
+          {t.import.link}
+        </Link>
       </section>
 
       <section className={section}>

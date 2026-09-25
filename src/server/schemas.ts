@@ -140,3 +140,44 @@ export type FactInput = z.infer<typeof factInput>
 export type MapViewInput = z.infer<typeof mapViewInput>
 export type PlanInput = z.infer<typeof planInput>
 export type RelationshipPatch = z.infer<typeof relationshipPatch>
+
+// Import: radene brukeren valgte i forhåndsvisningen. Filen er lest i
+// nettleseren; serveren sjekker duplikater på nytt før noe lagres.
+export const IMPORT_MAX = 1000
+
+export const contactImport = z.object({
+  contacts: z
+    .array(
+      z.object({
+        name: z.string().trim().min(1).max(120),
+        birthday: isoDate.nullable(),
+        phone: z.string().trim().max(200).nullable(),
+        email: z.string().trim().max(200).nullable(),
+        note: z.string().max(10_000).nullable(),
+      }),
+    )
+    .min(1)
+    .max(IMPORT_MAX),
+  tagIds: z.array(id).max(50),
+  remind: z.boolean(),
+})
+
+export const eventImport = z.object({
+  events: z
+    .array(
+      z.object({
+        kind: z.enum(['log', 'plan']),
+        title: z.string().trim().max(500),
+        description: z.string().max(10_000).nullable(),
+        personIds: z.array(id).min(1).max(50),
+        // Dagen i din kalender, og tidspunktet (ISO) når hendelsen har klokkeslett.
+        date: isoDate,
+        at: z.string().datetime().nullable(),
+      }),
+    )
+    .min(1)
+    .max(IMPORT_MAX),
+})
+
+export type ContactImport = z.infer<typeof contactImport>
+export type EventImport = z.infer<typeof eventImport>
