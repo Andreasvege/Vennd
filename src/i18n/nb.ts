@@ -135,6 +135,12 @@ export const nb = {
     selected: (n: number, total: number) => `${n} av ${total} valgt`,
   },
 
+  exportData: {
+    title: 'Dine data',
+    hint: 'Alt du har skrevet i ett JSON-dokument: personer, logger, tråder, planer, tagger og visninger.',
+    download: 'Last ned alt (JSON)',
+  },
+
   suggestions: {
     title: 'Forslag',
     from: 'fra Claude',
