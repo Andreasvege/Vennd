@@ -19,6 +19,9 @@ export const nb = {
 
   nav: {
     map: 'Kart',
+    today: 'I dag',
+    log: 'Logg',
+    tabs: 'Faner',
     settings: 'Innstillinger',
     signIn: 'Logg inn med Google',
     signOut: 'Logg ut',
@@ -68,6 +71,39 @@ export const nb = {
     PARTNER: 'Kjærester',
     ENDED: 'Avsluttet',
     label: 'Fase',
+  },
+
+  composer: {
+    title: 'Ny logg',
+    open: 'Skriv',
+    openHint: 'Skriv (N)',
+    prompt: 'Hva skjedde, og med hvem?',
+    text: 'Hva skjedde?',
+    today: 'I dag',
+    yesterday: 'I går',
+    otherDay: 'Annen dag',
+    when: 'Når',
+    type: 'Type',
+    with: 'Med',
+    addPerson: 'Legg til person',
+    newPerson: (name: string) => `Legg til «${name}» som ny person`,
+    removePerson: (name: string) => `Fjern ${name}`,
+    didYouMean: (word: string) => `Hvilken ${word}?`,
+    openThreads: 'Åpne tråder med dem',
+    followedUp: (title: string) => `Fulgt opp: ${title}`,
+    howItWent: 'Hvordan gikk det?',
+    howItWentPlaceholder: 'Fikk jobben',
+    followUp: 'Noe å følge opp?',
+    followUpPlaceholder: 'Første uka i ny jobb',
+    followUpAbout: 'Gjelder',
+    removeFollowUp: 'Fjern linjen',
+    save: 'Lagre',
+    saveHint: '⌘ Enter',
+    needPerson: 'Velg minst én person loggen gjelder.',
+    saved: (closed: number, opened: number) =>
+      ['Lagret.', closed > 0 && `${closed === 1 ? '1 tråd' : `${closed} tråder`} fulgt opp.`, opened > 0 && `${opened === 1 ? '1 ny tråd' : `${opened} nye tråder`}.`]
+        .filter(Boolean)
+        .join(' '),
   },
 
   errors: {
@@ -191,6 +227,26 @@ export const nb = {
     add: 'Legg til relasjon',
     samePerson: 'Velg to forskjellige personer.',
     failed: 'Relasjonen ble ikke lagt til. Prøv igjen.',
+  },
+
+  today: {
+    title: 'I dag',
+    upcoming: 'Kommende',
+    reach: 'Bør ta kontakt',
+    recent: 'Sist logget',
+    seeAll: 'Se alle logger',
+    logWith: (name: string) => `Logg med ${name.split(' ')[0]}`,
+    emptyTitle: 'Kartet ditt er tomt',
+    emptyBody: 'Skriv om noen du har truffet i det siste. Du kan legge dem til mens du skriver.',
+    emptyAction: 'Skriv første logg',
+    quiet: 'Ingen du bør ta kontakt med akkurat nå.',
+    showMore: (n: number) => `Vis ${n} til`,
+  },
+
+  logPage: {
+    title: 'Logg',
+    older: 'Vis eldre',
+    empty: 'Ingen logger ennå.',
   },
 
   reminders: {

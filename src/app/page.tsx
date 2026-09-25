@@ -1,23 +1,27 @@
 import { Landing } from '@/components/Landing'
-import { HomeClient } from '@/components/HomeClient'
+import { MapScreen } from '@/components/MapScreen'
+import { TodayView } from '@/components/today/TodayView'
 import { getUserId } from '@/server/session'
 import { getGraph } from '@/server/queries/graph'
-import { getReminders } from '@/server/queries/reminders'
-import { getRecentLogs } from '@/server/queries/log'
 import { getTags } from '@/server/queries/tags'
+import { getToday } from '@/server/queries/today'
 
+// Forsiden er «I dag» på mobil og kartet på PC (der «I dag» står i
+// panelet ved siden av). Samme rute; bredden avgjør hva som vises.
 export default async function HomePage() {
   const userId = await getUserId()
   if (!userId) return <Landing />
 
-  // Alt forsiden trenger, i parallell: én rundtur til databasen i stedet
-  // for fire klientkall etter at siden har lastet.
-  const [graph, reminders, logs, tags] = await Promise.all([
-    getGraph(userId),
-    getReminders(userId),
-    getRecentLogs(userId),
-    getTags(userId),
-  ])
+  const [graph, tags, today] = await Promise.all([getGraph(userId), getTags(userId), getToday(userId)])
 
-  return <HomeClient graph={graph} reminders={reminders} logs={logs} tags={tags} />
+  return (
+    <>
+      <div className="desk:hidden">
+        <TodayView data={today} />
+      </div>
+      <div className="hidden h-full desk:block">
+        <MapScreen graph={graph} tags={tags} />
+      </div>
+    </>
+  )
 }

@@ -9,7 +9,7 @@ import { formatDate } from '@/domain/format'
 import { isTagColor, tagStroke } from '@/lib/palette'
 import type { PersonProfileData } from '@/server/queries/person'
 import { t } from '@/i18n'
-import { LogContactPanel } from './LogContactPanel'
+import { LogWithButton } from './LogWithButton'
 import { PhaseStripe } from './PhaseStripe'
 import { ThreadList } from './ThreadList'
 
@@ -93,7 +93,9 @@ export function PersonProfile({ person }: { person: PersonProfileData }) {
       )}
 
       <section className={section}>
-        <LogContactPanel personId={person.id} personName={person.name} />
+        <SectionHeading action={<LogWithButton personId={person.id} name={person.name} />}>
+          {t.person.log}
+        </SectionHeading>
         {person.logs.length === 0 ? (
           <p className="text-[14px] text-ink-muted">{t.person.noLog}</p>
         ) : (
