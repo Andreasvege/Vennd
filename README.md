@@ -16,7 +16,7 @@ zod · Vitest
 
 ```bash
 npm install
-cp .env.example .env.local   # fyll inn Neon- og Google-OAuth-verdier
+cp .env.example .env.local   # fyll inn database- og Google-OAuth-verdier
 npx prisma migrate deploy    # kjør migrasjoner mot databasen
 npm run dev
 ```
