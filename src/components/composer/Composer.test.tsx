@@ -74,3 +74,14 @@ it('legger ikke til igjen en person du har fjernet', async () => {
   await user.type(text, ' og Martin igjen')
   expect(screen.queryByRole('button', { name: 'Fjern Martin Nilsen' })).not.toBeInTheDocument()
 })
+
+it('gjenoppretter en kladd, og lar deg forkaste den', async () => {
+  localStorage.setItem('composer-draft', JSON.stringify({ text: 'Halvskrevet', personIds: ['martin'], newThreads: [] }))
+  const { user } = setup()
+  expect(screen.getByRole('textbox', { name: 'Hva skjedde?' })).toHaveValue('Halvskrevet')
+  expect(screen.getByRole('button', { name: 'Fjern Martin Nilsen' })).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Forkast kladd' }))
+  expect(screen.getByRole('textbox', { name: 'Hva skjedde?' })).toHaveValue('')
+  expect(localStorage.getItem('composer-draft')).toBeNull()
+})

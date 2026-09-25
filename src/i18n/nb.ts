@@ -99,6 +99,8 @@ export const nb = {
     removeFollowUp: 'Fjern linjen',
     save: 'Lagre',
     saveHint: '⌘ Enter',
+    draftRestored: 'Fortsetter der du slapp.',
+    discardDraft: 'Forkast kladd',
     needPerson: 'Velg minst én person loggen gjelder.',
     saved: (closed: number, opened: number) =>
       ['Lagret.', closed > 0 && `${closed === 1 ? '1 tråd' : `${closed} tråder`} fulgt opp.`, opened > 0 && `${opened === 1 ? '1 ny tråd' : `${opened} nye tråder`}.`]

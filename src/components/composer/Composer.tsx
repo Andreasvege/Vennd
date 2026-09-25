@@ -61,6 +61,7 @@ export function Composer({ isOpen, onClose, data, presetPersonIds }: Props) {
   const draft = useDraft()
   // Kladden leses én gang, når arket åpnes uten forhåndsvalgte personer.
   const [restored] = useState(() => (presetPersonIds?.length ? null : draft.load()))
+  const [showRestored, setShowRestored] = useState(Boolean(restored))
 
   const [extraPersons, setExtraPersons] = useState<ComposerPerson[]>([])
   const persons = useMemo(() => [...data.persons, ...extraPersons], [data.persons, extraPersons])
@@ -97,6 +98,16 @@ export function Composer({ isOpen, onClose, data, presetPersonIds }: Props) {
     if (presetPersonIds?.length) return
     draft.save({ text, personIds, newThreads: newThreads.map(({ title, personIds }) => ({ title, personIds })) })
   }, [text, personIds, newThreads, presetPersonIds, draft])
+
+  const discard = () => {
+    draft.clear()
+    setText('')
+    setChosen([])
+    setDismissed(new Set())
+    setNewThreads([])
+    setClosing(new Map())
+    setShowRestored(false)
+  }
 
   const addPerson = (id: string) => {
     setChosen((prev) => (prev.includes(id) ? prev : [...prev, id]))
@@ -200,6 +211,15 @@ export function Composer({ isOpen, onClose, data, presetPersonIds }: Props) {
             <TextField label={t.log.date} type="date" value={otherDate} onChange={setOtherDate} className="w-44" />
           )}
         </div>
+
+        {showRestored && (
+          <div className="-mb-2 flex items-center justify-between gap-3 text-[13px] text-ink-muted">
+            <span>{t.composer.draftRestored}</span>
+            <Button variant="quiet" size="sm" onPress={discard} className="-mr-2.5">
+              {t.composer.discardDraft}
+            </Button>
+          </div>
+        )}
 
         <AriaTextField value={text} onChange={setText} className="flex flex-col" autoFocus>
           <Label className="sr-only">{t.composer.text}</Label>
