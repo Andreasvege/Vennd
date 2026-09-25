@@ -366,7 +366,7 @@ export function Composer({ isOpen, onClose, data, preset = {} }: Props) {
                   variant="quiet"
                   aria-label={t.composer.removeFollowUp}
                   onPress={() => setNewThreads((prev) => prev.filter((l) => l.key !== line.key))}
-                  className="size-11 px-0"
+                  size="icon"
                 >
                   <X aria-hidden size={16} strokeWidth={1.75} />
                 </Button>

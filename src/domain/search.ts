@@ -23,15 +23,19 @@ export type Interpretation = {
  * sa om intervjuet, ikke alle logger med ordet.
  */
 export function interpretQuery(q: string, persons: { id: string; name: string }[]): Interpretation {
-  const words = fold(q).split(/\s+/).filter(Boolean)
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean)
   const kept = words.length === 1 ? words : words.filter((w) => w.length >= 2)
   const names = persons.map((p) => ({ id: p.id, parts: fold(p.name).split(/\s+/) }))
 
   const people: string[][] = []
   const terms: string[] = []
   for (const word of kept) {
-    const ids = word.length >= NAME_MIN ? names.filter((n) => n.parts.some((part) => part.startsWith(word))).map((n) => n.id) : []
+    const folded = fold(word)
+    const ids =
+      folded.length >= NAME_MIN ? names.filter((n) => n.parts.some((part) => part.startsWith(folded))).map((n) => n.id) : []
     if (ids.length) people.push(ids)
+    // Fritekst beholder aksentene: databasen sammenligner uten store
+    // bokstaver, men «café» skal finne «café».
     else terms.push(word)
   }
   return { people, terms }

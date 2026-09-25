@@ -47,7 +47,8 @@ export function PanelSheet({ children, label }: { children: React.ReactNode; lab
           variant="quiet"
           onPress={() => router.back()}
           aria-label={t.common.close}
-          className="absolute right-2 top-2 z-10 size-11 px-0"
+          size="icon"
+          className="absolute right-2 top-2 z-10"
         >
           <X aria-hidden size={20} strokeWidth={1.75} />
         </Button>

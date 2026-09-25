@@ -34,7 +34,8 @@ export function Sheet({ title, children, size = 'md', isDismissable = true, ...p
                   variant="quiet"
                   onPress={close}
                   aria-label={t.common.close}
-                  className="-mr-2 size-11 px-0"
+                  size="icon"
+                  className="-mr-2"
                 >
                   <X aria-hidden size={20} strokeWidth={1.75} />
                 </Button>

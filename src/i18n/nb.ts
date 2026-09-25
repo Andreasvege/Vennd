@@ -27,6 +27,71 @@ export const nb = {
     signOut: 'Logg ut',
     account: 'Konto',
     main: 'Hovedmeny',
+    insight: 'Innsikt',
+  },
+
+  search: {
+    open: 'Søk',
+    openHint: 'Søk (⌘K)',
+    label: 'Søk',
+    placeholder: 'Søk etter folk, samtaler og tråder',
+    hint: 'Søk etter folk, samtaler, tråder og planer. Skriv et navn for å se alt om én person.',
+    persons: 'Personer',
+    logs: 'Logger',
+    threads: 'Tråder',
+    plans: 'Planer',
+    allInLog: 'Se alle i loggen',
+    noHits: (q: string) => `Ingen treff på «${q}»`,
+    writeIt: (q: string) => `Skriv en logg: «${q}»`,
+    closed: 'lukket',
+    failed: 'Søket feilet. Prøv igjen.',
+  },
+
+  insight: {
+    title: 'Innsikt',
+    period: 'Periode',
+    periods: { 30: '30 dager', 90: '3 måneder', 365: '12 måneder' } as Record<number, string>,
+    unseen: 'Hvem har du ikke sett?',
+    unseenLead: 'Alle som ikke har vært med i en logg de siste tre månedene.',
+    allSeen: 'Du har sett alle de siste tre månedene.',
+    bands: { year: 'Over et år', half: 'Et halvt år', quarter: 'Tre måneder', never: 'Aldri logget' },
+    last: (date: string) => `sist ${date}`,
+    noReminder: 'ingen påminnelse',
+    showAll: (n: number) => `Vis alle ${n}`,
+    log: 'Logg',
+    plan: 'Planlegg',
+    time: 'Hvor tiden går',
+    byTag: 'Miljøer',
+    untagged: 'Uten tagg',
+    overlapNote: 'En logg med folk fra flere miljøer teller for hvert av dem.',
+    types: (parts: string[]) => (parts.length ? `${parts.join(', ')}.` : ''),
+    typeCount: {
+      MET: (n: number) => `${n} treff`,
+      CALLED: (n: number) => `${n} ${n === 1 ? 'samtale' : 'samtaler'}`,
+      MESSAGE: (n: number) => `${n} ${n === 1 ? 'melding' : 'meldinger'}`,
+      DATE: (n: number) => `${n} ${n === 1 ? 'date' : 'dater'}`,
+      OTHER: (n: number) => `${n} annet`,
+    },
+    often: 'Oftest',
+    times: (n: number) => `${n} ${n === 1 ? 'gang' : 'ganger'}`,
+    weeks: 'Uke for uke',
+    weekSummary: (avg: string, week: number, max: number) =>
+      max === 0 ? 'Ingen logger i perioden.' : `Snitt ${avg} logger i uka. Travleste uke: uke ${week}, ${max} logger.`,
+    weekCol: 'Uke',
+    countCol: 'Logger',
+    empty: 'Ingen logger i perioden ennå. Innsikten bygger seg opp etter hvert som du skriver.',
+  },
+
+  rhythm: {
+    every: (days: number) => {
+      if (days <= 1) return 'hver dag'
+      if (days < 14) return `hver ${days}. dag`
+      const weeks = Math.round(days / 7)
+      if (days < 60) return weeks === 1 ? 'hver uke' : `hver ${weeks}. uke`
+      const months = Math.round(days / 30)
+      return months === 1 ? 'hver måned' : `hver ${months}. måned`
+    },
+    together: (every: string) => `Dere ses omtrent ${every}`,
   },
 
   landing: {
@@ -378,6 +443,9 @@ export const nb = {
     title: 'Logg',
     older: 'Vis eldre',
     empty: 'Ingen logger ennå.',
+    filtered: (q: string) => `Treff på «${q}»`,
+    noHits: 'Ingen logger passer søket.',
+    clear: 'Vis hele loggen',
   },
 
   reminders: {

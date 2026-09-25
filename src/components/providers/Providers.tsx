@@ -6,6 +6,7 @@ import { RouterProvider } from 'react-aria-components'
 import { SessionProvider } from 'next-auth/react'
 import { readTheme, syncThemeColor } from '@/components/theme'
 import { ComposerProvider } from '@/components/composer/ComposerProvider'
+import { SearchProvider } from '@/components/search/SearchProvider'
 import { ToastProvider } from '@/components/toast/ToastProvider'
 import type { ComposerData } from '@/server/queries/composer'
 
@@ -27,7 +28,11 @@ export function Providers({ children, composer }: { children: React.ReactNode; c
     <RouterProvider navigate={router.push}>
       <SessionProvider>
         <ToastProvider>
-          <ComposerProvider data={composer}>{children}</ComposerProvider>
+          <ComposerProvider data={composer}>
+            {/* Innenfor skriving: «Skriv en logg» fra et tomt søk åpner skriv-arket.
+                Uten innlogging (forsiden) finnes ingenting å søke i. */}
+            {composer ? <SearchProvider>{children}</SearchProvider> : children}
+          </ComposerProvider>
         </ToastProvider>
       </SessionProvider>
     </RouterProvider>

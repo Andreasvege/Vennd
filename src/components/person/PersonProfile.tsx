@@ -31,7 +31,8 @@ type Log = PersonProfileData['logs'][number]
 function LogItem({ entry }: { entry: Log }) {
   const Icon = LOG_ICON[entry.type ?? 'OTHER']
   return (
-    <li className="relative border-l border-rule pb-6 pl-6 last:pb-0">
+    // Id-en er målet for søketreff (#logg-…).
+    <li id={`logg-${entry.id}`} className="relative scroll-mt-24 border-l border-rule pb-6 pl-6 last:pb-0">
       <span aria-hidden className="absolute -left-[3.5px] top-[7px] size-1.5 rounded-full bg-ink" />
       <div className="flex flex-wrap items-center gap-x-2 text-[13px]">
         <Icon aria-hidden size={14} strokeWidth={1.75} className="text-ink-muted" />

@@ -6,6 +6,7 @@ import { Composer } from './Composer'
 import { PlanSheet } from './PlanSheet'
 
 import type { LogEntryType } from '@/types'
+import { shouldIgnoreShortcut } from '@/components/shortcuts'
 
 export type ComposerPreset = {
   personIds?: string[]
@@ -26,10 +27,6 @@ export const useComposer = () => useContext(ComposerContext)
 /** Åpne planlegg-arket: `usePlanner()({ personIds: [id] })`. */
 export const usePlanner = () => useContext(PlannerContext)
 
-function isTyping(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false
-  return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
-}
 
 /**
  * Eier skriv-arket og snarveien N. Dataene (personer og åpne tråder) kommer
@@ -48,7 +45,7 @@ export function ComposerProvider({ data, children }: { data: ComposerData | null
     const onKey = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase()
       if ((key !== 'n' && key !== 'p') || e.metaKey || e.ctrlKey || e.altKey) return
-      if (isTyping(e.target) || document.querySelector('[role="dialog"]')) return
+      if (shouldIgnoreShortcut(e)) return
       e.preventDefault()
       // N skriver om noe som har skjedd; P planlegger noe som skal skje.
       if (key === 'n') open()

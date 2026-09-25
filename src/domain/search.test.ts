@@ -41,6 +41,10 @@ describe('interpretQuery', () => {
     expect(interpretQuery('soren', persons).people).toEqual([])
   })
 
+  it('finner navn uten å bry seg om aksenter, men beholder dem i fritekst', () => {
+    expect(interpretQuery('Café Martín', persons)).toEqual({ people: [['martin']], terms: ['café'] })
+  })
+
   it('gir tomt resultat for tomt søk', () => {
     expect(interpretQuery('   ', persons)).toEqual({ people: [], terms: [] })
   })
