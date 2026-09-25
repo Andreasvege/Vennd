@@ -91,7 +91,7 @@ export const nb = {
       const months = Math.round(days / 30)
       return months === 1 ? 'hver måned' : `hver ${months}. måned`
     },
-    together: (every: string) => `Dere ses omtrent ${every}`,
+    together: (every: string) => `Ses omtrent ${every}`,
   },
 
   landing: {

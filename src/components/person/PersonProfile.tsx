@@ -17,6 +17,7 @@ import { PersonAhead } from './PersonAhead'
 import { pathHref } from '@/app/kart/sti'
 import { PhaseStripe } from './PhaseStripe'
 import { ThreadList } from './ThreadList'
+import { rhythm } from '@/domain/insight'
 
 const section = 'border-t border-rule pt-6'
 
@@ -80,8 +81,10 @@ export function PersonProfile({ person }: { person: PersonProfileData }) {
     })),
   ].sort((a, b) => b.date.getTime() - a.date.getTime())
 
+  const every = rhythm(person.logs.map((l) => new Date(l.date)))
   const meta = [
     t.cadence.summary(person.cadenceWeeks),
+    every !== null && t.rhythm.together(t.rhythm.every(every)),
     person.birthday && t.person.birthdayLabel(formatDate(new Date(person.birthday))),
   ].filter(Boolean)
 
