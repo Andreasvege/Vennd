@@ -9,6 +9,7 @@ import { getLogPage } from '@/server/queries/log'
 import { interpretFor, logFilter } from '@/server/queries/search'
 import { snippet } from '@/domain/search'
 import { Marked } from '@/components/Marked'
+import { EditLogButton } from '@/components/composer/EditLogButton'
 import { t } from '@/i18n'
 
 type Props = { searchParams: Promise<{ for?: string; q?: string }> }
@@ -62,6 +63,13 @@ export default async function LogPage({ searchParams }: Props) {
                     </span>
                   ))}
                   <RelativeDay date={entry.date} className="text-ink-muted" />
+                  <EditLogButton
+                    id={entry.id}
+                    body={entry.body}
+                    date={entry.date}
+                    type={entry.type}
+                    personIds={entry.participants.map((p) => p.id)}
+                  />
                 </p>
                 {entry.body && (
                   <p className="mt-1.5 font-display text-[17px] leading-relaxed">

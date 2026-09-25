@@ -135,6 +135,12 @@ export const nb = {
     selected: (n: number, total: number) => `${n} av ${total} valgt`,
   },
 
+  exportData: {
+    title: 'Dine data',
+    hint: 'Alt du har skrevet i ett JSON-dokument: personer, logger, tråder, planer, tagger og visninger.',
+    download: 'Last ned alt (JSON)',
+  },
+
   suggestions: {
     title: 'Forslag',
     from: 'fra Claude',
@@ -448,6 +454,14 @@ export const nb = {
     empty: 'Ingen kontakter logget ennå',
     more: (n: number) => `${n} til`,
     recent: 'Sist logget',
+    edit: 'Rediger',
+    editLabel: (date: string) => `Rediger loggen fra ${date}`,
+    editTitle: 'Rediger logg',
+    updated: 'Loggen er endret.',
+    delete: 'Slett logg',
+    confirmDelete: 'Slett for godt',
+    deleteWarning: 'Loggen slettes. Trådene den åpnet, blir stående. En plan den fulgte opp, venter på «Hvordan gikk det?» igjen.',
+    deleted: 'Loggen er slettet.',
   },
 
   relationship: {
@@ -489,6 +503,9 @@ export const nb = {
     otherDay: 'Annen dag',
     save: 'Planlegg',
     saved: 'Planlagt.',
+    updated: 'Planen er endret.',
+    editTitle: 'Endre plan',
+    edit: 'Endre',
     needPerson: 'Velg minst én person.',
     howDidItGo: 'Hvordan gikk det?',
     writeIt: 'Skriv hvordan det gikk',

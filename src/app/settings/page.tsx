@@ -53,6 +53,15 @@ export default async function SettingsPage() {
       </section>
 
       <section className={section}>
+        <SectionHeading>{t.exportData.title}</SectionHeading>
+        <p className="mb-2 text-[14px] text-ink-muted">{t.exportData.hint}</p>
+        {/* Vanlig lenke, ikke klientnavigasjon: nettleseren skal laste ned filen. */}
+        <a href="/api/eksport" download className="text-[15px] text-pen underline-offset-4 hover:underline">
+          {t.exportData.download}
+        </a>
+      </section>
+
+      <section className={section}>
         <SectionHeading>{t.settings.appearance}</SectionHeading>
         <ThemeToggle />
       </section>

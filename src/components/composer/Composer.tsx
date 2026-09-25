@@ -27,11 +27,11 @@ import { ParticipantPicker } from './ParticipantPicker'
 import type { ComposerPreset } from './ComposerProvider'
 import { dueFrom, type DueChoice } from '@/domain/plans'
 import { useDraft } from './useDraft'
+import { LOG_TYPES } from '@/domain/logTypes'
 
 type When = 'today' | 'yesterday' | 'other'
 type NewThread = { key: number; title: string; personIds: string[]; autoFocus: boolean; due: DueChoice }
 
-const LOG_TYPES: LogEntryType[] = ['MET', 'CALLED', 'MESSAGE', 'DATE', 'OTHER']
 const WHEN_OPTIONS: { value: When; label: string }[] = [
   { value: 'today', label: t.composer.today },
   { value: 'yesterday', label: t.composer.yesterday },

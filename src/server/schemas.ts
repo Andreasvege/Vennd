@@ -1,12 +1,12 @@
 import { z } from 'zod'
 import { TAG_COLORS } from '@/lib/palette'
 import { MAP_MODES } from '@/domain/mapMode'
+import { LOG_TYPES } from '@/domain/logTypes'
 
 // Alt som kommer inn i en server action, valideres her. Skjemaene er rene
 // og testes direkte; handlingene bare kaller safeParse.
 
 const RELATIONSHIP_TYPES = ['FRIEND', 'FAMILY', 'COLLEAGUE', 'ROMANTIC', 'ACQUAINTANCE', 'OTHER'] as const
-const LOG_TYPES = ['MET', 'CALLED', 'MESSAGE', 'DATE', 'OTHER'] as const
 const PHASES = ['FIRST_DATE', 'SEEING', 'EXCLUSIVE', 'PARTNER', 'ENDED'] as const
 
 export const id = z.string().min(1).max(64)
@@ -190,3 +190,13 @@ export const suggestionPayload = {
   PARTICIPANT: z.object({ personId: id }),
   PERSON: z.object({ name: z.string().trim().min(1).max(120) }),
 } as const
+
+// Å rette en logg i ettertid: tekst, dag, type og hvem som var med.
+// Trådene den lukket eller åpnet står urørt.
+export const logEdit = z.object({
+  personIds: z.array(id).min(1).max(50),
+  date: isoDate,
+  type: z.enum(LOG_TYPES).nullable(),
+  body: z.string().max(20_000),
+})
+export type LogEdit = z.infer<typeof logEdit>

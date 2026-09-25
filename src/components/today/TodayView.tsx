@@ -101,6 +101,18 @@ function PlanRow({ plan, children }: { plan: PlanItem; children: React.ReactNode
 export function TodayView({ data }: { data: TodayData }) {
   const openComposer = useComposer()
   const openPlanner = usePlanner()
+  // Flyttet, eller fikk nytt navn: samme ark som da den ble planlagt.
+  const editPlan = (plan: PlanItem) =>
+    openPlanner({
+      plan: {
+        id: plan.id,
+        title: plan.title,
+        personIds: plan.persons.map((p) => p.id),
+        at: new Date(plan.at).toISOString(),
+        hasTime: plan.hasTime,
+        type: plan.type,
+      },
+    })
   const [brief, setBrief] = useState<PlanItem | null>(null)
   const { ahead } = data
   // Når et treff er «passert», avgjøres av din klokke: serveren (UTC) ville
@@ -204,6 +216,9 @@ export function TodayView({ data }: { data: TodayData }) {
                 >
                   {t.plans.didntHappen}
                 </Button>
+                <Button variant="quiet" size="sm" onPress={() => editPlan(plan)}>
+                  {t.plans.edit}
+                </Button>
               </PlanRow>
             ))}
           </ul>
@@ -218,6 +233,9 @@ export function TodayView({ data }: { data: TodayData }) {
               <PlanRow key={plan.id} plan={plan}>
                 <Button variant="quiet" size="sm" onPress={() => setBrief(plan)}>
                   {t.plans.prepare}
+                </Button>
+                <Button variant="quiet" size="sm" onPress={() => editPlan(plan)}>
+                  {t.plans.edit}
                 </Button>
               </PlanRow>
             ))}

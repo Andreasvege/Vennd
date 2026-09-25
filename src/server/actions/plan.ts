@@ -37,6 +37,34 @@ export async function createPlan(raw: PlanInput): Promise<ActionResult<{ id: str
   return { ok: true, data: { id: plan.id } }
 }
 
+/** Flytt, gi nytt navn eller endre hvem som er med. Bare planer som ikke er gjort eller avlyst. */
+export async function updatePlan(rawId: string, raw: PlanInput): Promise<ActionResult> {
+  const userId = await requireUserId()
+  const id = parseId(rawId)
+  const parsed = planInput.safeParse(raw)
+  if (!id || !parsed.success) return fail('invalid')
+  const { title, personIds, date, at, type } = parsed.data
+  const unique = [...new Set(personIds)]
+
+  try {
+    await assertPersonsOwned(userId, unique)
+    await prisma.$transaction(async (tx) => {
+      const { count } = await tx.plan.updateMany({
+        where: { id, userId, status: 'PLANNED' },
+        data: { title, type: type ?? null, at: at ? new Date(at) : fromDateInput(date), hasTime: Boolean(at) },
+      })
+      if (count !== 1) throw new NotOwnedError()
+      await tx.planPerson.deleteMany({ where: { planId: id } })
+      await tx.planPerson.createMany({ data: unique.map((personId) => ({ planId: id, personId })) })
+    })
+  } catch (e) {
+    if (e instanceof NotOwnedError) return fail('not-found')
+    throw e
+  }
+  refreshAll()
+  return { ok: true }
+}
+
 /** «Ble ikke noe av»: planen forsvinner fra I dag, men blir ikke en logg. */
 export async function cancelPlan(rawId: string): Promise<ActionResult> {
   const userId = await requireUserId()

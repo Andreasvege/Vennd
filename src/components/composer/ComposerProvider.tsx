@@ -3,8 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import type { ComposerData } from '@/server/queries/composer'
 import { Composer } from './Composer'
-import { PlanSheet } from './PlanSheet'
-
+import { PlanSheet, type PlanDraft } from './PlanSheet'
+import { LogEditSheet, type LogDraft } from './LogEditSheet'
 import type { LogEntryType } from '@/types'
 import { shouldIgnoreShortcut } from '@/components/shortcuts'
 import { useSuggestionWatch } from '@/components/suggestions/useSuggestionWatch'
@@ -19,14 +19,18 @@ export type ComposerPreset = {
   planId?: string
 }
 type Open = (options?: ComposerPreset) => void
-type OpenPlanner = (options?: { personIds?: string[] }) => void
+type OpenPlanner = (options?: { personIds?: string[]; plan?: PlanDraft }) => void
+type EditLog = (log: LogDraft) => void
 const ComposerContext = createContext<Open>(() => {})
 const PlannerContext = createContext<OpenPlanner>(() => {})
+const LogEditorContext = createContext<EditLog>(() => {})
 
 /** Åpne skriv-arket hvor som helst: `useComposer()({ personIds: [id] })`. */
 export const useComposer = () => useContext(ComposerContext)
-/** Åpne planlegg-arket: `usePlanner()({ personIds: [id] })`. */
+/** Åpne planlegg-arket: `usePlanner()({ personIds: [id] })`, eller endre en plan: `({ plan })`. */
 export const usePlanner = () => useContext(PlannerContext)
+/** Rett eller slett en logg: `useLogEditor()(log)`. */
+export const useLogEditor = () => useContext(LogEditorContext)
 
 
 /**
@@ -39,8 +43,9 @@ export function ComposerProvider({ data, children }: { data: ComposerData | null
 
   const watchSuggestions = useSuggestionWatch(data?.claude ?? false)
   const open = useCallback<Open>((options) => setSession({ key: Date.now(), preset: options ?? {} }), [])
-  const [planning, setPlanning] = useState<{ key: number; personIds?: string[] } | null>(null)
-  const openPlanner = useCallback<OpenPlanner>((options) => setPlanning({ key: Date.now(), personIds: options?.personIds }), [])
+  const [planning, setPlanning] = useState<{ key: number; personIds?: string[]; plan?: PlanDraft } | null>(null)
+  const openPlanner = useCallback<OpenPlanner>((options) => setPlanning({ key: Date.now(), ...options }), [])
+  const [editing, setEditing] = useState<LogDraft | null>(null)
 
   useEffect(() => {
     if (!data) return
@@ -60,10 +65,12 @@ export function ComposerProvider({ data, children }: { data: ComposerData | null
   return (
     <ComposerContext.Provider value={open}>
       <PlannerContext.Provider value={openPlanner}>
+      <LogEditorContext.Provider value={setEditing}>
       {children}
       {data && planning && (
-        <PlanSheet key={planning.key} data={data} personIds={planning.personIds} onClose={() => setPlanning(null)} />
+        <PlanSheet key={planning.key} data={data} personIds={planning.personIds} plan={planning.plan} onClose={() => setPlanning(null)} />
       )}
+      {data && editing && <LogEditSheet key={editing.id} data={data} log={editing} onClose={() => setEditing(null)} />}
       {data && session && (
         <Composer
           key={session.key}
@@ -74,6 +81,7 @@ export function ComposerProvider({ data, children }: { data: ComposerData | null
           preset={session.preset}
         />
       )}
+      </LogEditorContext.Provider>
       </PlannerContext.Provider>
     </ComposerContext.Provider>
   )
