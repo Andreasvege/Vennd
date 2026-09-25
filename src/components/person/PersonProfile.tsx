@@ -31,7 +31,7 @@ export function PersonProfile({ person }: { person: PersonWithHistory }) {
   return (
     <article className="flex flex-col gap-8">
       <header className="flex flex-col gap-5 sm:flex-row sm:items-start">
-        <Avatar name={person.name} tint={TYPE_TINT[person.type]} size="xl" />
+        <Avatar name={person.name} tint={TYPE_TINT[person.type]} size="xl" decorative />
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <p className="text-[12px] uppercase tracking-[0.14em] text-ink-muted">
             {t.relationType[person.type]}

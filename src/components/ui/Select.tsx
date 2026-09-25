@@ -21,6 +21,7 @@ type Props<T extends string> = {
   options: SelectOption<T>[]
   placeholder?: string
   isRequired?: boolean
+  autoFocus?: boolean
   className?: string
 }
 
@@ -35,6 +36,7 @@ export function Select<T extends string>({
   options,
   placeholder,
   isRequired,
+  autoFocus,
   className,
 }: Props<T>) {
   return (
@@ -45,6 +47,7 @@ export function Select<T extends string>({
       }}
       placeholder={placeholder}
       isRequired={isRequired}
+      autoFocus={autoFocus}
       className={['flex flex-col', className].filter(Boolean).join(' ')}
     >
       <Label className={fieldLabel}>{label}</Label>

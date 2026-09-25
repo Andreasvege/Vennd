@@ -27,7 +27,7 @@ function ReminderList({ reminders, busy, onSnooze }: ListProps) {
     <ul className="flex flex-col divide-y divide-rule">
       {reminders.map((r) => (
         <li key={r.id} className="flex items-start gap-3 py-3.5">
-          <Avatar name={r.personName} tint={TYPE_TINT[r.personType]} size="md" />
+          <Avatar name={r.personName} tint={TYPE_TINT[r.personType]} size="md" decorative />
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <Link
               href={`/person/${r.personId}`}

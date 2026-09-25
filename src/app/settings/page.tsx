@@ -22,7 +22,7 @@ export default async function SettingsPage() {
       <section className={section}>
         <SectionHeading>{t.settings.account}</SectionHeading>
         <div className="flex items-center gap-4">
-          <Avatar name={session.user.name ?? t.common.you} src={session.user.image} size="lg" />
+          <Avatar name={session.user.name ?? t.common.you} src={session.user.image} size="lg" decorative />
           <div className="min-w-0">
             <p className="font-display text-[18px]">{session.user.name}</p>
             <p className="truncate text-[14px] text-ink-muted">{session.user.email}</p>

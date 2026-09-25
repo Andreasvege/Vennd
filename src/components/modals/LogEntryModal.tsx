@@ -89,6 +89,8 @@ export function LogEntryModal({ isOpen, onClose, onSuccess, defaultPersonId }: P
           options={persons.map((p) => ({ value: p.id, label: p.name }))}
           placeholder={t.common.choosePerson}
           isRequired
+          // Uten valgt person er det første du må gjøre; ellers er det å skrive.
+          autoFocus={!defaultPersonId}
         />
         <ChipGroup label={t.log.type} value={type} onChange={setType} options={LOG_TYPES} />
         <TextField label={t.log.date} type="date" value={date} onChange={setDate} />
@@ -98,6 +100,7 @@ export function LogEntryModal({ isOpen, onClose, onSuccess, defaultPersonId }: P
           multiline
           serif
           rows={4}
+          autoFocus={Boolean(defaultPersonId)}
           value={notes}
           onChange={setNotes}
           placeholder={t.log.notePlaceholder}

@@ -16,6 +16,8 @@ type Props = {
   tint?: TagColor
   src?: string | null
   size?: Size
+  /** Navnet står allerede ved siden av: skjul avataren for skjermlesere. */
+  decorative?: boolean
   className?: string
 }
 
@@ -23,13 +25,12 @@ type Props = {
  * En person som en tintet sirkel med blekkstrek — samme form på kartet,
  * i lister og på profilen, så man kjenner dem igjen overalt.
  */
-export function Avatar({ name, tint = 'stone', src, size = 'md', className }: Props) {
+export function Avatar({ name, tint = 'stone', src, size = 'md', decorative, className }: Props) {
   const { px, text } = SIZES[size]
 
   return (
     <span
-      role="img"
-      aria-label={name}
+      {...(decorative ? { 'aria-hidden': true } : { role: 'img', 'aria-label': name })}
       className={[
         'relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full',
         'font-sans font-semibold text-ink',

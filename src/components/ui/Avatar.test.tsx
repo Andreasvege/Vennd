@@ -13,3 +13,9 @@ it('viser bilde i stedet for initialer når src finnes', () => {
   expect(avatar.querySelector('img')).toBeInTheDocument()
   expect(avatar).not.toHaveTextContent('IA')
 })
+
+it('skjules for skjermlesere når navnet står ved siden av', () => {
+  const { container } = render(<Avatar name="Ingrid Aas" decorative />)
+  expect(screen.queryByRole('img')).not.toBeInTheDocument()
+  expect(container.firstChild).toHaveAttribute('aria-hidden', 'true')
+})
