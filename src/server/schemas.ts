@@ -1,12 +1,12 @@
 import { z } from 'zod'
 import { TAG_COLORS } from '@/lib/palette'
 import { MAP_MODES } from '@/domain/mapMode'
+import { LOG_TYPES } from '@/domain/logTypes'
 
 // Alt som kommer inn i en server action, valideres her. Skjemaene er rene
 // og testes direkte; handlingene bare kaller safeParse.
 
 const RELATIONSHIP_TYPES = ['FRIEND', 'FAMILY', 'COLLEAGUE', 'ROMANTIC', 'ACQUAINTANCE', 'OTHER'] as const
-const LOG_TYPES = ['MET', 'CALLED', 'MESSAGE', 'DATE', 'OTHER'] as const
 const PHASES = ['FIRST_DATE', 'SEEING', 'EXCLUSIVE', 'PARTNER', 'ENDED'] as const
 
 export const id = z.string().min(1).max(64)

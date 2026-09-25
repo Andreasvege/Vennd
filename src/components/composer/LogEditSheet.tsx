@@ -11,11 +11,10 @@ import type { ComposerData } from '@/server/queries/composer'
 import type { LogEntryType } from '@/types'
 import { t } from '@/i18n'
 import { PeopleField } from './PeopleField'
+import { LOG_TYPES } from '@/domain/logTypes'
 
 /** En lagret logg slik skjemaet trenger den. `date` er YYYY-MM-DD. */
 export type LogDraft = { id: string; body: string | null; date: string; type: LogEntryType | null; personIds: string[] }
-
-const TYPES: LogEntryType[] = ['MET', 'CALLED', 'MESSAGE', 'DATE', 'OTHER']
 
 /**
  * Rett en logg i ettertid, eller slett den. Trådene den lukket og åpnet
@@ -71,7 +70,7 @@ export function LogEditSheet({ data, log, onClose }: { data: ComposerData; log: 
           onSelectionChange={(keys) => setType(([...keys][0] as LogEntryType | undefined) ?? null)}
           className="flex flex-wrap gap-2"
         >
-          {TYPES.map((value) => (
+          {LOG_TYPES.map((value) => (
             <ToggleButton key={value} id={value} className={chipBase}>
               {t.logType[value]}
             </ToggleButton>

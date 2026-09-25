@@ -12,9 +12,9 @@ import type { ComposerData } from '@/server/queries/composer'
 import type { LogEntryType } from '@/types'
 import { t } from '@/i18n'
 import { PeopleField } from './PeopleField'
+import { PLAN_TYPES } from '@/domain/logTypes'
 
 type When = 'today' | 'tomorrow' | 'other'
-const TYPES: LogEntryType[] = ['MET', 'CALLED', 'DATE', 'OTHER']
 
 function dateFor(when: When, other: string): string {
   if (when === 'other') return other
@@ -31,7 +31,9 @@ function fromPlan(plan: PlanDraft) {
   const at = new Date(plan.at)
   const date = plan.hasTime ? todayISO(at) : plan.at.slice(0, 10)
   const when: When = date === dateFor('today', '') ? 'today' : date === dateFor('tomorrow', '') ? 'tomorrow' : 'other'
-  const time = plan.hasTime ? at.toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' }) : ''
+  // Tidsfeltet vil ha HH:mm; norsk formatering gir «14.30», som feltet ikke godtar.
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const time = plan.hasTime ? `${pad(at.getHours())}:${pad(at.getMinutes())}` : ''
   return { date, when, time }
 }
 
@@ -107,7 +109,7 @@ export function PlanSheet({ data, personIds: preset = [], plan, onClose }: Props
           onSelectionChange={(keys) => setType(([...keys][0] as LogEntryType | undefined) ?? null)}
           className="flex flex-wrap gap-2"
         >
-          {TYPES.map((value) => (
+          {PLAN_TYPES.map((value) => (
             <ToggleButton key={value} id={value} className={chipBase}>
               {t.logType[value]}
             </ToggleButton>
