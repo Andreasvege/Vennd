@@ -7,6 +7,7 @@ import { PlanSheet } from './PlanSheet'
 
 import type { LogEntryType } from '@/types'
 import { shouldIgnoreShortcut } from '@/components/shortcuts'
+import { useSuggestionWatch } from '@/components/suggestions/useSuggestionWatch'
 
 export type ComposerPreset = {
   personIds?: string[]
@@ -36,6 +37,7 @@ export function ComposerProvider({ data, children }: { data: ComposerData | null
   // Ny nøkkel per åpning: arket starter alltid rent (eller fra kladden).
   const [session, setSession] = useState<{ key: number; preset: ComposerPreset } | null>(null)
 
+  const watchSuggestions = useSuggestionWatch(data?.claude ?? false)
   const open = useCallback<Open>((options) => setSession({ key: Date.now(), preset: options ?? {} }), [])
   const [planning, setPlanning] = useState<{ key: number; personIds?: string[] } | null>(null)
   const openPlanner = useCallback<OpenPlanner>((options) => setPlanning({ key: Date.now(), personIds: options?.personIds }), [])
@@ -67,6 +69,7 @@ export function ComposerProvider({ data, children }: { data: ComposerData | null
           key={session.key}
           isOpen
           onClose={() => setSession(null)}
+          onSaved={watchSuggestions}
           data={data}
           preset={session.preset}
         />

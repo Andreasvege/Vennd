@@ -6,6 +6,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { TagSettings } from '@/components/TagSettings'
+import { isClaudeEnabled, suggestModel } from '@/server/claude/client'
 import { t } from '@/i18n'
 
 const section = 'border-t border-rule pt-6'
@@ -34,6 +35,13 @@ export default async function SettingsPage() {
         <SectionHeading>{t.settings.tags}</SectionHeading>
         <p className="mb-2 text-[14px] text-ink-muted">{t.tags.hint}</p>
         <TagSettings tags={tags} />
+      </section>
+
+      <section className={section}>
+        <SectionHeading>{t.suggestions.settings}</SectionHeading>
+        <p className="text-[14px] leading-relaxed text-ink-muted">
+          {isClaudeEnabled() ? t.suggestions.on(suggestModel()) : t.suggestions.off}
+        </p>
       </section>
 
       <section className={section}>

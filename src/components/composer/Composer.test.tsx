@@ -15,6 +15,7 @@ const data = {
     { id: 'ingrid', name: 'Ingrid Aas', tint: 'sage' as const },
   ],
   threads: [{ id: 't1', title: 'Fjellturen', personIds: ['martin'] }],
+  claude: false,
 }
 
 beforeEach(() => {
@@ -24,17 +25,18 @@ beforeEach(() => {
 
 function setup() {
   const onClose = vi.fn()
+  const onSaved = vi.fn()
   render(
     <ToastProvider>
-      <Composer isOpen onClose={onClose} data={data} />
+      <Composer isOpen onClose={onClose} onSaved={onSaved} data={data} />
     </ToastProvider>,
   )
-  return { onClose, user: userEvent.setup() }
+  return { onClose, onSaved, user: userEvent.setup() }
 }
 
 it('finner personen i teksten og lagrer loggen med henne', async () => {
   createLog.mockResolvedValue({ ok: true, data: { id: 'l1', closed: 0, opened: 0 } })
-  const { user, onClose } = setup()
+  const { user, onClose, onSaved } = setup()
 
   await user.type(screen.getByRole('textbox', { name: 'Hva skjedde?' }), 'Middag med Martin')
   expect(screen.getByRole('button', { name: 'Fjern Martin Nilsen' })).toBeInTheDocument()
@@ -43,6 +45,8 @@ it('finner personen i teksten og lagrer loggen med henne', async () => {
 
   await user.click(screen.getByRole('button', { name: 'Lagre' }))
   await waitFor(() => expect(onClose).toHaveBeenCalled())
+  // Id-en går videre, så forslag fra Claude kan hentes når de er klare.
+  expect(onSaved).toHaveBeenCalledWith('l1')
   expect(createLog).toHaveBeenCalledWith(expect.objectContaining({ personIds: ['martin'], body: 'Middag med Martin' }))
 })
 

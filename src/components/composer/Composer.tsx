@@ -48,6 +48,8 @@ function dateFor(when: When, other: string): string {
 type Props = {
   isOpen: boolean
   onClose: () => void
+  /** Kalles med loggens id når den er lagret. */
+  onSaved?: (logId: string) => void
   data: ComposerData
   /** Forhåndsutfylt, f.eks. fra en profil eller en plan. Uten personer gjenopprettes kladden. */
   preset?: ComposerPreset
@@ -58,7 +60,7 @@ type Props = {
  * fra teksten, viser trådene du kan lukke med dem, og lar deg legge igjen
  * noe å følge opp. Alt lagres i én handling.
  */
-export function Composer({ isOpen, onClose, data, preset = {} }: Props) {
+export function Composer({ isOpen, onClose, onSaved, data, preset = {} }: Props) {
   const presetPersonIds = preset.personIds
   const toast = useToast()
   const draft = useDraft()
@@ -195,6 +197,7 @@ export function Composer({ isOpen, onClose, data, preset = {} }: Props) {
     // En logg fra en profil har ikke rørt kladden; den skal ligge der til neste gang.
     if (!presetPersonIds?.length) draft.clear()
     toast(t.composer.saved(result.data.closed, result.data.opened))
+    onSaved?.(result.data.id)
     onClose()
   }
 

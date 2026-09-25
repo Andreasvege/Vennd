@@ -135,6 +135,23 @@ export const nb = {
     selected: (n: number, total: number) => `${n} av ${total} valgt`,
   },
 
+  suggestions: {
+    title: 'Forslag',
+    from: 'fra Claude',
+    thread: (title: string) => `Spør om: ${title}`,
+    fact: (label: string, value: string) => `${label}: ${value}`,
+    participant: (name: string) => `Var ${name.split(' ')[0]} med?`,
+    person: (name: string) => `Legg til ${name}`,
+    inLog: (line: string) => `i «${line}»`,
+    accept: 'Legg til',
+    dismiss: 'Avvis',
+    dismissLabel: (what: string) => `Avvis: ${what}`,
+    accepted: { THREAD: 'La til tråd.', FACT: 'La til faktum.', PARTICIPANT: 'La til i loggen.', PERSON: 'La til person.' },
+    settings: 'Forslag fra Claude',
+    on: (model: string) => `På (${model}). Når du lagrer en logg, sendes teksten og navnene på dem du kjenner til Anthropic for å lage forslag.`,
+    off: 'Av. Sett ANTHROPIC_API_KEY for å slå på forslag til tråder, fakta og personer fra loggene dine.',
+  },
+
   rhythm: {
     every: (days: number) => {
       if (days <= 1) return 'hver dag'

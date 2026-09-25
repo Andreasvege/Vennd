@@ -6,6 +6,9 @@ import { assertAllOwned, NotOwnedError } from '@/server/ownership'
 import { logInput, type LogInput } from '@/server/schemas'
 import { assertPersonsOwned, fromDateInput, parseId, refreshAll } from './shared'
 import { fail, type ActionResult } from './result'
+import { after } from 'next/server'
+import { isClaudeEnabled } from '@/server/claude/client'
+import { generateSuggestions } from '@/server/claude/suggest'
 
 export type LogSaved = { id: string; closed: number; opened: number }
 
@@ -89,6 +92,9 @@ export async function createLog(raw: LogInput): Promise<ActionResult<LogSaved>> 
   }
 
   refreshAll()
+  // Loggen er lagret og svaret går ut nå; Claude foreslår tråder, fakta og
+  // personer etterpå, så skrivingen aldri venter.
+  if (isClaudeEnabled()) after(() => generateSuggestions(userId, entry.id))
   return { ok: true, data: { id: entry.id, closed: closeIds.length, opened: newThreads.length } }
 }
 
