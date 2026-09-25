@@ -42,7 +42,7 @@ Definert som CSS-variabler i `globals.css` og registrert i Tailwind v4 med `@the
 | `pen-wash` | `#E4E7F1` | `#262B3D` | Aksentflater, for eksempel valgt tilstand |
 | `redpencil` | `#B23A2A` | `#EE8A78` | Uthevinger: stier, varsler og feil |
 
-**Taggpaletten** er åtte fargeblyanttoner. Hver har en flate-farge, som brukes til nodefyll og chip-bakgrunn, og en strek-farge, som brukes til prikker og kanter. Begge finnes i lys og mørk variant. Tonene skiller seg i lyshet og ikke bare i fargetone, slik at de er lesbare også for fargeblinde. Taggens farge lagres som en nøkkel (`sage`, `ochre`, `slate`, `plum`, `rose`, `moss`, `clay`, `sky`) og ikke som en hex-verdi, så paletten kan justeres uten å migrere data.
+**Taggpaletten** er åtte fargeblyanttoner. Hver har en flate-farge, som brukes til nodefyll og chip-bakgrunn, og en strek-farge, som brukes til prikker og kanter. Begge finnes i lys og mørk variant. Tonene skiller seg i lyshet og ikke bare i fargetone, slik at de er lesbare også for fargeblinde. Taggens farge lagres som en nøkkel (`sage`, `ochre`, `slate`, `plum`, `rose`, `teal`, `clay`, `stone`) og ikke som en hex-verdi, så paletten kan justeres uten å migrere data.
 
 ### Typografi
 
@@ -131,7 +131,7 @@ model Tag {
   id        String  @id @default(cuid())
   userId    String
   name      String
-  color     String            // palettnøkkel: sage | ochre | slate | plum | rose | moss | clay | sky
+  color     String            // palettnøkkel: sage | ochre | slate | plum | rose | teal | clay | stone
   sortOrder Int     @default(0)
   persons   PersonTag[]
   primaryOf Person[] @relation("PrimaryTag")
