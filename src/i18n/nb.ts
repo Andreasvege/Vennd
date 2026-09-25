@@ -398,6 +398,11 @@ export const nb = {
   },
 
   person: {
+    photo: 'Bilde',
+    addPhoto: 'Legg til bilde',
+    changePhoto: 'Bytt bilde',
+    removePhoto: 'Fjern',
+    photoUnreadable: 'Kunne ikke lese bildet. Prøv et JPEG- eller PNG-bilde.',
     profile: 'Profil',
     relationship: 'Relasjon',
     name: 'Navn',

@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { hostname: 'lh3.googleusercontent.com' },
+      // Bilder av personer, lastet opp til Vercel Blob.
+      { hostname: '*.public.blob.vercel-storage.com' },
     ],
   },
 };
