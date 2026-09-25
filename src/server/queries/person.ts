@@ -6,6 +6,7 @@ import { getTags } from './tags'
 import { getProximities } from './proximity'
 import { getPersonPlans } from './plans'
 import { getPendingSuggestions } from './suggestions'
+import { isPhotosEnabled } from '@/server/blob'
 
 /** Alt profilen viser om én person. null hvis den ikke finnes eller er en annens. */
 export async function getPersonProfile(userId: string, id: string) {
@@ -126,14 +127,20 @@ export async function getPersonForEdit(userId: string, id: string) {
         birthday: true,
         cadenceWeeks: true,
         primaryTagId: true,
+        photoUrl: true,
+        primaryTag: { select: { color: true } },
         tags: { select: { tagId: true } },
       },
     }),
     getTags(userId),
   ])
   if (!person) return null
-  const { tags, ...rest } = person
-  return { person: { ...rest, tagIds: tags.map((t) => t.tagId) }, allTags }
+  const { tags, primaryTag, ...rest } = person
+  return {
+    person: { ...rest, tint: personTint({ primaryTag }), tagIds: tags.map((t) => t.tagId) },
+    allTags,
+    photosEnabled: isPhotosEnabled(),
+  }
 }
 
 export type PersonEditData = NonNullable<Awaited<ReturnType<typeof getPersonForEdit>>>

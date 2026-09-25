@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { placeNewPerson } from '@/domain/placement'
 import { requireUserId } from '@/server/session'
+import { removeBlob } from '@/server/blob'
 import { NotOwnedError } from '@/server/ownership'
 import { personInput, personPatch, type PersonInput, type PersonPatch } from '@/server/schemas'
 import { revalidatePath } from 'next/cache'
@@ -99,6 +100,7 @@ export async function deletePerson(rawId: string): Promise<ActionResult> {
   const id = parseId(rawId)
   if (!id) return fail('invalid')
 
+  const photo = await prisma.person.findFirst({ where: { id, userId }, select: { photoUrl: true } })
   const onlyThem = { every: { personId: id }, some: { personId: id } }
   const [, , deleted] = await prisma.$transaction([
     prisma.logEntry.deleteMany({ where: { userId, participants: onlyThem } }),
@@ -106,6 +108,7 @@ export async function deletePerson(rawId: string): Promise<ActionResult> {
     prisma.person.deleteMany({ where: { id, userId } }),
   ])
   if (deleted.count === 0) return fail('not-found')
+  await removeBlob(photo?.photoUrl)
 
   // Bare forsiden og innstillingene: å friske opp ruta vi står på ville
   // rendret en profil som ikke finnes lenger (404) før klienten navigerer.

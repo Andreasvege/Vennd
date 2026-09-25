@@ -11,10 +11,11 @@ import { t } from '@/i18n'
 import type { RelationshipType } from '@/types'
 import { CADENCE_OPTIONS, cadenceFromOption, cadenceToOption, type CadenceOption } from './cadence-options'
 import { TagField } from './TagField'
+import { PhotoField } from './PhotoField'
 import { createTagOption } from './tag-actions'
 import { TYPE_OPTIONS } from './type-options'
 
-export function EditPersonForm({ person, allTags }: PersonEditData) {
+export function EditPersonForm({ person, allTags, photosEnabled }: PersonEditData) {
   const router = useRouter()
   const [name, setName] = useState(person.name)
   const [notes, setNotes] = useState(person.notes ?? '')
@@ -79,6 +80,8 @@ export function EditPersonForm({ person, allTags }: PersonEditData) {
 
   return (
     <form onSubmit={save} className="flex flex-col gap-5">
+      {/* Uten bildelagring vises initialene, og feltet skjules. */}
+      {photosEnabled && <PhotoField personId={person.id} name={name || person.name} tint={person.tint} photoUrl={person.photoUrl} />}
       <TextField label={t.person.name} isRequired value={name} onChange={setName} />
       <ChipGroup label={t.person.relationship} value={type} onChange={chooseType} options={TYPE_OPTIONS} />
       <TagField
