@@ -83,6 +83,21 @@ export const threadCloseInput = z.object({
   resolution: z.string().trim().max(500).optional(),
 })
 
+export const factInput = z.object({
+  label: z.string().trim().min(1).max(40),
+  value: z.string().trim().min(1).max(200),
+})
+
+export const relationshipPatch = z
+  .object({
+    type: z.enum(RELATIONSHIP_TYPES),
+    label: z.string().trim().max(60).nullable(),
+    since: isoDate.nullable(),
+    until: isoDate.nullable(),
+  })
+  .partial()
+  .refine((r) => !r.since || !r.until || r.since <= r.until, { path: ['until'] })
+
 export const phaseInput = z.object({
   personId: id,
   phase: z.enum(PHASES),
@@ -96,3 +111,5 @@ export type LogInput = z.infer<typeof logInput>
 export type ThreadCloseInput = z.infer<typeof threadCloseInput>
 export type TagInput = z.infer<typeof tagInput>
 export type PhaseInput = z.infer<typeof phaseInput>
+export type FactInput = z.infer<typeof factInput>
+export type RelationshipPatch = z.infer<typeof relationshipPatch>

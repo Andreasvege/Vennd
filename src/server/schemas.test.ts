@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { tagName, tagInput, logInput, personInput, relationshipInput, phaseInput } from './schemas'
+import { tagName, tagInput, logInput, personInput, relationshipInput, phaseInput, factInput, relationshipPatch } from './schemas'
 
 describe('tagName', () => {
   it('trimmer og avviser tomme', () => {
@@ -87,5 +87,21 @@ describe('logInput med tråder', () => {
   it('avviser en ny tråd uten tittel eller uten personer', () => {
     expect(logInput.safeParse({ ...base, newThreads: [{ title: '  ', personIds: ['ingrid'] }] }).success).toBe(false)
     expect(logInput.safeParse({ ...base, newThreads: [{ title: 'X', personIds: [] }] }).success).toBe(false)
+  })
+})
+
+describe('factInput', () => {
+  it('trimmer og krever både etikett og verdi', () => {
+    expect(factInput.parse({ label: ' Jobb ', value: ' Statkraft ' })).toEqual({ label: 'Jobb', value: 'Statkraft' })
+    expect(factInput.safeParse({ label: 'Jobb', value: '  ' }).success).toBe(false)
+  })
+})
+
+describe('relationshipPatch', () => {
+  it('godtar å avslutte med bare until', () => {
+    expect(relationshipPatch.safeParse({ until: '2026-09-25' }).success).toBe(true)
+  })
+  it('avviser slutt før start', () => {
+    expect(relationshipPatch.safeParse({ since: '2026-01-01', until: '2025-01-01' }).success).toBe(false)
   })
 })

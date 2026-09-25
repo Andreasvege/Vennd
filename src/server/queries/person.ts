@@ -23,8 +23,22 @@ export async function getPersonProfile(userId: string, id: string) {
               type: true,
               body: true,
               participants: { select: { person: { select: { id: true, name: true } } } },
+              threadsClosed: { select: { id: true, title: true, resolution: true } },
+              threadsOpened: { select: { id: true, title: true, status: true } },
             },
           },
+        },
+      },
+      relationsFrom: {
+        select: {
+          id: true, type: true, label: true, since: true, until: true,
+          toPerson: { select: { id: true, name: true } },
+        },
+      },
+      relationsTo: {
+        select: {
+          id: true, type: true, label: true, since: true, until: true,
+          fromPerson: { select: { id: true, name: true } },
         },
       },
       threads: {
@@ -46,7 +60,23 @@ export async function getPersonProfile(userId: string, id: string) {
   })
   if (!person) return null
 
-  const { primaryTag, tags, participations, threads, phases, ...rest } = person
+  const [closedByHand, factLabels, people] = await Promise.all([
+    // Tråder lukket med sirkelen på profilen, ikke av en logg: de hører
+    // likevel hjemme i historikken.
+    prisma.thread.findMany({
+      where: { userId, status: 'CLOSED', closedById: null, persons: { some: { personId: id } } },
+      orderBy: { closedAt: 'desc' },
+      select: { id: true, title: true, resolution: true, closedAt: true },
+    }),
+    prisma.fact.findMany({
+      where: { person: { userId } },
+      distinct: ['label'],
+      select: { label: true },
+    }),
+    prisma.person.findMany({ where: { userId, id: { not: id } }, orderBy: { name: 'asc' }, select: { id: true, name: true } }),
+  ])
+
+  const { primaryTag, tags, participations, threads, phases, relationsFrom, relationsTo, ...rest } = person
   return {
     ...rest,
     tint: personTint({ primaryTag }),
@@ -62,6 +92,13 @@ export async function getPersonProfile(userId: string, id: string) {
       ...thread,
       others: thread.persons.map((p) => p.person).filter((p) => p.id !== id),
     })),
+    closedByHand,
+    relationships: [
+      ...relationsFrom.map(({ toPerson, ...r }) => ({ ...r, other: toPerson })),
+      ...relationsTo.map(({ fromPerson, ...r }) => ({ ...r, other: fromPerson })),
+    ].sort((a, b) => Number(a.until !== null) - Number(b.until !== null) || a.other.name.localeCompare(b.other.name, 'nb')),
+    factLabels: factLabels.map((f) => f.label),
+    people,
   }
 }
 

@@ -141,6 +141,42 @@ export const nb = {
     nameTaken: 'Du har allerede en tagg med det navnet.',
   },
 
+  facts: {
+    add: 'Legg til',
+    label: 'Hva',
+    value: 'Svar',
+    labelPlaceholder: 'Jobb',
+    valuePlaceholder: 'Statkraft, fra november',
+    edit: (label: string) => `Endre ${label}`,
+    remove: (label: string) => `Fjern ${label}`,
+    empty: 'Noe du vil huske om dem? Jobb, partner, hva de liker.',
+    suggestions: ['Jobb', 'Partner', 'Barn', 'Bor', 'Liker', 'Obs'],
+  },
+
+  phaseControl: {
+    start: 'Start: Første date',
+    next: (label: string) => `Neste: ${label}`,
+    end: 'Avslutt',
+    confirmEnd: 'Avslutte? Det blir stående i historikken.',
+  },
+
+  relations: {
+    title: 'Relasjoner',
+    add: 'Legg til relasjon',
+    person: 'Hvem',
+    type: 'Hvordan',
+    label: 'Beskrivelse',
+    labelPlaceholder: 'klatrer sammen',
+    since: 'Siden',
+    until: 'Til',
+    end: 'Avslutt',
+    edit: (name: string) => `Endre relasjonen til ${name}`,
+    remove: 'Fjern',
+    ended: (date: string) => `til ${date}`,
+    since_: (date: string) => `siden ${date}`,
+    empty: 'Ingen registrerte relasjoner til andre.',
+  },
+
   thread: {
     ask: 'Spør om',
     askAbout: (title: string) => `Spør om: ${title}`,
@@ -185,6 +221,8 @@ export const nb = {
     added: (date: string) => `Lagt til ${date}`,
     reminders: 'Påminnelser',
     facts: 'Å huske',
+    history: 'Historikk',
+    closedByHand: 'Fulgt opp',
     with: (names: string) => `med ${names}`,
     log: 'Kontaktlogg',
     noLog: 'Ingen logget kontakt ennå.',
