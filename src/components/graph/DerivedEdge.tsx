@@ -12,8 +12,9 @@ export type DerivedEdgeData = { count: number; dimmed?: boolean }
 export function DerivedEdge({ id, sourceX, sourceY, targetX, targetY, data }: EdgeProps) {
   const edge = data as DerivedEdgeData
   const [path] = getStraightPath({ sourceX, sourceY, targetX, targetY })
+  // Tilgjengelig navn settes på kanten selv (ariaLabel); tittelen er for mus.
   return (
-    <g aria-label={t.map.derived(edge.count)}>
+    <g>
       <title>{`${t.map.derived(edge.count)} · ${t.map.derivedHint}`}</title>
       <BaseEdge
         id={id}

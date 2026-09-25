@@ -82,8 +82,10 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   // Buntede kanter i Kretser beregnes for sluttposisjonene; de tones inn
-  // når overgangen er ferdig.
-  const [settled, setSettled] = useState(true)
+  // når overgangen til synet er ferdig. Å huske *hvilket* syn som sist
+  // kom på plass gjør at de er usynlige fra første ramme etter et bytte.
+  const [settledMode, setSettledMode] = useState<MapMode | null>(mode)
+  const settled = settledMode === mode
   const lastMode = useRef<MapMode | null>(null)
 
   const { visible, targets, fresh, relationships, derived, edgePath } = model
@@ -116,6 +118,9 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
       ...visible.map((p) => {
         const c = targets.get(p.id) ?? { x: 0, y: 0 }
         return {
+          // Behold det React Flow vet om noden fra før (målt størrelse,
+          // håndtak), så den ikke må måles på nytt.
+          ...current.get(p.id),
           id: p.id,
           type: 'person',
           position: { x: c.x, y: c.y - PERSON_TOP },
@@ -137,33 +142,40 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
     lastMode.current = mode
     const from = new Map([...current].map(([id, n]) => [id, n.position]))
     const to = new Map(target.map((n) => [n.id, n.position]))
+    const moves = [...to].some(([id, p]) => {
+      const f = from.get(id)
+      return !f || Math.abs(f.x - p.x) > 0.5 || Math.abs(f.y - p.y) > 0.5
+    })
 
-    // Første tegning, eller redusert bevegelse: rett på plass.
-    if (reducedMotion || current.size === 0) {
+    // Første tegning, redusert bevegelse, eller ingen som flytter seg (f.eks.
+    // ny data etter en handling): rett på plass, uten overgang.
+    if (reducedMotion || current.size === 0 || !moves) {
       const raf = requestAnimationFrame(() => {
         setNodes(target)
-        setSettled(true)
+        setSettledMode(mode)
         if (modeChanged) flow.fitView({ padding: 0.2 })
       })
       return () => cancelAnimationFrame(raf)
     }
 
-    // Ellers glir de, fra der nodene står *nå* — også midt i en annen overgang.
+    // Ellers glir de, fra der nodene står *nå* — også midt i en annen
+    // overgang. Hver ramme endrer bare posisjonene; valg og målinger står.
     let raf = 0
     const start = performance.now()
     const step = (now: number) => {
       const progress = Math.min(1, (now - start) / TRANSITION_MS)
       const at = interpolate(from, to, easeInOut(progress))
-      setNodes(target.map((n) => ({ ...n, position: at.get(n.id) ?? n.position })))
+      setNodes((prev) => prev.map((n) => ({ ...n, position: at.get(n.id) ?? n.position })))
       if (progress < 1) {
         raf = requestAnimationFrame(step)
       } else {
-        setSettled(true)
+        setSettledMode(mode)
         if (modeChanged) flow.fitView({ padding: 0.2, duration: 300 })
       }
     }
     raf = requestAnimationFrame((now) => {
-      setSettled(false)
+      // Nye data og nye noder først (på startplassene), så beveger de seg.
+      setNodes(target.map((n) => ({ ...n, position: from.get(n.id) ?? n.position })))
       step(now)
     })
     return () => cancelAnimationFrame(raf)
@@ -218,6 +230,7 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
       sourceHandle: 'center',
       targetHandle: 'center',
       type: 'derived',
+      ariaLabel: `${t.map.derived(d.count)}. ${t.map.derivedHint}`,
       data: { count: d.count, dimmed: pathMode } satisfies DerivedEdgeData,
     }))
 
@@ -252,6 +265,12 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
       onNodeDragStop={onNodeDragStop}
       onEdgeClick={(_e, edge) => {
         if (edge.type === 'derived') onDerivedClick(edge.source, edge.target)
+      }}
+      // Tastatur: velg en «ofte sammen»-kant og trykk Enter for å gjøre den til en relasjon.
+      onKeyDown={(e) => {
+        if (e.key !== 'Enter') return
+        const edge = flow.getEdges().find((x) => x.selected && x.type === 'derived')
+        if (edge) onDerivedClick(edge.source, edge.target)
       }}
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}

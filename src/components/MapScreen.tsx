@@ -49,7 +49,8 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
     setPair(null)
   }
 
-  const usedTags = graph.tags.filter((tag) => graph.persons.some((p) => p.tagIds.includes(tag.id)))
+  // Forklaringen viser hovedtaggene (det fargene betyr); alle tagger ligger i filteret.
+  const usedTags = graph.tags.filter((tag) => graph.persons.some((p) => p.primaryTag?.id === tag.id))
   const hiddenByFilter = graph.persons.length > 0 && model.visible.length === 0
   const nameOf = (id: string) => graph.persons.find((p) => p.id === id)?.name.split(' ')[0] ?? ''
 

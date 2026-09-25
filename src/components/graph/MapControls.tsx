@@ -77,7 +77,7 @@ function ViewMenu({ view }: { view: SavedView }) {
               e.preventDefault()
               startTransition(async () => {
                 const result = await settle(renameView(view.id, name))
-                if (!result.ok) return setError(result.error === 'taken' ? t.errors.taken : t.errors[result.error])
+                if (!result.ok) return setError(result.error === 'taken' ? t.map.viewNameTaken : t.errors[result.error])
                 setRenaming(false)
               })
             }}
@@ -146,7 +146,16 @@ export function MapControls({ mode, onMode, filter, onFilter, tags, views, activ
             className="max-h-[70dvh] overflow-y-auto rounded-[16px] border border-rule bg-paper-raised shadow-float outline-none"
           >
             <Dialog aria-label={t.map.filter} className="outline-none">
-              <FilterPanel tags={tags} filter={filter} mode={mode} onChange={onFilter} onSaved={() => setFilterOpen(false)} />
+              <FilterPanel
+                tags={tags}
+                filter={filter}
+                mode={mode}
+                onChange={onFilter}
+                onSaved={(v) => {
+                  setFilterOpen(false)
+                  onView({ ...v, mode, filter })
+                }}
+              />
             </Dialog>
           </Popover>
         </DialogTrigger>

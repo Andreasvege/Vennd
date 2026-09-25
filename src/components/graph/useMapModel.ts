@@ -39,10 +39,16 @@ export function useMapModel(graph: Graph, mode: MapMode, filter: MapFilter, now:
 
     const fresh = new Map(visible.map((p) => [p.id, freshness(p.lastContact ? new Date(p.lastContact) : null, p.cadenceWeeks, now)]))
     const groups = graph.tags.map((tag) => ({ id: tag.id as string | null, name: tag.name }))
+    // Gruppen er hovedtaggen — med mindre den er skjult; da den første
+    // synlige taggen, så ingen står i en gruppe du har skrudd av.
+    const groupOf = (p: (typeof visible)[number]) => {
+      if (p.primaryTag && !filter.hiddenTags.includes(p.primaryTag.id)) return p.primaryTag.id
+      return p.tagIds.find((id) => !filter.hiddenTags.includes(id)) ?? null
+    }
     const layoutPersons = visible.map((p) => ({
       id: p.id,
       name: p.name,
-      groupId: p.primaryTag?.id ?? null,
+      groupId: groupOf(p),
       freshness: fresh.get(p.id) ?? 0,
     }))
     const tagById = new Map(graph.tags.map((tag) => [tag.id, tag]))
@@ -60,7 +66,9 @@ export function useMapModel(graph: Graph, mode: MapMode, filter: MapFilter, now:
         rings: nearnessRings(NEARNESS_DEFAULTS).map((ring) => ({ r: ring.r, label: t.map.rings[ring.label] })),
       }
     } else if (mode === 'circles') {
-      const c = circles(layoutPersons, groups, { r: CIRCLE_R })
+      // Sirkelen vokser med antallet, så avatarene aldri overlapper.
+      const r = Math.max(CIRCLE_R, (layoutPersons.length * NODE_GAP) / (2 * Math.PI * 0.9))
+      const c = circles(layoutPersons, groups, { r })
       targets = c.positions
       edgePath = c.edgePath
       backdrop = {
@@ -69,8 +77,8 @@ export function useMapModel(graph: Graph, mode: MapMode, filter: MapFilter, now:
           const tag = arc.groupId ? tagById.get(arc.groupId) : null
           return {
             id: arc.groupId ?? 'untagged',
-            path: arcPath(CIRCLE_R + 28, arc.start + 0.01, arc.end - 0.01),
-            labelPath: arcPath(CIRCLE_R + 40, arc.start, arc.end, true),
+            path: arcPath(r + 28, arc.start + 0.01, Math.min(arc.end, arc.start + 2 * Math.PI - 0.02) - 0.01),
+            labelPath: arcPath(r + 40, arc.start, Math.min(arc.end, arc.start + 2 * Math.PI - 0.02), true),
             label: tag?.name ?? t.map.untagged,
             color: tag?.color ?? null,
           }
@@ -81,8 +89,9 @@ export function useMapModel(graph: Graph, mode: MapMode, filter: MapFilter, now:
       targets = new Map(visible.map((p) => [p.id, { x: p.positionX, y: p.positionY }]))
       const members = new Map<string, Point[]>()
       for (const p of visible) {
-        if (!p.primaryTag) continue
-        members.set(p.primaryTag.id, [...(members.get(p.primaryTag.id) ?? []), targets.get(p.id)!])
+        const g = groupOf(p)
+        if (!g) continue
+        members.set(g, [...(members.get(g) ?? []), targets.get(p.id)!])
       }
       backdrop = {
         kind: 'hulls',

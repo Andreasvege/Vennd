@@ -57,8 +57,10 @@ export function useMapState(tagIds: string[], views: SavedView[]) {
 
   // En visning er aktiv bare så lenge filteret og synet er uendret.
   const view = views.find((v) => v.id === state.viewId)
-  const activeViewId =
-    view && view.mode === state.mode && JSON.stringify(view.filter) === JSON.stringify(state.filter) ? view.id : null
+  const same = (a: MapFilter, b: MapFilter) =>
+    JSON.stringify({ ...a, hiddenTags: [...a.hiddenTags].sort() }) ===
+    JSON.stringify({ ...b, hiddenTags: [...b.hiddenTags].sort() })
+  const activeViewId = view && view.mode === state.mode && same(view.filter, state.filter) ? view.id : null
 
   return {
     mode: state.mode,
