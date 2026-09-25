@@ -30,9 +30,13 @@ const instrument = Instrument_Sans({
 export const metadata: Metadata = {
   title: 'Vennekart',
   description: 'En dagbok over menneskene dine',
+  // Lagt til på hjemskjermen på iPhone: åpnes uten nettleserramme.
+  appleWebApp: { capable: true, title: 'Vennekart', statusBarStyle: 'default' },
 }
 
 export const viewport: Viewport = {
+  // Innholdet går helt ut til kantene; fanelinjen tar selv høyde for hjemmelinjen.
+  viewportFit: 'cover',
   themeColor: [
     // Nettleserens ramme (adresselinje, statuslinje) får papirfargen.
     { media: '(prefers-color-scheme: light)', color: TOKENS.light.paper },
