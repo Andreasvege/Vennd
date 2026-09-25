@@ -17,15 +17,15 @@ import { useSession } from 'next-auth/react'
 import { PersonNode } from './PersonNode'
 import { MeNode } from './MeNode'
 import { RelationshipEdge } from './RelationshipEdge'
-import { RELATIONSHIP_COLORS, RELATIONSHIP_LABELS } from '@/lib/relationship-colors'
+import { Link2, UserPlus } from 'lucide-react'
+import { Button, EmptyState } from '@/components/ui'
+import { TYPE_TINT, tagFill } from '@/lib/palette'
+import { t } from '@/i18n'
 import type { Person, Relationship } from '@/types'
 
 // Syntetisk id. «Meg» er ingen databaserad, så den kan ikke kollidere med
 // en cuid fra Person.
 const ME_ID = 'me'
-
-const initialsOf = (name: string) =>
-  name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
 
 const nodeTypes = { person: PersonNode, me: MeNode }
 const edgeTypes = { relationship: RelationshipEdge }
@@ -42,16 +42,24 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
   const { data: session } = useSession()
   const [persons, setPersons] = useState<Person[]>([])
   const [relationships, setRelationships] = useState<Relationship[]>([])
+  // Tom-tilstanden skal bare vises når vi *vet* at kartet er tomt — ikke
+  // mens det lastes, og ikke når lastingen feilet.
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
 
   useEffect(() => {
     async function fetchData() {
-      const res = await fetch('/api/graph')
-      if (!res.ok) return
-      const data = (await res.json()) as { persons: Person[]; relationships: Relationship[] }
-      setPersons(data.persons)
-      setRelationships(data.relationships)
+      try {
+        const res = await fetch('/api/graph')
+        if (!res.ok) throw new Error(String(res.status))
+        const data = (await res.json()) as { persons: Person[]; relationships: Relationship[] }
+        setPersons(data.persons)
+        setRelationships(data.relationships)
+        setStatus('ready')
+      } catch {
+        setStatus('error')
+      }
     }
     fetchData()
   }, [refreshKey])
@@ -65,8 +73,7 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
       data: {
         id: p.id,
         name: p.name,
-        color: p.color,
-        initials: initialsOf(p.name),
+        type: p.type,
         onAddLog,
         onViewProfile: (id: string) => router.push(`/person/${id}`),
       },
@@ -81,7 +88,7 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
         }
       : { x: 0, y: 0 }
 
-    const meName = session?.user?.name ?? 'Meg'
+    const meName = session?.user?.name ?? t.common.you
     const meNode: Node = {
       id: ME_ID,
       type: 'me',
@@ -92,7 +99,6 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
       data: {
         name: meName,
         image: session?.user?.image ?? null,
-        initials: initialsOf(meName),
       },
     }
 
@@ -108,7 +114,7 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
       target: p.id,
       targetHandle: 'center',
       type: 'relationship',
-      data: { color: RELATIONSHIP_COLORS[p.type], label: undefined, variant: 'spoke' },
+      data: { type: p.type, variant: 'spoke' },
     }))
 
     const between: Edge[] = relationships.map((r: Relationship) => ({
@@ -119,7 +125,7 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
       sourceHandle: 'center',
       targetHandle: 'center',
       type: 'relationship',
-      data: { color: r.color, label: undefined, variant: 'between' },
+      data: { type: r.type, variant: 'between' },
     }))
 
     setEdges(persons.length ? [...spokes, ...between] : between)
@@ -158,8 +164,13 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
     })
   }
 
+  // Bare typene som faktisk finnes på kartet, i fast rekkefølge.
+  const typesInUse = (Object.keys(TYPE_TINT) as Person['type'][]).filter((type) =>
+    persons.some((p) => p.type === type),
+  )
+
   return (
-    <div className="relative flex-1 h-full">
+    <div className="relative h-full flex-1">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -175,56 +186,63 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
         // Målhåndtaket tar ikke pointer-events (ellers kunne man ikke dra
         // noden), så vi lar React Flow snappe geometrisk i stedet.
         connectionRadius={60}
+        connectionLineStyle={{ stroke: 'var(--pen)', strokeWidth: 1.5 }}
         minZoom={0.3}
         maxZoom={2}
       >
-        <Background
-          variant={BackgroundVariant.Dots}
-          gap={24}
-          size={1}
-          color="rgba(255,255,255,0.3)"
-        />
-        <Controls className="bg-Glass! border-GlassBorder! rounded-xl! shadow-lg!" />
+        {/* Svak prikkstruktur, som papir med punktrutenett. */}
+        <Background variant={BackgroundVariant.Dots} gap={28} size={1.2} color="var(--rule)" />
+        <Controls showInteractive={false} position="top-left" />
       </ReactFlow>
 
-      {/* Floating action buttons */}
-      <div className="absolute bottom-6 right-6 flex flex-col gap-2 z-10">
-        <button
-          onClick={onAddRelationship}
-          className="glass-card px-4 py-2 text-sm font-medium text-Text/80 hover:text-Text transition-colors flex items-center gap-2"
-          title="Legg til relasjon"
-        >
-          <span className="text-Accent">⟷</span> Relasjon
-        </button>
-        <button
-          onClick={onAddPerson}
-          className="bg-Accent text-Primary px-5 py-3 rounded-2xl font-bold text-lg shadow-lg shadow-Accent/30 hover:opacity-90 transition-opacity"
-          title="Legg til person"
-        >
-          +
-        </button>
+      <div className="absolute bottom-5 right-5 z-10 flex items-center gap-2">
+        <Button variant="secondary" onPress={onAddRelationship}>
+          <Link2 aria-hidden size={16} strokeWidth={1.75} />
+          {t.map.newRelationship}
+        </Button>
+        <Button variant="primary" size="lg" onPress={onAddPerson}>
+          <UserPlus aria-hidden size={18} strokeWidth={1.75} />
+          {t.map.newPerson}
+        </Button>
       </div>
 
-      {/* Fargeforklaring — viser bare typene du faktisk har på kartet */}
-      {persons.length > 0 && (
-        <div className="absolute bottom-6 left-6 z-10 glass-card px-3 py-2 flex flex-col gap-1">
-          {[...new Set(persons.map((p) => p.type))].map((t) => (
-            <div key={t} className="flex items-center gap-2">
+      {typesInUse.length > 0 && (
+        <ul
+          aria-label={t.map.legend}
+          className="absolute bottom-5 left-5 z-10 hidden flex-col gap-1.5 rounded-[10px] border border-rule bg-paper-raised/90 px-3 py-2.5 sm:flex"
+        >
+          {typesInUse.map((type) => (
+            <li key={type} className="flex items-center gap-2 text-[12px] text-ink-muted">
               <span
-                className="w-4 h-0.5 rounded-full shrink-0"
-                style={{ backgroundColor: RELATIONSHIP_COLORS[t] }}
+                aria-hidden
+                className="size-2.5 rounded-full"
+                style={{ background: tagFill(TYPE_TINT[type]), boxShadow: 'inset 0 0 0 1px var(--ink)' }}
               />
-              <span className="text-[10px] text-Text/50">{RELATIONSHIP_LABELS[t]}</span>
-            </div>
+              {t.relationType[type]}
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
-      {/* Empty state */}
-      {persons.length === 0 && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 pointer-events-none">
-          <p className="text-Text/40 text-lg">Vennekartet ditt er tomt</p>
-          <p className="text-Text/30 text-sm">Trykk + for å legge til din første person</p>
+      {status === 'error' && (
+        <p role="alert" className="absolute left-1/2 top-5 z-10 -translate-x-1/2 rounded-[10px] border border-rule bg-paper-raised px-4 py-2 text-[14px] text-redpencil">
+          {t.map.loadFailed}
+        </p>
+      )}
+
+      {status === 'ready' && persons.length === 0 && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
+          <EmptyState
+            title={t.map.emptyTitle}
+            body={t.map.emptyBody}
+            className="pointer-events-auto"
+            action={
+              <Button variant="primary" size="lg" onPress={onAddPerson}>
+                <UserPlus aria-hidden size={18} strokeWidth={1.75} />
+                {t.map.newPerson}
+              </Button>
+            }
+          />
         </div>
       )}
     </div>

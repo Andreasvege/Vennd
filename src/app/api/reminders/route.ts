@@ -17,6 +17,7 @@ export async function GET() {
     select: {
       id: true,
       name: true,
+      type: true,
       userId: true,
       cadenceWeeks: true,
       snoozedUntil: true,
@@ -33,10 +34,13 @@ export async function GET() {
     lastContactDate: p.logEntries[0]?.date ?? null,
   }))
 
+  const typeOf = new Map(persons.map((p) => [p.id, p.type]))
+
   const auto: ReminderResponse[] = computeAutoReminders(withCadence).map((r) => ({
     id: r.id,
     personId: r.personId,
     personName: r.personName,
+    personType: typeOf.get(r.personId)!,
     type: 'AUTO',
     message: r.message,
     dueDate: null,
@@ -45,7 +49,7 @@ export async function GET() {
 
   const stored = await prisma.reminder.findMany({
     where: { userId: session.user.id, type: 'MANUAL', dismissed: false },
-    include: { person: { select: { name: true } } },
+    include: { person: { select: { name: true, type: true } } },
     orderBy: { createdAt: 'desc' },
   })
 
@@ -53,6 +57,7 @@ export async function GET() {
     id: r.id,
     personId: r.personId,
     personName: r.person.name,
+    personType: r.person.type,
     type: 'MANUAL',
     message: r.message ?? '',
     dueDate: r.dueDate?.toISOString() ?? null,

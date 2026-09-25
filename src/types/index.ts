@@ -33,6 +33,7 @@ export type ReminderResponse = {
   id: string
   personId: string
   personName: string
+  personType: RelationshipType
   type: ReminderType
   message: string
   dueDate: string | null
@@ -43,15 +44,13 @@ export type ReminderResponse = {
 export type MeNodeData = {
   name: string
   image: string | null
-  initials: string
 }
 
 // React Flow node data shape
 export type PersonNodeData = {
   id: string
   name: string
-  color: string
-  initials: string
+  type: RelationshipType
   onAddLog: (personId: string) => void
   onViewProfile: (personId: string) => void
 }

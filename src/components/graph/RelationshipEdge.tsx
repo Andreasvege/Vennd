@@ -1,55 +1,46 @@
 'use client'
 
 import { BaseEdge, EdgeLabelRenderer, getStraightPath, type EdgeProps } from '@xyflow/react'
+import { tagStroke } from '@/lib/palette'
+import type { RelationshipType } from '@/types'
 
 type RelationshipEdgeData = {
+  type: RelationshipType
   label?: string
-  color: string
-  // 'spoke' er meg → person: stiplet og svak.
-  // 'between' er person ↔ person: hel, men tynn og svak.
-  variant?: 'spoke' | 'between'
+  // 'spoke' er deg → person: blekkstrek, tydeligst.
+  // 'between' er person ↔ person: tynnere og dempet.
+  variant: 'spoke' | 'between'
 }
 
-export function RelationshipEdge({
-  id,
-  sourceX,
-  sourceY,
-  targetX,
-  targetY,
-  data,
-}: EdgeProps) {
-  const edgeData = data as RelationshipEdgeData
-  const [edgePath, labelX, labelY] = getStraightPath({
-    sourceX,
-    sourceY,
-    targetX,
-    targetY,
-  })
+function strokeFor({ type, variant }: RelationshipEdgeData): React.CSSProperties {
+  // Romantiske bånd mellom andre er den ene relasjonen som får farge —
+  // det er informasjonen du oftest leter etter i en vennekrets.
+  if (variant === 'between' && type === 'PARTNER') {
+    return { stroke: tagStroke('rose'), strokeWidth: 1.4, strokeDasharray: '6 4' }
+  }
+  if (variant === 'between') {
+    return { stroke: 'var(--ink-muted)', strokeWidth: 1, strokeOpacity: 0.6 }
+  }
+  return { stroke: 'var(--ink)', strokeWidth: 1.5, strokeOpacity: 0.5 }
+}
+
+export function RelationshipEdge({ id, sourceX, sourceY, targetX, targetY, data }: EdgeProps) {
+  const edge = data as RelationshipEdgeData
+  const [path, labelX, labelY] = getStraightPath({ sourceX, sourceY, targetX, targetY })
 
   return (
     <>
-      <BaseEdge
-        id={id}
-        path={edgePath}
-        style={{
-          stroke: edgeData?.color ?? '#6c63ff',
-          strokeWidth: edgeData?.variant === 'between' ? 1 : 2,
-          strokeOpacity: edgeData?.variant === 'between' ? 0.3 : 0.45,
-          strokeDasharray: edgeData?.variant === 'between' ? undefined : '5 5',
-        }}
-      />
-      {edgeData?.label && (
+      <BaseEdge id={id} path={path} style={{ ...strokeFor(edge), strokeLinecap: 'round' }} />
+      {edge.label && (
         <EdgeLabelRenderer>
-          <div
+          <span
+            className="ink-halo absolute font-display text-[13px] italic text-ink-muted"
             style={{
-              position: 'absolute',
-              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
-              pointerEvents: 'all',
+              transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
             }}
-            className="text-[10px] text-white/70 bg-Primary/80 backdrop-blur-sm px-1.5 py-0.5 rounded-full border border-white/10"
           >
-            {edgeData.label}
-          </div>
+            {edge.label}
+          </span>
         </EdgeLabelRenderer>
       )}
     </>

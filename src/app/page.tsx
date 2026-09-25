@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { useSession, signIn } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
+import { Landing } from '@/components/Landing'
 import { VennekartCanvas } from '@/components/graph/VennekartCanvas'
 import { TimelineStripe } from '@/components/TimelineStripe'
-import { RemindersSidebar } from '@/components/RemindersSidebar'
+import { RemindersPanel } from '@/components/RemindersPanel'
 import { AddPersonModal } from '@/components/modals/AddPersonModal'
 import { AddRelationshipModal } from '@/components/modals/AddRelationshipModal'
 import { LogEntryModal } from '@/components/modals/LogEntryModal'
@@ -37,46 +38,28 @@ export default function HomePage() {
     setLogEntryOpen(true)
   }
 
-  if (status === 'loading') {
-    return (
-      <div className="flex items-center justify-center h-[80vh]">
-        <div className="text-Text/40">Laster...</div>
-      </div>
-    )
-  }
+  // Ingen «Laster …»-tekst: et tomt papir i et halvt sekund er roligere
+  // enn et blink av tekst som straks forsvinner.
+  if (status === 'loading') return null
 
-  if (!session) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[80vh] gap-6 text-center px-4">
-        <h1 className="text-5xl font-bold text-Accent">Vennekart</h1>
-        <p className="text-Text/60 max-w-sm">
-          Din personlige sosiale relasjonsdagbok. Hold oversikt over vennene dine, logg kontakt og få påminnelser.
-        </p>
-        <button
-          onClick={() => signIn('google')}
-          className="bg-Accent text-Primary font-bold px-8 py-4 rounded-2xl text-lg hover:opacity-90 transition-opacity shadow-lg shadow-Accent/30"
-        >
-          Kom i gang med Google
-        </button>
-      </div>
-    )
-  }
+  if (!session) return <Landing />
 
   return (
     <>
-      <TimelineStripe
-        refreshKey={activityKey}
-        onAddLog={() => handleAddLog(undefined)}
-      />
-
-      <div className="flex mx-4 mt-2 gap-0" style={{ height: 'calc(100vh - 140px)' }}>
-        <VennekartCanvas
-          onAddPerson={() => setAddPersonOpen(true)}
-          onAddRelationship={() => setAddRelationshipOpen(true)}
-          onAddLog={handleAddLog}
-          refreshKey={graphKey}
-        />
-        <RemindersSidebar refreshKey={activityKey} />
+      {/* Skjermen minus headeren (64 px). Tidslinjen tar det den trenger, og
+          kartet fyller resten — også når tidslinjen brettes ut, så siden
+          aldri scroller. */}
+      <div className="flex h-[calc(100dvh-64px)] flex-col">
+        <TimelineStripe refreshKey={activityKey} onAddLog={() => handleAddLog(undefined)} />
+        <div className="relative flex min-h-0 flex-1">
+          <VennekartCanvas
+            onAddPerson={() => setAddPersonOpen(true)}
+            onAddRelationship={() => setAddRelationshipOpen(true)}
+            onAddLog={handleAddLog}
+            refreshKey={graphKey}
+          />
+          <RemindersPanel refreshKey={activityKey} />
+        </div>
       </div>
 
       <AddPersonModal

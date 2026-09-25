@@ -1,54 +1,56 @@
-import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { RELATIONSHIP_LABELS, RELATIONSHIP_COLORS } from '@/lib/relationship-colors'
-import Image from 'next/image'
+import { auth } from '@/lib/auth'
+import { Avatar } from '@/components/ui/Avatar'
+import { SectionHeading } from '@/components/ui/SectionHeading'
+import { ThemeToggle } from '@/components/ThemeToggle'
+import { TYPE_TINT, tagStroke } from '@/lib/palette'
+import { t } from '@/i18n'
+import type { RelationshipType } from '@/types'
+
+const section = 'border-t border-rule pt-6'
 
 export default async function SettingsPage() {
   const session = await auth()
   if (!session?.user?.id) redirect('/')
 
-  const types = Object.entries(RELATIONSHIP_LABELS) as [keyof typeof RELATIONSHIP_LABELS, string][]
+  const types = Object.keys(TYPE_TINT) as RelationshipType[]
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-Text mb-8">Innstillinger</h1>
+    <main className="mx-auto flex max-w-2xl flex-col gap-8 px-5 py-10">
+      <h1 className="font-display text-[34px] leading-tight tracking-tight">{t.settings.title}</h1>
 
-      {/* Account */}
-      <div className="glass-card p-6 mb-6">
-        <h2 className="text-sm font-semibold text-Text/60 uppercase tracking-wider mb-4">Konto</h2>
+      <section className={section}>
+        <SectionHeading>{t.settings.account}</SectionHeading>
         <div className="flex items-center gap-4">
-          {session.user.image && (
-            <Image
-              src={session.user.image}
-              alt="Profilbilde"
-              width={48}
-              height={48}
-              className="rounded-full"
-            />
-          )}
-          <div>
-            <p className="font-medium text-Text">{session.user.name}</p>
-            <p className="text-sm text-Text/50">{session.user.email}</p>
+          <Avatar name={session.user.name ?? t.common.you} src={session.user.image} size="lg" decorative />
+          <div className="min-w-0">
+            <p className="font-display text-[18px]">{session.user.name}</p>
+            <p className="truncate text-[14px] text-ink-muted">{session.user.email}</p>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Relationship color legend */}
-      <div className="glass-card p-6">
-        <h2 className="text-sm font-semibold text-Text/60 uppercase tracking-wider mb-4">Relasjonsfarger</h2>
-        <div className="flex flex-col gap-3">
-          {types.map(([type, label]) => (
-            <div key={type} className="flex items-center gap-3">
-              <div
-                className="w-4 h-4 rounded-full shrink-0"
-                style={{ backgroundColor: RELATIONSHIP_COLORS[type] }}
+      <section className={section}>
+        <SectionHeading>{t.settings.appearance}</SectionHeading>
+        <ThemeToggle />
+      </section>
+
+      <section className={section}>
+        <SectionHeading>{t.settings.relationTypes}</SectionHeading>
+        <p className="mb-4 text-[14px] text-ink-muted">{t.settings.relationTypesHint}</p>
+        <ul className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
+          {types.map((type) => (
+            <li key={type} className="flex items-center gap-2.5 text-[15px]">
+              <span
+                aria-hidden
+                className="size-2.5 rounded-full"
+                style={{ background: tagStroke(TYPE_TINT[type]) }}
               />
-              <span className="text-sm text-Text/80">{label}</span>
-              <span className="text-xs text-Text/40 ml-auto font-mono">{RELATIONSHIP_COLORS[type]}</span>
-            </div>
+              {t.relationType[type]}
+            </li>
           ))}
-        </div>
-      </div>
+        </ul>
+      </section>
     </main>
   )
 }

@@ -1,9 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Modal } from './Modal'
-import { RELATIONSHIP_LABELS, RELATIONSHIP_COLORS } from '@/lib/relationship-colors'
+import { useEffect, useState } from 'react'
+import { Button, ChipGroup, Select, Sheet } from '@/components/ui'
+import { TYPE_TINT } from '@/lib/palette'
+import { t } from '@/i18n'
 import type { Person, RelationshipType } from '@/types'
+
+const TYPE_OPTIONS = (Object.keys(TYPE_TINT) as RelationshipType[]).map((value) => ({
+  value,
+  label: t.relationType[value],
+  tint: TYPE_TINT[value],
+}))
 
 type Props = {
   isOpen: boolean
@@ -11,27 +18,33 @@ type Props = {
   onSuccess: () => void
 }
 
-const RELATIONSHIP_TYPES = Object.keys(RELATIONSHIP_LABELS) as RelationshipType[]
-
 export function AddRelationshipModal({ isOpen, onClose, onSuccess }: Props) {
   const [persons, setPersons] = useState<Person[]>([])
-  const [fromId, setFromId] = useState('')
-  const [toId, setToId] = useState('')
+  const [fromId, setFromId] = useState<string | null>(null)
+  const [toId, setToId] = useState<string | null>(null)
   const [type, setType] = useState<RelationshipType>('FRIEND')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  // En gammel feilmelding hører ikke hjemme i et nyåpnet ark.
+  const [wasOpen, setWasOpen] = useState(isOpen)
+  if (isOpen !== wasOpen) {
+    setWasOpen(isOpen)
+    if (isOpen) setError('')
+  }
+
   useEffect(() => {
     if (!isOpen) return
     fetch('/api/persons')
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then(setPersons)
+      .catch(() => setError(t.log.loadPersonsFailed))
   }, [isOpen])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!fromId || !toId || fromId === toId) {
-      setError('Velg to forskjellige personer')
+      setError(t.relationship.samePerson)
       return
     }
 
@@ -47,73 +60,56 @@ export function AddRelationshipModal({ isOpen, onClose, onSuccess }: Props) {
     setLoading(false)
 
     if (!res.ok) {
-      setError('Noe gikk galt. Prøv igjen.')
+      setError(t.relationship.failed)
       return
     }
 
-    setFromId('')
-    setToId('')
+    setFromId(null)
+    setToId(null)
     setType('FRIEND')
     onSuccess()
     onClose()
   }
 
-  const selectClass = "bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-Text focus:outline-none focus:border-Accent transition-colors w-full"
+  const options = persons.map((p) => ({ value: p.id, label: p.name }))
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Legg til relasjon">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        {error && <p className="text-red-400 text-sm">{error}</p>}
-
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm text-Text/60">Fra person</label>
-          <select value={fromId} onChange={(e) => setFromId(e.target.value)} className={selectClass}>
-            <option value="">Velg person...</option>
-            {persons.map((p: Person) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
+    <Sheet
+      isOpen={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+      title={t.relationship.title}
+    >
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Select
+            label={t.relationship.from}
+            value={fromId}
+            onChange={setFromId}
+            options={options}
+            placeholder={t.common.choosePerson}
+          />
+          <Select
+            label={t.relationship.to}
+            value={toId}
+            onChange={setToId}
+            options={options.filter((o) => o.value !== fromId)}
+            placeholder={t.common.choosePerson}
+          />
         </div>
+        <ChipGroup label={t.relationship.type} value={type} onChange={setType} options={TYPE_OPTIONS} />
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm text-Text/60">Til person</label>
-          <select value={toId} onChange={(e) => setToId(e.target.value)} className={selectClass}>
-            <option value="">Velg person...</option>
-            {persons.filter((p: Person) => p.id !== fromId).map((p: Person) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-        </div>
+        {error && (
+          <p role="alert" className="text-[14px] text-redpencil">
+            {error}
+          </p>
+        )}
 
-        <div className="flex flex-col gap-2">
-          <label className="text-sm text-Text/60">Relasjonstype</label>
-          <div className="flex flex-wrap gap-2">
-            {RELATIONSHIP_TYPES.map((t: RelationshipType) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setType(t)}
-                className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
-                  type === t
-                    ? 'text-Primary border-transparent'
-                    : 'text-Text/60 border-white/10 hover:border-white/30'
-                }`}
-                style={type === t ? { backgroundColor: RELATIONSHIP_COLORS[t] } : {}}
-              >
-                {RELATIONSHIP_LABELS[t]}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading || !fromId || !toId}
-          className="mt-2 bg-Accent text-Primary font-bold py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40"
-        >
-          {loading ? 'Legger til...' : 'Legg til relasjon'}
-        </button>
+        <Button variant="primary" size="lg" type="submit" isDisabled={loading || !fromId || !toId}>
+          {loading ? t.common.saving : t.relationship.add}
+        </Button>
       </form>
-    </Modal>
+    </Sheet>
   )
 }

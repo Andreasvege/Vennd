@@ -60,7 +60,7 @@ describe('computeAutoReminders', () => {
     const out = computeAutoReminders([person({ lastContactDate: null })], NOW)
     expect(out).toHaveLength(1)
     expect(out[0].weeksSinceContact).toBeNull()
-    expect(out[0].message).toContain('aldri')
+    expect(out[0].message).toBe('Ingen kontakt logget ennå')
   })
 
   it('respekterer ulik kadens per person', () => {
@@ -79,10 +79,13 @@ describe('computeAutoReminders', () => {
     expect(out[0].id).toBe('auto:p1')
   })
 
-  it('navngir personen i meldingen', () => {
+  // Navnet vises allerede over meldingen, så meldingen sier bare hvor
+  // lenge det er siden — ellers står navnet to ganger i samme rad.
+  it('bærer navnet separat og sier antall uker i meldingen', () => {
     const out = computeAutoReminders([person({ name: 'Jenny', lastContactDate: weeksAgo(9) })], NOW)
-    expect(out[0].message).toContain('Jenny')
     expect(out[0].personName).toBe('Jenny')
+    expect(out[0].message).toBe('9 uker siden sist')
+    expect(out[0].message).not.toContain('Jenny')
   })
 
   it('sorterer mest forfalte først, og aldri-kontaktede øverst', () => {

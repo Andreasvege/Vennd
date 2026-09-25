@@ -1,108 +1,141 @@
 @import "tailwindcss";
 @import '@xyflow/react/dist/style.css';
 
-/* ====================================
-   FONTS
-   Option 1 (default): Google Fonts via next/font/google in layout.tsx
-   Option 2: Local custom fonts — add @font-face blocks here, then
-   update --font-body and --font-heading in :root below.
-
-   Example local font setup:
-   @font-face {
-     font-family: 'MyFont';
-     src: url('/fonts/MyFont-Regular.woff2') format('woff2');
-     font-weight: 400;
-     font-style: normal;
-   }
-   ==================================== */
-
-
-/* ====================================
-   3D SPIN ANIMATION
-   Usage: className="animate-spin-3d"
-   ==================================== */
-@keyframes spin-3d {
-  0%   { transform: rotateY(0deg); }
-  100% { transform: rotateY(360deg); }
-}
-
-.animate-spin-3d {
-  animation: spin-3d 4s linear infinite;
-}
-
-
-/* ====================================
-   HOVER GLITCH EFFECT
-   Usage: className="hover-glitch"
-
-   This base version uses a subtle opacity effect.
-   For a full font-glitch version (like Novafest), add @font-face
-   variants (e.g. Redaction10, Redaction20...) and replace the
-   animation with font-family switching keyframes.
-   ==================================== */
-.hover-glitch {
-  transition: opacity 0.05s;
-}
-
-.hover-glitch:hover {
-  opacity: 0.75;
-}
-
-
-/* ====================================
-   BRAND COLORS
-   Change these two values for each project, everything updates automatically.
-   Tailwind usage: bg-Primary, text-Accent, border-Accent, etc.
-   ==================================== */
+/* ── Dagbok ─────────────────────────────────────────────────────────────
+   Eneste kilde til farge. Lys er standard; mørk følger systemet, og
+   html[data-theme] overstyrer begge veier. Hold i synk med styles/tokens.ts
+   — kontrasttesten der vokter parene.
+   Mørk-blokken står to ganger med vilje: CSS kan ikke dele én
+   deklarasjonsblokk mellom en media query og en attributtselektor. */
 :root {
-  --Primary: #0f0f1a;
-  --Accent:  #6c63ff;
-  --Text:    #eaeaea;
-  --Glass:   rgba(255, 255, 255, 0.06);
-  --GlassBorder: rgba(255, 255, 255, 0.12);
+  --paper: #F3EEE4; --paper-raised: #FAF7F1; --ink: #27231E; --ink-muted: #6B6257;
+  --rule: #DDD3C3; --pen: #26386E; --pen-wash: #E4E7F1; --redpencil: #B23A2A;
+  --float-shadow: 0 12px 32px rgb(39 35 30 / 0.12);
+  --scrim: rgb(39 35 30 / 0.32);
+  --tag-sage-fill: #D5DDC8;  --tag-sage-stroke: #6E8559;
+  --tag-ochre-fill: #EBD9AE; --tag-ochre-stroke: #9A7426;
+  --tag-slate-fill: #CCD7E0; --tag-slate-stroke: #4F6E86;
+  --tag-plum-fill: #DDD0E3;  --tag-plum-stroke: #7A5A8C;
+  --tag-rose-fill: #EDCFCB;  --tag-rose-stroke: #A2544C;
+  --tag-teal-fill: #C7DEDA;  --tag-teal-stroke: #3F7F77;
+  --tag-clay-fill: #E6D0BD;  --tag-clay-stroke: #9A5F33;
+  --tag-stone-fill: #DAD6CF; --tag-stone-stroke: #6B655C;
+  color-scheme: light;
 }
 
-
-/* ====================================
-   TAILWIND THEME
-   Registers CSS variables as Tailwind utility classes.
-   --color-X makes bg-X, text-X, border-X etc. available.
-   ==================================== */
-@theme inline {
-  --color-Primary: var(--Primary);
-  --color-Accent:  var(--Accent);
-  --color-Text:    var(--Text);
-  --color-Glass:   var(--Glass);
-  --color-GlassBorder: var(--GlassBorder);
-  --breakpoint-navbar: 768px;
-}
-
-
-/* ====================================
-   CURSOR FIX
-   Tailwind 4 doesn't add pointer cursor to buttons by default.
-   ==================================== */
-@layer base {
-  button:not(:disabled) {
-    cursor: pointer;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #1B1916; --paper-raised: #24211D; --ink: #ECE5D8; --ink-muted: #A69D90;
+    --rule: #3A352F; --pen: #A9B8EE; --pen-wash: #262B3D; --redpencil: #EE8A78;
+    --float-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
+    --scrim: rgb(0 0 0 / 0.6);
+    --tag-sage-fill: #2E3628;  --tag-sage-stroke: #A3B98D;
+    --tag-ochre-fill: #3A3120; --tag-ochre-stroke: #D9B266;
+    --tag-slate-fill: #243039; --tag-slate-stroke: #93B1C8;
+    --tag-plum-fill: #33283A;  --tag-plum-stroke: #C0A2D2;
+    --tag-rose-fill: #3D2826;  --tag-rose-stroke: #E0A097;
+    --tag-teal-fill: #203533;  --tag-teal-stroke: #86C4BA;
+    --tag-clay-fill: #3A2B20;  --tag-clay-stroke: #D6A27A;
+    --tag-stone-fill: #2F2C28; --tag-stone-stroke: #B4ADA2;
+    color-scheme: dark;
   }
 }
 
-
-body {
-  background-color: var(--Primary);
-  color: var(--Text);
+:root[data-theme="dark"] {
+    --paper: #1B1916; --paper-raised: #24211D; --ink: #ECE5D8; --ink-muted: #A69D90;
+    --rule: #3A352F; --pen: #A9B8EE; --pen-wash: #262B3D; --redpencil: #EE8A78;
+    --float-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
+    --scrim: rgb(0 0 0 / 0.6);
+    --tag-sage-fill: #2E3628;  --tag-sage-stroke: #A3B98D;
+    --tag-ochre-fill: #3A3120; --tag-ochre-stroke: #D9B266;
+    --tag-slate-fill: #243039; --tag-slate-stroke: #93B1C8;
+    --tag-plum-fill: #33283A;  --tag-plum-stroke: #C0A2D2;
+    --tag-rose-fill: #3D2826;  --tag-rose-stroke: #E0A097;
+    --tag-teal-fill: #203533;  --tag-teal-stroke: #86C4BA;
+    --tag-clay-fill: #3A2B20;  --tag-clay-stroke: #D6A27A;
+    --tag-stone-fill: #2F2C28; --tag-stone-stroke: #B4ADA2;
+    color-scheme: dark;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-weight: bold;
+/* Gjør tokenene til Tailwind-klasser: --color-ink gir text-ink, bg-ink osv. */
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-rule: var(--rule);
+  --color-pen: var(--pen);
+  --color-pen-wash: var(--pen-wash);
+  --color-redpencil: var(--redpencil);
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-sans: var(--font-instrument), system-ui, sans-serif;
+  --shadow-float: var(--float-shadow);
+  --color-scrim: var(--scrim);
+  --breakpoint-desk: 1024px;
 }
 
-/* Glassmorphism card — use className="glass-card" */
-.glass-card {
-  background: var(--Glass);
-  border: 1px solid var(--GlassBorder);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: 1rem;
+
+/* I base-laget, så utility-klasser alltid kan overstyre. Ulagret CSS
+   vinner over alle Tailwind-lag, uansett spesifisitet. */
+@layer base {
+  body {
+    background-color: var(--paper);
+    color: var(--ink);
+  }
+
+  /* Tailwind v4 gir ikke knapper pekermarkør som standard. */
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+
+  /* Fraunces halvfet: tydelig uten å bli tung. */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* React Flow tegnes som resten av papiret. Biblioteket styres med egne
+   variabler; overstyrer vi klassene direkte, vinner dets mørk-modus-regler. */
+.react-flow {
+  --xy-controls-button-background-color: var(--paper-raised);
+  --xy-controls-button-background-color-hover: var(--pen-wash);
+  --xy-controls-button-color: var(--ink);
+  --xy-controls-button-color-hover: var(--ink);
+  --xy-controls-button-border-color: var(--rule);
+  --xy-controls-box-shadow: none;
+  --xy-connectionline-stroke-default: var(--pen);
+}
+.react-flow__controls {
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* En papirfarget glorie rundt tekst som står rett på kartet, så den er
+   lesbar selv der en strek går bak. */
+.ink-halo {
+  text-shadow:
+    0 0 2px var(--paper),
+    0 0 2px var(--paper),
+    0 0 4px var(--paper),
+    0 0 6px var(--paper);
+}
+
+/* Fraunces sine egne akser: SOFT runder av formene, og WONK gir kursiven
+   de litt skjeve bokstavene. Det er dette som skiller dagbok-stemmen fra
+   en vanlig avis-serif. */
+.font-display {
+  font-variation-settings: 'SOFT' 50, 'WONK' 0;
+}
+.font-display.italic,
+.font-display .italic,
+.italic .font-display {
+  font-variation-settings: 'SOFT' 50, 'WONK' 1;
 }
