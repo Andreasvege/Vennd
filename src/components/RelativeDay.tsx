@@ -1,9 +1,7 @@
 'use client'
 
-import { useSyncExternalStore } from 'react'
+import { useIsClient } from './useIsClient'
 import { formatDate, relativeDay } from '@/domain/format'
-
-const noop = () => () => {}
 
 /**
  * «i går» avhenger av hvilken dag det er der *du* er. Serveren kjører i
@@ -13,7 +11,7 @@ const noop = () => () => {}
  */
 export function RelativeDay({ date, className }: { date: Date | string; className?: string }) {
   const d = new Date(date)
-  const onClient = useSyncExternalStore(noop, () => true, () => false)
+  const onClient = useIsClient()
   return (
     <time dateTime={d.toISOString()} className={className}>
       {onClient ? relativeDay(d) : formatDate(d)}

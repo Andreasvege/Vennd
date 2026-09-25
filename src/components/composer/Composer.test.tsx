@@ -103,7 +103,7 @@ it('rører ikke kladden når loggen skrives fra en profil', async () => {
   const onClose = vi.fn()
   render(
     <ToastProvider>
-      <Composer isOpen onClose={onClose} data={data} presetPersonIds={['ingrid']} />
+      <Composer isOpen onClose={onClose} data={data} preset={{ personIds: ['ingrid'] }} />
     </ToastProvider>,
   )
   await userEvent.setup().click(screen.getByRole('button', { name: 'Lagre' }))

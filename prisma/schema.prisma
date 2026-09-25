@@ -55,6 +55,7 @@ model User {
   threads       Thread[]
   tags          Tag[]
   mapViews      MapView[]
+  plans         Plan[]
 }
 
 model Person {
@@ -86,6 +87,7 @@ model Person {
   participations LogParticipant[]
   threads        ThreadPerson[]
   phases         RomanticPhaseEntry[]
+  plans          PlanPerson[]
   relationsFrom  Relationship[] @relation("FromPerson")
   relationsTo    Relationship[] @relation("ToPerson")
 }
@@ -158,6 +160,7 @@ model LogEntry {
   participants  LogParticipant[]
   threadsOpened Thread[] @relation("OpenedBy")
   threadsClosed Thread[] @relation("ClosedBy")
+  plan          Plan?
 
   @@index([userId, date])
 }
@@ -265,4 +268,41 @@ model MapView {
   createdAt DateTime @default(now())
 
   @@unique([userId, name])
+}
+
+// Noe som skal skje: «Middag med Ingrid lørdag». Blir til en logg når det
+// har skjedd (logEntryId), eller avlyses. Loggen er det som faktisk skjedde;
+// planen er det du hadde tenkt.
+model Plan {
+  id         String       @id @default(cuid())
+  userId     String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  at         DateTime
+  // Uten klokkeslett lagres datoen kl. 12:00 UTC, som logger.
+  hasTime    Boolean      @default(false)
+  title      String
+  type       LogEntryType?
+  status     PlanStatus   @default(PLANNED)
+  logEntryId String?      @unique
+  logEntry   LogEntry?    @relation(fields: [logEntryId], references: [id], onDelete: SetNull)
+  createdAt  DateTime     @default(now())
+  persons    PlanPerson[]
+
+  @@index([userId, status, at])
+}
+
+enum PlanStatus {
+  PLANNED
+  DONE
+  CANCELLED
+}
+
+model PlanPerson {
+  planId   String
+  personId String
+  plan     Plan   @relation(fields: [planId], references: [id], onDelete: Cascade)
+  person   Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@id([planId, personId])
+  @@index([personId])
 }

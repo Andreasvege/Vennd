@@ -152,6 +152,31 @@ async function main() {
     ],
   })
 
+  // Framover: en bursdag snart, et treff i morgen, og ett som har vært.
+  const inDays = (n: number) => {
+    const d = new Date()
+    d.setDate(d.getDate() + n)
+    return d
+  }
+  const soon = inDays(5)
+  await prisma.person.update({
+    where: { id: id.Ingrid },
+    data: { birthday: new Date(Date.UTC(1997, soon.getMonth(), soon.getDate(), 12)) },
+  })
+  const plan = (title: string, when: Date, who: string[], type: 'MET' | 'DATE' | null = 'MET') =>
+    prisma.plan.create({
+      data: {
+        userId: USER_ID,
+        title,
+        at: new Date(Date.UTC(when.getFullYear(), when.getMonth(), when.getDate(), 12)),
+        type,
+        persons: { create: who.map((w) => ({ personId: id[w] })) },
+      },
+    })
+  await plan('Middag på Smalhans', inDays(1), ['Ingrid', 'Martin'])
+  await plan('Date på Territoriet', inDays(3), ['Hanna'], 'DATE')
+  await plan('Kaffe med Sofie', inDays(-2), ['Sofie'])
+
   console.log(`Seedet ${people.length} personer for ${USER_ID}.`)
 }
 

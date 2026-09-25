@@ -17,7 +17,7 @@ export async function createLog(raw: LogInput): Promise<ActionResult<LogSaved>> 
   const userId = await requireUserId()
   const parsed = logInput.safeParse(raw)
   if (!parsed.success) return fail('invalid')
-  const { personIds, date, type, body, closeThreads = [], newThreads = [] } = parsed.data
+  const { personIds, date, type, body, closeThreads = [], newThreads = [], planId } = parsed.data
   const unique = [...new Set(personIds)]
   const closeIds = [...new Set(closeThreads.map((c) => c.id))]
 
@@ -28,6 +28,10 @@ export async function createLog(raw: LogInput): Promise<ActionResult<LogSaved>> 
       select: { id: true },
     })
     assertAllOwned(closeIds, open)
+    if (planId) {
+      const plan = await prisma.plan.findFirst({ where: { id: planId, userId, status: 'PLANNED' }, select: { id: true } })
+      if (!plan) throw new NotOwnedError()
+    }
   } catch (e) {
     if (e instanceof NotOwnedError) return fail('not-found')
     throw e
@@ -58,6 +62,14 @@ export async function createLog(raw: LogInput): Promise<ActionResult<LogSaved>> 
       })
       if (count !== 1) throw new NotOwnedError()
     }
+    if (planId) {
+      // Planen er fulgt opp: loggen er det som faktisk skjedde.
+      const { count } = await tx.plan.updateMany({
+        where: { id: planId, userId, status: 'PLANNED' },
+        data: { status: 'DONE', logEntryId: created.id },
+      })
+      if (count !== 1) throw new NotOwnedError()
+    }
     for (const th of newThreads) {
       await tx.thread.create({
         data: {
@@ -84,7 +96,13 @@ export async function deleteLog(rawId: string): Promise<ActionResult> {
   const userId = await requireUserId()
   const id = parseId(rawId)
   if (!id) return fail('invalid')
-  const { count } = await prisma.logEntry.deleteMany({ where: { id, userId } })
+  const count = await prisma.$transaction(async (tx) => {
+    // Loggen som avsluttet en plan: planen venter igjen på «hvordan gikk
+    // det?», i stedet for å bli stående som gjort uten noe å vise til.
+    await tx.plan.updateMany({ where: { logEntryId: id, userId }, data: { status: 'PLANNED', logEntryId: null } })
+    const { count } = await tx.logEntry.deleteMany({ where: { id, userId } })
+    return count
+  })
   if (count === 0) return fail('not-found')
   refreshAll()
   return { ok: true }

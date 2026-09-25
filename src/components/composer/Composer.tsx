@@ -11,7 +11,7 @@ import {
   ToggleButtonGroup,
 } from 'react-aria-components'
 import { Check, Plus, X } from 'lucide-react'
-import { Avatar, Button, ChipGroup, Sheet, TextField } from '@/components/ui'
+import { Avatar, Button, ChipGroup, Select, Sheet, TextField } from '@/components/ui'
 import { chipBase } from '@/components/ui/Chip'
 import { fieldControl, fieldLabel } from '@/components/ui/TextField'
 import { useToast } from '@/components/toast/ToastProvider'
@@ -24,10 +24,12 @@ import type { ComposerData, ComposerPerson } from '@/server/queries/composer'
 import { t } from '@/i18n'
 import type { LogEntryType } from '@/types'
 import { ParticipantPicker } from './ParticipantPicker'
+import type { ComposerPreset } from './ComposerProvider'
+import { dueFrom, type DueChoice } from '@/domain/plans'
 import { useDraft } from './useDraft'
 
 type When = 'today' | 'yesterday' | 'other'
-type NewThread = { key: number; title: string; personIds: string[]; autoFocus: boolean }
+type NewThread = { key: number; title: string; personIds: string[]; autoFocus: boolean; due: DueChoice }
 
 const LOG_TYPES: LogEntryType[] = ['MET', 'CALLED', 'MESSAGE', 'DATE', 'OTHER']
 const WHEN_OPTIONS: { value: When; label: string }[] = [
@@ -47,8 +49,8 @@ type Props = {
   isOpen: boolean
   onClose: () => void
   data: ComposerData
-  /** Forhåndsvalgte personer, f.eks. fra en profil. Uten dem gjenopprettes kladden. */
-  presetPersonIds?: string[]
+  /** Forhåndsutfylt, f.eks. fra en profil eller en plan. Uten personer gjenopprettes kladden. */
+  preset?: ComposerPreset
 }
 
 /**
@@ -56,7 +58,8 @@ type Props = {
  * fra teksten, viser trådene du kan lukke med dem, og lar deg legge igjen
  * noe å følge opp. Alt lagres i én handling.
  */
-export function Composer({ isOpen, onClose, data, presetPersonIds }: Props) {
+export function Composer({ isOpen, onClose, data, preset = {} }: Props) {
+  const presetPersonIds = preset.personIds
   const toast = useToast()
   const draft = useDraft()
   // Kladden leses én gang, når arket åpnes uten forhåndsvalgte personer.
@@ -67,10 +70,11 @@ export function Composer({ isOpen, onClose, data, presetPersonIds }: Props) {
   const persons = useMemo(() => [...data.persons, ...extraPersons], [data.persons, extraPersons])
   const byId = useMemo(() => new Map(persons.map((p) => [p.id, p])), [persons])
 
-  const [when, setWhen] = useState<When>('today')
-  const [otherDate, setOtherDate] = useState(todayISO())
-  const [type, setType] = useState<LogEntryType | null>(null)
-  const [text, setText] = useState(restored?.text ?? '')
+  const presetWhen: When = !preset.date || preset.date === todayISO() ? 'today' : 'other'
+  const [when, setWhen] = useState<When>(presetWhen)
+  const [otherDate, setOtherDate] = useState(preset.date ?? todayISO())
+  const [type, setType] = useState<LogEntryType | null>(preset.type ?? null)
+  const [text, setText] = useState(preset.text ?? restored?.text ?? '')
   // Personer du selv har valgt (eller som var forhåndsvalgt).
   const [chosen, setChosen] = useState<string[]>(() => {
     // En kladd kan nevne noen som er slettet siden; de ville verken vises
@@ -82,7 +86,7 @@ export function Composer({ isOpen, onClose, data, presetPersonIds }: Props) {
   const [dismissed, setDismissed] = useState<Set<string>>(new Set())
   const [closing, setClosing] = useState<Map<string, string>>(new Map())
   const [newThreads, setNewThreads] = useState<NewThread[]>(
-    (restored?.newThreads ?? []).map((th, i) => ({ ...th, key: i, autoFocus: false })),
+    (restored?.newThreads ?? []).map((th, i) => ({ ...th, key: i, autoFocus: false, due: 'none' as DueChoice })),
   )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -147,7 +151,7 @@ export function Composer({ isOpen, onClose, data, presetPersonIds }: Props) {
     })
 
   const addFollowUp = () =>
-    setNewThreads((prev) => [...prev, { key: Date.now(), title: '', personIds: [...personIds], autoFocus: true }])
+    setNewThreads((prev) => [...prev, { key: Date.now(), title: '', personIds: [...personIds], autoFocus: true, due: 'none' }])
 
   const submit = async () => {
     if (saving) return
@@ -164,7 +168,7 @@ export function Composer({ isOpen, onClose, data, presetPersonIds }: Props) {
         // En linje følger deltakerne: de som er fjernet siden, faller bort, og
         // står ingen igjen, gjelder den alle.
         const who = th.personIds.filter((id) => personIds.includes(id))
-        return { title: th.title, personIds: who.length ? who : personIds }
+        return { title: th.title, personIds: who.length ? who : personIds, dueDate: dueFrom(th.due) }
       })
 
     const result = await settle(
@@ -179,6 +183,7 @@ export function Composer({ isOpen, onClose, data, presetPersonIds }: Props) {
           .filter(([id]) => threadsWithThem.some((th) => th.id === id))
           .map(([id, resolution]) => ({ id, resolution })),
         newThreads: lines,
+        planId: preset.planId,
       }),
     )
     setSaving(false)
@@ -365,6 +370,33 @@ export function Composer({ isOpen, onClose, data, presetPersonIds }: Props) {
                 >
                   <X aria-hidden size={16} strokeWidth={1.75} />
                 </Button>
+              </div>
+              <div className="flex flex-wrap items-end gap-3">
+                <Select
+                  label={t.composer.followUpWhen}
+                  value={['none', 'week', 'month'].includes(line.due) ? line.due : 'date'}
+                  onChange={(v) =>
+                    setNewThreads((prev) =>
+                      prev.map((l) => (l.key === line.key ? { ...l, due: v === 'date' ? todayISO() : v } : l)),
+                    )
+                  }
+                  options={[
+                    { value: 'none', label: t.composer.dueNone },
+                    { value: 'week', label: t.composer.dueWeek },
+                    { value: 'month', label: t.composer.dueMonth },
+                    { value: 'date', label: t.composer.dueDate },
+                  ]}
+                  className="w-44"
+                />
+                {!['none', 'week', 'month'].includes(line.due) && (
+                  <TextField
+                    label={t.log.date}
+                    type="date"
+                    value={line.due}
+                    onChange={(v) => setNewThreads((prev) => prev.map((l) => (l.key === line.key ? { ...l, due: v } : l)))}
+                    className="w-44"
+                  />
+                )}
               </div>
               {personIds.length > 1 && (
                 <ToggleButtonGroup

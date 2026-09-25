@@ -13,6 +13,7 @@ import { LogWithButton } from './LogWithButton'
 import { FactList } from './FactList'
 import { PhaseControl } from './PhaseControl'
 import { RelationshipList } from './RelationshipList'
+import { PersonAhead } from './PersonAhead'
 import { pathHref } from '@/app/kart/sti'
 import { PhaseStripe } from './PhaseStripe'
 import { ThreadList } from './ThreadList'
@@ -109,6 +110,7 @@ export function PersonProfile({ person }: { person: PersonProfileData }) {
             </ul>
           )}
           <p className="text-[14px] text-ink-muted">{meta.join(' · ')}</p>
+          <PersonAhead person={person} />
           {person.type === 'ROMANTIC' && (
             <div className="mt-2 flex max-w-sm flex-col gap-3">
               {person.phase && <PhaseStripe phases={person.phases} current={person.phase} />}

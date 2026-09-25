@@ -2,9 +2,17 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { ArrowRight, PenLine } from 'lucide-react'
+import { ArrowRight, CalendarPlus, Cake, PenLine } from 'lucide-react'
 import { Avatar, Button, EmptyState, SectionHeading } from '@/components/ui'
-import { useComposer } from '@/components/composer/ComposerProvider'
+import { useComposer, usePlanner } from '@/components/composer/ComposerProvider'
+import { BriefSheet } from './BriefSheet'
+import { useIsClient } from '@/components/useIsClient'
+import { birthdayLabel, whenLabel } from './when'
+import { cancelPlan } from '@/server/actions/plan'
+import { todayISO } from '@/domain/format'
+import type { BirthdayItem, PlanItem } from '@/server/queries/plans'
+import { nextBirthday } from '@/domain/birthdays'
+import { splitPlans } from '@/domain/plans'
 import { LOG_ICON } from '@/components/log-icons'
 import { RelativeDay } from '@/components/RelativeDay'
 import { closeThread } from '@/server/actions/thread'
@@ -46,6 +54,44 @@ function ReminderRow({ r, onDismiss, busy }: { r: ReminderItem; onDismiss: () =>
   )
 }
 
+function BirthdayRow({ b }: { b: BirthdayItem }) {
+  // I nettleseren: «i dag» og «i morgen» etter din kalender, ikke serverens.
+  const next = useIsClient() ? nextBirthday(new Date(b.birthday), new Date()) : { inDays: b.inDays, turns: b.turns }
+  if (next.inDays > 14) return null
+  return (
+    <li className="flex items-center gap-3">
+      <Cake aria-hidden size={16} strokeWidth={1.75} className="shrink-0 text-ink-muted" />
+      <span className="text-[15px]">
+        <Link href={`/person/${b.id}`} className="font-medium hover:underline">
+          {b.name}
+        </Link>{' '}
+        {next.turns !== null ? t.birthdays.turns(next.turns) : t.birthdays.birthday} {birthdayLabel(next.inDays)}
+      </span>
+    </li>
+  )
+}
+
+function PlanRow({ plan, children }: { plan: PlanItem; children: React.ReactNode }) {
+  // Datoen formateres i nettleseren (lokal tid), aldri på serveren.
+  const label = useIsClient() ? whenLabel(new Date(plan.at), plan.hasTime) : ''
+  return (
+    <li className="flex items-start gap-3 py-4">
+      <div className="flex -space-x-2 pt-0.5">
+        {plan.persons.slice(0, 3).map((p) => (
+          <Avatar key={p.id} name={p.name} tint={p.tint} size="md" decorative className="ring-2 ring-paper" />
+        ))}
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <p className="font-display text-[18px] leading-snug">{plan.title}</p>
+        <p className="text-[14px] text-ink-muted">
+          {[label, plan.persons.map((p) => p.name.split(' ')[0]).join(', ')].filter(Boolean).join(' · ')}
+        </p>
+        <div className="-ml-2.5 mt-1 flex flex-wrap gap-1">{children}</div>
+      </div>
+    </li>
+  )
+}
+
 /**
  * «I dag»: det viktigste først. Skriveboksen, så det som har en dato, så
  * hvem du bør ta kontakt med (og hva du kan spørre om), så det siste du
@@ -53,6 +99,12 @@ function ReminderRow({ r, onDismiss, busy }: { r: ReminderItem; onDismiss: () =>
  */
 export function TodayView({ data }: { data: TodayData }) {
   const openComposer = useComposer()
+  const openPlanner = usePlanner()
+  const [brief, setBrief] = useState<PlanItem | null>(null)
+  const { ahead } = data
+  // Når et treff er «passert», avgjøres av din klokke: serveren (UTC) ville
+  // holdt gårsdagens treff som kommende til langt på natt norsk tid.
+  const { upcoming, awaiting } = splitPlans(ahead.plans, useIsClient() ? new Date() : new Date(ahead.now))
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [showAll, setShowAll] = useState(false)
@@ -103,22 +155,87 @@ export function TodayView({ data }: { data: TodayData }) {
         {t.composer.prompt}
       </button>
 
+      <Button variant="quiet" onPress={() => openPlanner()} className="-mt-5 -ml-2.5 self-start">
+        <CalendarPlus aria-hidden size={16} strokeWidth={1.75} />
+        {t.plans.plan}
+      </Button>
+
       {error && (
         <p role="alert" className="text-[14px] text-redpencil">
           {error}
         </p>
       )}
 
-      {data.due.length > 0 && (
+      {awaiting.length > 0 && (
+        <section>
+          <SectionHeading>{t.plans.howDidItGo}</SectionHeading>
+          <ul className="flex flex-col divide-y divide-rule">
+            {awaiting.map((plan) => (
+              <PlanRow key={plan.id} plan={plan}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onPress={() =>
+                    openComposer({
+                      personIds: plan.persons.map((p) => p.id),
+                      type: plan.type,
+                      date: todayISO(new Date(plan.at)),
+                      text: `${plan.title}. `,
+                      planId: plan.id,
+                    })
+                  }
+                >
+                  <PenLine aria-hidden size={14} strokeWidth={1.75} />
+                  {t.plans.writeIt}
+                </Button>
+                <Button
+                  variant="quiet"
+                  size="sm"
+                  onPress={() =>
+                    startTransition(async () => {
+                      const result = await settle(cancelPlan(plan.id))
+                      if (!result.ok) setError(t.errors[result.error])
+                    })
+                  }
+                >
+                  {t.plans.didntHappen}
+                </Button>
+              </PlanRow>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {(upcoming.length > 0 || data.due.length > 0) && (
         <section>
           <SectionHeading>{t.today.upcoming}</SectionHeading>
           <ul className="flex flex-col divide-y divide-rule">
+            {upcoming.map((plan) => (
+              <PlanRow key={plan.id} plan={plan}>
+                <Button variant="quiet" size="sm" onPress={() => setBrief(plan)}>
+                  {t.plans.prepare}
+                </Button>
+              </PlanRow>
+            ))}
             {data.due.map((r) => (
               <ReminderRow key={r.id} r={r} onDismiss={() => dismiss(r)} busy={busy === r.id} />
             ))}
           </ul>
         </section>
       )}
+
+      {ahead.birthdays.length > 0 && (
+        <section>
+          <SectionHeading>{t.birthdays.title}</SectionHeading>
+          <ul className="flex flex-col gap-3">
+            {ahead.birthdays.map((b) => (
+              <BirthdayRow key={b.id} b={b} />
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {brief && <BriefSheet plan={brief} briefs={ahead.briefs} onClose={() => setBrief(null)} />}
 
       <section>
         <SectionHeading>{t.today.reach}</SectionHeading>
