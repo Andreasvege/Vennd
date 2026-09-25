@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { tagName, tagInput, logInput, personInput, relationshipInput, phaseInput, factInput, relationshipPatch } from './schemas'
+import { tagName, tagInput, logInput, personInput, relationshipInput, phaseInput, factInput, relationshipPatch, mapViewInput } from './schemas'
 
 describe('tagName', () => {
   it('trimmer og avviser tomme', () => {
@@ -103,5 +103,17 @@ describe('relationshipPatch', () => {
   })
   it('avviser slutt før start', () => {
     expect(relationshipPatch.safeParse({ since: '2026-01-01', until: '2025-01-01' }).success).toBe(false)
+  })
+})
+
+describe('mapViewInput', () => {
+  const filter = { hiddenTags: [], showUntagged: true, hideRomanticEdges: true, showHistorical: true, showDerived: false }
+  it('godtar et kjent syn med fullt filter', () => {
+    expect(mapViewInput.safeParse({ name: 'Vis til andre', mode: 'nearness', filter }).success).toBe(true)
+  })
+  it('avviser ukjent syn, tomt navn og ufullstendig filter', () => {
+    expect(mapViewInput.safeParse({ name: 'X', mode: 'globe', filter }).success).toBe(false)
+    expect(mapViewInput.safeParse({ name: ' ', mode: 'network', filter }).success).toBe(false)
+    expect(mapViewInput.safeParse({ name: 'X', mode: 'network', filter: {} }).success).toBe(false)
   })
 })

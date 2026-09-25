@@ -1,5 +1,6 @@
 import 'server-only'
 import { prisma } from '@/lib/prisma'
+import { getLastContact } from './lastContact'
 import { computeAutoReminders } from '@/domain/reminders'
 import { personTint, type TagColor } from '@/lib/palette'
 
@@ -42,15 +43,7 @@ export async function getReminders(userId: string, now: Date = new Date()): Prom
         },
       },
     }),
-    // Siste kontakt per person, regnet ut i databasen: å laste hver logg
-    // du noensinne har skrevet, bare for å finne den nyeste, skalerer dårlig.
-    prisma.$queryRaw<{ personId: string; last: Date }[]>`
-      SELECT lp."personId", max(le."date") AS "last"
-      FROM "LogParticipant" lp
-      JOIN "LogEntry" le ON le."id" = lp."logEntryId"
-      WHERE le."userId" = ${userId}
-      GROUP BY lp."personId"
-    `,
+    getLastContact(userId),
     prisma.thread.findMany({
       // Datoer lagres kl. 12 UTC. «I dag» betyr hele dagen, ikke bare fram
       // til nå — ellers dukket dagens tråder først opp klokka 14 norsk tid.
@@ -67,7 +60,7 @@ export async function getReminders(userId: string, now: Date = new Date()): Prom
     }),
   ])
 
-  const lastContact = new Map(logs.map((l) => [l.personId, l.last]))
+  const lastContact = logs
   const byId = new Map(persons.map((p) => [p.id, p]))
 
   const threads: ReminderItem[] = dueThreads.flatMap((th) => {
