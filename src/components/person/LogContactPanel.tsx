@@ -59,7 +59,7 @@ export function LogContactPanel({ personId, personName }: { personId: string; pe
         Kontaktlogg
       </h2>
       {!open && (
-        <Button variant="glass" size="sm" onPress={() => setOpen(true)}>
+        <Button variant="secondary" size="sm" onPress={() => setOpen(true)}>
           + Logg kontakt
         </Button>
       )}
@@ -106,10 +106,10 @@ export function LogContactPanel({ personId, personName }: { personId: string; pe
       />
 
       <div className="flex gap-2">
-        <Button type="submit" size="sm" isDisabled={saving} className="flex-1">
+        <Button variant="primary" type="submit" size="sm" isDisabled={saving} className="flex-1">
           {saving ? 'Lagrer...' : 'Lagre'}
         </Button>
-        <Button variant="ghost" size="sm" onPress={() => setOpen(false)} isDisabled={saving}>
+        <Button variant="quiet" size="sm" onPress={() => setOpen(false)} isDisabled={saving}>
           Avbryt
         </Button>
         </div>

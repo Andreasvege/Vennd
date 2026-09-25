@@ -153,7 +153,7 @@ export function EditPersonForm({ person }: Props) {
             {COLOR_OPTIONS.map((c) => (
               <Button
                 key={c}
-                variant="ghost"
+                variant="quiet"
                 size="sm"
                 onPress={() => setColor(c)}
                 aria-label={`Velg farge ${c}`}
@@ -167,11 +167,11 @@ export function EditPersonForm({ person }: Props) {
         </div>
 
         <div className="flex gap-2 mt-2">
-          <Button type="submit" isDisabled={saving || !name.trim()} className="flex-1">
+          <Button variant="primary" type="submit" isDisabled={saving || !name.trim()} className="flex-1">
             {saving ? 'Lagrer...' : 'Lagre'}
           </Button>
           <Button
-            variant="glass"
+            variant="secondary"
             onPress={() => router.push(`/person/${person.id}`)}
             isDisabled={saving}
           >
@@ -179,7 +179,7 @@ export function EditPersonForm({ person }: Props) {
           </Button>
           {confirmDelete ? (
             <Button
-              variant="glass"
+              variant="secondary"
               onPress={remove}
               isDisabled={saving}
               className="text-red-400! border-red-400/40!"
@@ -187,7 +187,7 @@ export function EditPersonForm({ person }: Props) {
               Slett for godt?
             </Button>
           ) : (
-            <Button variant="ghost" onPress={() => setConfirmDelete(true)} isDisabled={saving}>
+            <Button variant="quiet" onPress={() => setConfirmDelete(true)} isDisabled={saving}>
               Slett
             </Button>
           )}

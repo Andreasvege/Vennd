@@ -168,7 +168,7 @@ export function AddPersonModal({ isOpen, onClose, onSuccess }: Props) {
             {COLOR_OPTIONS.map((c) => (
               <Button
                 key={c}
-                variant="ghost"
+                variant="quiet"
                 size="sm"
                 onPress={() => setColor(c)}
                 aria-label={`Velg farge ${c}`}
@@ -181,7 +181,7 @@ export function AddPersonModal({ isOpen, onClose, onSuccess }: Props) {
           </div>
         </div>
 
-        <Button type="submit" isDisabled={loading || !name.trim()} className="mt-2 w-full">
+        <Button variant="primary" type="submit" isDisabled={loading || !name.trim()} className="mt-2 w-full">
           {loading ? 'Legger til...' : 'Legg til'}
         </Button>
       </form>

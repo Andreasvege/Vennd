@@ -15,19 +15,22 @@ export type TextFieldProps = Omit<AriaTextFieldProps, 'children' | 'className'> 
   description?: string
   errorMessage?: string
   multiline?: boolean
+  /** Skriv i dagbokens stemme (Fraunces). Brukes for loggtekst og notater. */
+  serif?: boolean
   /** placeholder og rows ligger på Input/TextArea i react-aria, ikke på TextField. */
   placeholder?: string
   rows?: number
   className?: string
 }
 
-const controlStyles = [
-  'w-full bg-Glass border border-GlassBorder rounded-xl px-3 py-2 text-Text',
-  'placeholder:text-Text/30 outline-none transition-colors',
-  'data-[hovered]:border-Accent/30',
-  'data-[focused]:border-Accent data-[focused]:ring-2 data-[focused]:ring-Accent/30',
-  'data-[invalid]:border-[#ef5350]',
-  'data-[disabled]:opacity-40',
+export const fieldLabel = 'block text-[13px] text-ink-muted mb-1.5'
+
+export const fieldControl = [
+  'w-full rounded-[10px] bg-paper-raised border border-rule px-3 py-2.5 text-[15px] text-ink',
+  'placeholder:text-ink-muted/70 outline-none transition-colors duration-150',
+  'data-[hovered]:border-ink-muted/60',
+  'data-[focused]:border-pen data-[focused]:ring-2 data-[focused]:ring-pen/20',
+  'data-[invalid]:border-redpencil data-[disabled]:opacity-40',
 ].join(' ')
 
 export function TextField({
@@ -35,12 +38,17 @@ export function TextField({
   description,
   errorMessage,
   multiline = false,
+  serif = false,
   placeholder,
   rows = 3,
   className,
   isInvalid,
   ...props
 }: TextFieldProps) {
+  const control = [fieldControl, serif && 'font-display text-[18px] leading-relaxed']
+    .filter(Boolean)
+    .join(' ')
+
   return (
     <AriaTextField
       {...props}
@@ -49,25 +57,21 @@ export function TextField({
       isInvalid={isInvalid ?? Boolean(errorMessage)}
       className={['flex flex-col', className].filter(Boolean).join(' ')}
     >
-      <Label className="block text-sm text-Text/60 mb-1.5">{label}</Label>
+      <Label className={fieldLabel}>{label}</Label>
 
       {multiline ? (
-        <TextArea
-          placeholder={placeholder}
-          rows={rows}
-          className={`${controlStyles} resize-none`}
-        />
+        <TextArea placeholder={placeholder} rows={rows} className={`${control} resize-none`} />
       ) : (
-        <Input placeholder={placeholder} className={controlStyles} />
+        <Input placeholder={placeholder} className={control} />
       )}
 
       {description ? (
-        <Text slot="description" className="text-xs text-Text/40 mt-1">
+        <Text slot="description" className="text-[13px] text-ink-muted mt-1.5">
           {description}
         </Text>
       ) : null}
 
-      <FieldError className="text-xs text-[#ef5350] mt-1">
+      <FieldError className="text-[13px] text-redpencil mt-1.5">
         {({ validationErrors }) => errorMessage ?? validationErrors.join(' ')}
       </FieldError>
     </AriaTextField>

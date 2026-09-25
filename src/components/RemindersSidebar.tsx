@@ -55,7 +55,7 @@ export function RemindersSidebar({ refreshKey }: Props) {
   if (!visible) {
     return (
       <Button
-        variant="glass"
+        variant="secondary"
         size="sm"
         onPress={() => setVisible(true)}
         aria-label="Vis påminnelser"
@@ -79,7 +79,7 @@ export function RemindersSidebar({ refreshKey }: Props) {
           )}
         </h3>
         <Button
-          variant="ghost"
+          variant="quiet"
           size="sm"
           onPress={() => setVisible(false)}
           aria-label="Skjul"
@@ -112,7 +112,7 @@ export function RemindersSidebar({ refreshKey }: Props) {
                   {r.personName} →
                 </Link>
                 <Button
-                  variant="ghost"
+                  variant="quiet"
                   size="sm"
                   onPress={() => snooze(r)}
                   isDisabled={busy === r.id}

@@ -49,7 +49,7 @@ export function Dialog({ title, children, isDismissable = true, ...props }: Dial
                   {title}
                 </Heading>
                 <Button
-                  variant="ghost"
+                  variant="quiet"
                   size="sm"
                   onPress={close}
                   aria-label="Lukk"
