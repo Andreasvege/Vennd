@@ -24,13 +24,13 @@ export function AppHeader() {
     <header className="flex h-16 items-center gap-8 border-b border-rule px-4 desk:px-8">
       <Link
         href="/"
-        className="font-display text-[24px] italic tracking-tight text-ink outline-none focus-visible:ring-2 focus-visible:ring-pen rounded-sm"
+        className="font-display text-[26px] italic tracking-tight text-ink outline-none focus-visible:ring-2 focus-visible:ring-pen rounded-sm"
       >
         {t.app.name}
       </Link>
 
       {user && (
-        <nav aria-label="Hovedmeny" className="hidden desk:block">
+        <nav aria-label={t.nav.main} className="hidden desk:block">
           <ul className="flex gap-7 text-[14px]">
             {links.map((l) => {
               const active = l.href === '/' ? pathname === '/' : pathname.startsWith(l.href)
@@ -74,7 +74,7 @@ export function AppHeader() {
           <MenuTrigger>
             <AriaButton
               aria-label={t.nav.account}
-              className="rounded-full outline-none data-[focus-visible]:ring-2 data-[focus-visible]:ring-pen data-[focus-visible]:ring-offset-2 data-[focus-visible]:ring-offset-paper desk:hidden"
+              className="flex size-11 items-center justify-center rounded-full outline-none data-[focus-visible]:ring-2 data-[focus-visible]:ring-pen data-[focus-visible]:ring-offset-2 data-[focus-visible]:ring-offset-paper desk:hidden"
             >
               <Avatar name={user.name ?? t.common.you} src={user.image} size="md" />
             </AriaButton>

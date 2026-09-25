@@ -17,7 +17,7 @@ type Props<T extends string> = {
 }
 
 export const chipBase = [
-  'inline-flex h-9 items-center gap-2 rounded-full border px-3.5 text-[13px] cursor-pointer',
+  'inline-flex min-h-11 desk:min-h-9 items-center gap-2 rounded-full border px-3.5 text-[13px] cursor-pointer',
   'transition-colors duration-150 outline-none',
   'border-rule bg-paper-raised text-ink data-[hovered]:border-ink-muted/60',
   'data-[selected]:border-ink data-[selected]:bg-ink data-[selected]:text-paper',

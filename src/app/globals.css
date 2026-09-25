@@ -127,3 +127,15 @@
     0 0 4px var(--paper),
     0 0 6px var(--paper);
 }
+
+/* Fraunces sine egne akser: SOFT runder av formene, og WONK gir kursiven
+   de litt skjeve bokstavene. Det er dette som skiller dagbok-stemmen fra
+   en vanlig avis-serif. */
+.font-display {
+  font-variation-settings: 'SOFT' 50, 'WONK' 0;
+}
+.font-display.italic,
+.font-display .italic,
+.italic .font-display {
+  font-variation-settings: 'SOFT' 50, 'WONK' 1;
+}

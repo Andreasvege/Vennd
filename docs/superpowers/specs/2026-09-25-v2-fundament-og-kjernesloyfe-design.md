@@ -48,7 +48,7 @@ Definert som CSS-variabler i `globals.css` og registrert i Tailwind v4 med `@the
 
 - **Visning (display):** *Fraunces* med variable akser: `opsz` automatisk, `SOFT` 50 og `WONK` 1 på italic. Den brukes med måte: navn på personer, seksjonsoverskrifter i italic, loggtekst og appnavnet. Loggtekst skrives i Fraunces, fordi det er *dagboken*.
 - **Brødtekst og grensesnitt:** *Instrument Sans*, brukt til knapper, etiketter, metadata og skjemaer.
-- **Skala (1,25, basis 16):** 12 · 13 · 14 · 16 · 18 · 21 · 26 · 34 · 46. Linjehøyden er 1,5 for brødtekst og 1,05–1,15 for display.
+- **Skala (1,25, basis 16):** 12 · 13 · 14 · 15 · 16 · 18 · 21 · 26 · 34 · 46 (15 er standard for kontroller og lister; 64 brukes bare som tittel på forsiden). Linjehøyden er 1,5 for brødtekst og 1,05–1,15 for display.
 - Fontene lastes med `next/font/google` og variable fonter, uten eksterne CSS-kall.
 
 ### Rom, form og bevegelse

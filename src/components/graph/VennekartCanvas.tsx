@@ -19,7 +19,7 @@ import { MeNode } from './MeNode'
 import { RelationshipEdge } from './RelationshipEdge'
 import { Link2, UserPlus } from 'lucide-react'
 import { Button, EmptyState } from '@/components/ui'
-import { TYPE_TINT, tagStroke } from '@/lib/palette'
+import { TYPE_TINT, tagFill } from '@/lib/palette'
 import { t } from '@/i18n'
 import type { Person, Relationship } from '@/types'
 
@@ -42,16 +42,24 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
   const { data: session } = useSession()
   const [persons, setPersons] = useState<Person[]>([])
   const [relationships, setRelationships] = useState<Relationship[]>([])
+  // Tom-tilstanden skal bare vises når vi *vet* at kartet er tomt — ikke
+  // mens det lastes, og ikke når lastingen feilet.
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
 
   useEffect(() => {
     async function fetchData() {
-      const res = await fetch('/api/graph')
-      if (!res.ok) return
-      const data = (await res.json()) as { persons: Person[]; relationships: Relationship[] }
-      setPersons(data.persons)
-      setRelationships(data.relationships)
+      try {
+        const res = await fetch('/api/graph')
+        if (!res.ok) throw new Error(String(res.status))
+        const data = (await res.json()) as { persons: Person[]; relationships: Relationship[] }
+        setPersons(data.persons)
+        setRelationships(data.relationships)
+        setStatus('ready')
+      } catch {
+        setStatus('error')
+      }
     }
     fetchData()
   }, [refreshKey])
@@ -207,8 +215,8 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
             <li key={type} className="flex items-center gap-2 text-[12px] text-ink-muted">
               <span
                 aria-hidden
-                className="size-2 rounded-full"
-                style={{ background: tagStroke(TYPE_TINT[type]) }}
+                className="size-2.5 rounded-full"
+                style={{ background: tagFill(TYPE_TINT[type]), boxShadow: 'inset 0 0 0 1px var(--ink)' }}
               />
               {t.relationType[type]}
             </li>
@@ -216,7 +224,13 @@ export function VennekartCanvas({ onAddPerson, onAddLog, onAddRelationship, refr
         </ul>
       )}
 
-      {persons.length === 0 && (
+      {status === 'error' && (
+        <p role="alert" className="absolute left-1/2 top-5 z-10 -translate-x-1/2 rounded-[10px] border border-rule bg-paper-raised px-4 py-2 text-[14px] text-redpencil">
+          {t.map.loadFailed}
+        </p>
+      )}
+
+      {status === 'ready' && persons.length === 0 && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
           <EmptyState
             title={t.map.emptyTitle}

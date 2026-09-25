@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import Script from 'next/script'
 import { Fraunces, Instrument_Sans } from 'next/font/google'
 import './globals.css'
 import { AppHeader } from '@/components/AppHeader'
@@ -51,10 +52,11 @@ export default function RootLayout({
       className={`${fraunces.variable} ${instrument.variable}`}
       suppressHydrationWarning
     >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
       <body className="bg-paper text-ink font-sans antialiased">
+        {/* Kjører før hydrering, så et manuelt valgt tema aldri blinker. */}
+        <Script id="theme" strategy="beforeInteractive">
+          {themeScript}
+        </Script>
         <Providers>
           <div className="min-h-screen">
             <AppHeader />

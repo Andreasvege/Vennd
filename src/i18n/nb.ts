@@ -6,6 +6,12 @@
 // Feilmeldinger forklarer hva som gikk galt og hva du kan gjøre.
 
 export const nb = {
+  time: {
+    today: 'i dag',
+    yesterday: 'i går',
+    daysAgo: (days: number) => `${days} dager siden`,
+  },
+
   app: {
     name: 'Vennekart',
     description: 'En dagbok over menneskene dine',
@@ -17,6 +23,7 @@ export const nb = {
     signIn: 'Logg inn med Google',
     signOut: 'Logg ut',
     account: 'Konto',
+    main: 'Hovedmeny',
   },
 
   landing: {
@@ -74,6 +81,7 @@ export const nb = {
     emptyTitle: 'Kartet ditt er tomt',
     emptyBody: 'Legg til en du har truffet i det siste.',
     legend: 'Forklaring',
+    loadFailed: 'Kartet ble ikke lastet. Sjekk nettforbindelsen og last siden på nytt.',
   },
 
   person: {
@@ -132,7 +140,8 @@ export const nb = {
 
   reminders: {
     title: 'Bør ta kontakt',
-    open: 'Vis påminnelser',
+    open: (count: number) =>
+      count === 0 ? 'Vis påminnelser' : `Vis påminnelser, ${count} ${count === 1 ? 'person' : 'personer'}`,
     empty: 'Ingen du bør ta kontakt med akkurat nå.',
     snooze: 'Utsett en uke',
     dismiss: 'Avvis',
@@ -151,6 +160,19 @@ export const nb = {
     relationTypes: 'Relasjonstyper',
     relationTypesHint: 'Fargen på en person på kartet kommer fra relasjonstypen.',
   },
+  notFound: {
+    title: 'Den siden finnes ikke',
+    body: 'Kanskje personen er slettet, eller lenken er gammel.',
+    back: 'Tilbake til kartet',
+  },
 } as const
 
-export type Messages = typeof nb
+// Formen et språk må ha: samme nøkler, men vilkårlige strenger. Uten
+// utvidelsen ville typen krevd nøyaktig de norske tekstene.
+type Widen<T> = T extends string
+  ? string
+  : T extends (...args: infer A) => infer R
+    ? (...args: A) => Widen<R>
+    : { [K in keyof T]: Widen<T[K]> }
+
+export type Messages = Widen<typeof nb>

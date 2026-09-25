@@ -13,7 +13,7 @@ const centerHandle =
   'w-full! h-full! rounded-full! border-0! bg-transparent! left-0! top-0! transform-none! pointer-events-none!'
 
 const quickAction =
-  'nodrag inline-flex h-8 items-center gap-1.5 rounded-full border border-rule bg-paper-raised px-3 text-[12px] text-ink shadow-float transition-colors hover:border-ink-muted focus-visible:outline-2 focus-visible:outline-pen'
+  'nodrag inline-flex min-h-11 desk:min-h-8 items-center gap-1.5 rounded-full border border-rule bg-paper-raised px-3 text-[12px] text-ink shadow-float transition-colors hover:border-ink-muted focus-visible:outline-2 focus-visible:outline-pen'
 
 export function PersonNode({ data, selected }: NodeProps) {
   const d = data as PersonNodeData

@@ -51,7 +51,6 @@ export function TimelineStripe({ refreshKey, onAddLog }: Props) {
         <Heading className="min-w-0 flex-1 font-normal">
           <AriaButton
             slot="trigger"
-            aria-label={t.log.recent}
             className="flex w-full min-w-0 items-center gap-5 rounded-sm text-left outline-none data-[focus-visible]:ring-2 data-[focus-visible]:ring-pen"
           >
             <span className="flex h-5 min-w-0 flex-1 flex-wrap gap-x-5 overflow-hidden">

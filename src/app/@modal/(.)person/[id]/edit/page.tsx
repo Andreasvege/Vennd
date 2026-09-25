@@ -15,7 +15,7 @@ export default async function EditPersonModal({ params }: Params) {
   return (
     <div className="flex flex-col gap-6">
       <BackLink href={`/person/${person.id}`}>{t.person.backToProfile(person.name)}</BackLink>
-      <h2 className="font-display text-[28px] leading-tight tracking-tight">{t.person.editTitle(person.name)}</h2>
+      <h2 className="font-display text-[26px] leading-tight tracking-tight">{t.person.editTitle(person.name)}</h2>
       <EditPersonForm person={person} />
     </div>
   )

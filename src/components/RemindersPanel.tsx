@@ -31,7 +31,7 @@ function ReminderList({ reminders, busy, onSnooze }: ListProps) {
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <Link
               href={`/person/${r.personId}`}
-              className="self-start rounded-sm font-display text-[17px] leading-snug text-ink outline-none hover:underline focus-visible:ring-2 focus-visible:ring-pen"
+              className="self-start rounded-sm font-display text-[18px] leading-snug text-ink outline-none hover:underline focus-visible:ring-2 focus-visible:ring-pen"
             >
               {r.personName}
             </Link>
@@ -109,7 +109,7 @@ export function RemindersPanel({ refreshKey }: { refreshKey: number }) {
       </aside>
 
       <div className="absolute right-4 top-4 z-10 desk:hidden">
-        <Button variant="secondary" onPress={() => setSheetOpen(true)} aria-label={t.reminders.open}>
+        <Button variant="secondary" onPress={() => setSheetOpen(true)} aria-label={t.reminders.open(reminders.length)}>
           <Bell aria-hidden size={16} strokeWidth={1.75} />
           {reminders.length > 0 && <span className="tabular-nums">{reminders.length}</span>}
         </Button>

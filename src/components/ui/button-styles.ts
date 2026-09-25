@@ -26,10 +26,12 @@ export const buttonVariants: Record<ButtonVariant, string> = {
     'bg-paper-raised text-redpencil border border-redpencil/50 data-[hovered]:border-redpencil hover:border-redpencil',
 }
 
+// Under desk-bredden er alt minst 44 px høyt: fingre treffer ikke 32 px.
+// På PC, med mus, får de mindre størrelsene være kompakte.
 export const buttonSizes: Record<ButtonSize, string> = {
-  sm: 'h-8 px-2.5 text-[13px]',
-  md: 'h-10 px-4 text-[14px]',
-  lg: 'h-12 px-5 text-[15px]',
+  sm: 'min-h-11 px-2.5 text-[13px] desk:min-h-8',
+  md: 'min-h-11 px-4 text-[14px] desk:min-h-10',
+  lg: 'min-h-12 px-5 text-[15px]',
 }
 
 export function buttonClass(variant: ButtonVariant = 'secondary', size: ButtonSize = 'md'): string {

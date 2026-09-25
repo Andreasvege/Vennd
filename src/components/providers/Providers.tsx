@@ -1,8 +1,10 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { RouterProvider } from 'react-aria-components'
 import { SessionProvider } from 'next-auth/react'
+import { readTheme, syncThemeColor } from '@/components/theme'
 
 declare module 'react-aria-components' {
   interface RouterConfig {
@@ -17,6 +19,7 @@ declare module 'react-aria-components' {
  */
 export function Providers({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  useEffect(() => syncThemeColor(readTheme()), [])
   return (
     <RouterProvider navigate={router.push}>
       <SessionProvider>{children}</SessionProvider>

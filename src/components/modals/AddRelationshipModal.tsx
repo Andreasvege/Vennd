@@ -26,6 +26,13 @@ export function AddRelationshipModal({ isOpen, onClose, onSuccess }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  // En gammel feilmelding hører ikke hjemme i et nyåpnet ark.
+  const [wasOpen, setWasOpen] = useState(isOpen)
+  if (isOpen !== wasOpen) {
+    setWasOpen(isOpen)
+    if (isOpen) setError('')
+  }
+
   useEffect(() => {
     if (!isOpen) return
     fetch('/api/persons')

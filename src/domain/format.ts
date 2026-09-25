@@ -1,3 +1,5 @@
+import { t } from '@/i18n'
+
 const LOCALE = 'nb-NO'
 const DAY_MS = 86_400_000
 
@@ -11,9 +13,9 @@ function startOfDay(d: Date): number {
 export function relativeDay(date: Date, now: Date = new Date()): string {
   // Math.round tåler sommertid, der et døgn er 23 eller 25 timer.
   const days = Math.round((startOfDay(now) - startOfDay(date)) / DAY_MS)
-  if (days === 0) return 'i dag'
-  if (days === 1) return 'i går'
-  if (days > 1 && days < 7) return `${days} dager siden`
+  if (days === 0) return t.time.today
+  if (days === 1) return t.time.yesterday
+  if (days > 1 && days < 7) return t.time.daysAgo(days)
 
   const sameYear = date.getFullYear() === now.getFullYear()
   return date.toLocaleDateString(LOCALE, {

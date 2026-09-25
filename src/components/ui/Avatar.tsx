@@ -5,7 +5,7 @@ import { tagFill, type TagColor } from '@/lib/palette'
 type Size = 'sm' | 'md' | 'lg' | 'xl'
 
 const SIZES: Record<Size, { px: number; text: string }> = {
-  sm: { px: 28, text: 'text-[11px]' },
+  sm: { px: 28, text: 'text-[12px]' },
   md: { px: 40, text: 'text-[13px]' },
   lg: { px: 56, text: 'text-[16px]' },
   xl: { px: 88, text: 'text-[26px]' },

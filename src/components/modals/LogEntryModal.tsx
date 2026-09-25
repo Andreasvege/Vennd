@@ -36,6 +36,7 @@ export function LogEntryModal({ isOpen, onClose, onSuccess, defaultPersonId }: P
     if (isOpen) {
       setPersonId(defaultPersonId ?? null)
       setDate(todayISO())
+      setError('')
     }
   }
 

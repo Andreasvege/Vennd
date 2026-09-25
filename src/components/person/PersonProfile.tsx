@@ -4,7 +4,8 @@ import { Avatar } from '@/components/ui/Avatar'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { buttonClass } from '@/components/ui/button-styles'
 import { LOG_ICON } from '@/components/log-icons'
-import { formatDate, relativeDay } from '@/domain/format'
+import { formatDate } from '@/domain/format'
+import { RelativeDay } from '@/components/RelativeDay'
 import { TYPE_TINT } from '@/lib/palette'
 import { t } from '@/i18n'
 import { LogContactPanel } from './LogContactPanel'
@@ -50,7 +51,7 @@ export function PersonProfile({ person }: { person: PersonWithHistory }) {
       {person.notes && (
         <section className={section}>
           <SectionHeading>{t.person.notes}</SectionHeading>
-          <p className="whitespace-pre-wrap font-display text-[17px] leading-relaxed">{person.notes}</p>
+          <p className="whitespace-pre-wrap font-display text-[18px] leading-relaxed">{person.notes}</p>
         </section>
       )}
 
@@ -83,9 +84,7 @@ export function PersonProfile({ person }: { person: PersonWithHistory }) {
                   <div className="flex items-center gap-2 text-[13px]">
                     <Icon aria-hidden size={14} strokeWidth={1.75} className="text-ink-muted" />
                     <span className="font-medium">{t.logType[entry.type]}</span>
-                    <time dateTime={new Date(entry.date).toISOString()} className="text-ink-muted">
-                      {relativeDay(new Date(entry.date))}
-                    </time>
+                    <RelativeDay date={entry.date} className="text-ink-muted" />
                   </div>
                   {entry.notes && (
                     <p className="mt-1.5 font-display text-[16px] leading-relaxed">{entry.notes}</p>

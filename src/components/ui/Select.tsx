@@ -52,9 +52,9 @@ export function Select<T extends string>({
     >
       <Label className={fieldLabel}>{label}</Label>
       <AriaButton
-        className={`${fieldControl} flex items-center justify-between gap-2 text-left data-[focus-visible]:border-pen data-[focus-visible]:ring-2 data-[focus-visible]:ring-pen/20`}
+        className={`${fieldControl} flex items-center justify-between gap-2 text-left data-[focus-visible]:border-pen data-[focus-visible]:ring-2 data-[focus-visible]:ring-pen data-[focus-visible]:ring-offset-2 data-[focus-visible]:ring-offset-paper`}
       >
-        <SelectValue className="truncate data-[placeholder]:text-ink-muted/70" />
+        <SelectValue className="truncate data-[placeholder]:text-ink-muted" />
         <ChevronDown aria-hidden size={16} strokeWidth={1.75} className="shrink-0 text-ink-muted" />
       </AriaButton>
       <Popover

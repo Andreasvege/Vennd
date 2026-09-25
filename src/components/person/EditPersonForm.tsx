@@ -21,6 +21,9 @@ export function EditPersonForm({ person }: { person: Person }) {
   const [notes, setNotes] = useState(person.notes ?? '')
   const [type, setType] = useState<RelationshipType>(person.type)
   const [cadence, setCadence] = useState<CadenceOption>(cadenceToOption(person.cadenceWeeks))
+  // Velgeren runder kadenser som ikke finnes i lista. Sendes den bare når
+  // du har endret den, blir en uvanlig kadens stående urørt.
+  const [cadenceTouched, setCadenceTouched] = useState(false)
   const [birthday, setBirthday] = useState(
     person.birthday ? new Date(person.birthday).toISOString().slice(0, 10) : '',
   )
@@ -31,7 +34,10 @@ export function EditPersonForm({ person }: { person: Person }) {
   const chooseType = (next: RelationshipType) => {
     setType(next)
     // Følg typens standard så lenge kadensen ikke er slått av.
-    if (cadence !== 'never') setCadence(cadenceToOption(DEFAULT_CADENCE_WEEKS[next]))
+    if (cadence !== 'never') {
+      setCadence(cadenceToOption(DEFAULT_CADENCE_WEEKS[next]))
+      setCadenceTouched(true)
+    }
   }
 
   const save = async (e: React.FormEvent) => {
@@ -48,10 +54,12 @@ export function EditPersonForm({ person }: { person: Person }) {
         name: name.trim(),
         notes,
         type,
-        cadenceWeeks: cadenceFromOption(cadence),
+        ...(cadenceTouched && {
+          cadenceWeeks: cadenceFromOption(cadence),
+          // Endrer du kadensen, er en gammel utsettelse ikke lenger relevant.
+          snoozedUntil: null,
+        }),
         birthday: birthday || null,
-        // Endrer du kadensen, er en gammel utsettelse ikke lenger relevant.
-        snoozedUntil: null,
       }),
     })
 
@@ -83,7 +91,15 @@ export function EditPersonForm({ person }: { person: Person }) {
     <form onSubmit={save} className="flex flex-col gap-5">
       <TextField label={t.person.name} isRequired value={name} onChange={setName} />
       <ChipGroup label={t.person.relationship} value={type} onChange={chooseType} options={TYPE_OPTIONS} />
-      <Select label={t.cadence.label} value={cadence} onChange={setCadence} options={CADENCE_OPTIONS} />
+      <Select
+        label={t.cadence.label}
+        value={cadence}
+        onChange={(next) => {
+          setCadence(next)
+          setCadenceTouched(true)
+        }}
+        options={CADENCE_OPTIONS}
+      />
       <TextField
         label={t.person.birthday}
         description={t.common.optional}

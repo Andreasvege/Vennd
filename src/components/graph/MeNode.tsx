@@ -27,7 +27,7 @@ export function MeNode({ data }: NodeProps) {
         {d.image ? (
           <Image src={d.image} alt="" width={72} height={72} className="size-full object-cover" />
         ) : (
-          <span className="font-sans text-[20px] font-semibold">{initialsOf(d.name)}</span>
+          <span className="font-sans text-[21px] font-semibold">{initialsOf(d.name)}</span>
         )}
       </div>
       <span

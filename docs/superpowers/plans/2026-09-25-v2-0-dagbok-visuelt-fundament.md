@@ -14,7 +14,7 @@
 
 - Farger kommer **bare** fra tokens: `paper`, `paper-raised`, `ink`, `ink-muted`, `rule`, `pen`, `pen-wash`, `redpencil`, pluss taggpaletten `sage | ochre | slate | plum | rose | teal | clay | stone` (fill/stroke). Ingen hex-verdier i komponenter.
 - Fonter: Fraunces (display, akser `SOFT`, `WONK`, `opsz`) og Instrument Sans (UI). Ingen andre familier.
-- Typeskala: 12 · 13 · 14 · 16 · 18 · 21 · 26 · 34 · 46 px.
+- Typeskala: 12 · 13 · 14 · 15 · 16 · 18 · 21 · 26 · 34 · 46 (15 er standard for kontroller og lister; 64 brukes bare som tittel på forsiden) px.
 - Radius: 10 px (felt/chips), 16 px (ark/paneler), full (avatarer). Ingen `glass-card`, ingen backdrop-blur-glass.
 - Trykkflater minst 44 px på mobil. Synlig fokus: 2 px `pen`-ring med 2 px offset.
 - Bevegelse: 150 ms tilstand, 250 ms ark, `ease-out`. `prefers-reduced-motion: reduce` slår av transform-animasjon.
