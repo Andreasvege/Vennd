@@ -6,7 +6,8 @@ import { isTagColor, personTint } from '@/lib/palette'
 import { getLastContact } from './lastContact'
 
 // Nok til å se hvem som ofte er sammen, uten å lese hele dagboken for hvert kart.
-const DERIVED_FROM_LAST = 500
+const DERIVED_FROM_LAST = 1000
+const MAX_DERIVED = 40
 
 /**
  * Alt kartet trenger: personene med farge, tagger og siste kontakt,
@@ -50,10 +51,14 @@ export const getGraph = cache(async function getGraph(userId: string) {
     }),
   ])
 
+  // Bare logger med flere personer kan si noe om hvem som er sammen; de
+  // tydeligste parene først, og ikke flere enn kartet tåler å vise.
   const derived = derivePairs(
-    sharedLogs.map((l) => ({ personIds: l.participants.map((p) => p.personId) })),
+    sharedLogs
+      .map((l) => ({ personIds: l.participants.map((p) => p.personId) }))
+      .filter((l) => l.personIds.length > 1),
     relationships.map((r) => [r.fromPersonId, r.toPersonId] as [string, string]),
-  )
+  ).slice(0, MAX_DERIVED)
 
   return {
     persons: persons.map(({ tags: personTags, ...p }) => ({

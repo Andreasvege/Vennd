@@ -32,7 +32,8 @@ type Props = {
   filter: MapFilter
   mode: MapMode
   onChange: (f: MapFilter) => void
-  onSaved: () => void
+  /** Den nye visningen blir aktiv med én gang. */
+  onSaved: (view: { id: string; name: string }) => void
 }
 
 /**
@@ -54,11 +55,11 @@ export function FilterPanel({ tags, filter, mode, onChange, onSaved }: Props) {
   const save = () =>
     startTransition(async () => {
       const result = await settle(saveView({ name, mode, filter }))
-      if (!result.ok) return setError(t.errors[result.error])
+      if (!result.ok) return setError(result.error === 'taken' ? t.map.viewNameTaken : t.errors[result.error])
       setNaming(false)
       setName('')
       setError('')
-      onSaved()
+      onSaved({ id: result.data.id, name: name.trim() })
     })
 
   return (

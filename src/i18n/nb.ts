@@ -258,6 +258,7 @@ export const nb = {
     viewOptions: (name: string) => `Valg for ${name}`,
     renameView: 'Gi nytt navn',
     deleteView: 'Slett visningen',
+    viewNameTaken: 'Du har allerede en visning med det navnet.',
     toggleTag: (name: string) => `Vis eller skjul ${name}`,
   },
 
