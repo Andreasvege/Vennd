@@ -112,7 +112,7 @@ export function PlanSheet({ data, personIds: preset = [], onClose }: { data: Com
           </div>
         </div>
 
-        <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+        <div className="flex flex-wrap items-start gap-x-4 gap-y-3">
           <ChipGroup
             label={t.plans.when}
             value={when}

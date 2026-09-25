@@ -33,10 +33,13 @@ export async function getAhead(userId: string, now: Date = new Date()) {
     persons: persons.map(({ person }) => ({ id: person.id, name: person.name, tint: personTint(person) })),
   }))
   const { upcoming, awaiting } = splitPlans(shaped, now)
-  const birthdays = upcomingBirthdays(withBirthday, now).map((p) => ({
+  // Et døgns slingringsmonn: serveren regner i UTC; nettleseren regner
+  // «i dag»/«i morgen» på nytt i lokal tid.
+  const birthdays = upcomingBirthdays(withBirthday, now, 15).map((p) => ({
     id: p.id,
     name: p.name,
     tint: personTint(p),
+    birthday: p.birthday,
     date: p.next.date,
     inDays: p.next.inDays,
     turns: p.next.turns,
