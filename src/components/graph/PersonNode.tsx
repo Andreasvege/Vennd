@@ -17,10 +17,12 @@ export type PersonNodeData = {
   onViewProfile: (personId: string) => void
 }
 
-// Midtpunktsankeret: dekker hele sirkelen, så React Flow regner midten som
-// feste for strekene. Uten pointer-events, ellers kan ikke noden flyttes.
-const centerHandle =
-  'w-full! h-full! rounded-full! border-0! bg-transparent! left-0! top-0! transform-none! pointer-events-none!'
+// Midtpunktsankeret: et usynlig punkt i sentrum av avataren. React Flow
+// fester streken på kanten av håndtaket; med et punkt er kanten midten, så
+// strekene går fra midten av én person til midten av en annen. Uten
+// pointer-events, ellers kan ikke noden flyttes.
+export const centerHandle =
+  'left-1/2! top-1/2! size-px! min-h-0! min-w-0! -translate-x-1/2! -translate-y-1/2! border-0! bg-transparent! opacity-0! pointer-events-none!'
 
 const quickAction =
   'nodrag inline-flex min-h-11 desk:min-h-8 items-center gap-1.5 rounded-full border border-rule bg-paper-raised px-3 text-[12px] text-ink shadow-float transition-colors hover:border-ink-muted focus-visible:outline-2 focus-visible:outline-pen'
