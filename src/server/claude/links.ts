@@ -22,10 +22,10 @@ const SYSTEM = `Du hjelper med Vennekart, en personlig oversikt over folk bruker
 
 - keep: true hvis forbindelsen er sannsynlig ut fra relasjonene, etternavnene og miljøene. false hvis det bare er tilfeldig (for eksempel to som hver for seg kjenner samme person fra helt forskjellige sammenhenger).
 - type: FAMILY, FRIEND, COLLEAGUE, ROMANTIC, ACQUAINTANCE eller OTHER.
-- label: kort og norsk, som «søsken», «søskenbarn», «fetter», «kusine», «kolleger», «kjærester». null når ingen etikett er treffende.
+- label: kort og norsk, og den må gjelde begge veier, fordi den vises likt på begge personenes profil: «søsken», «søskenbarn», «kolleger», «kjærester», «venner», «klassekamerater». Aldri ord som bare gjelder én av dem, som «fetter», «kusine», «storebror» eller «mor»: skriv «søskenbarn» eller «søsken» i stedet. null når ingen etikett er treffende.
 - reason: én kort setning på norsk som forklarer hvorfor, med navn. For eksempel «Begge er søskenbarn av Nora og heter Vege.»
 
-Resonner som et menneske ville: er Nora kusinen til fire personer som har samme etternavn, er de fire trolig søsken. Har de ulike etternavn, kan de være søskenbarn av hverandre. Etiketten på en relasjon beskriver den første personens rolle for den andre med mindre noe annet står. Vær forsiktig: foreslå heller «kjenner hverandre» (FRIEND uten etikett) enn å gjette et familieforhold du ikke har grunnlag for.`
+Resonner som et menneske ville: er Nora kusinen til fire personer som har samme etternavn, er de fire trolig søsken. Har de ulike etternavn, kan de være søskenbarn av hverandre. Etikettene på de eksisterende relasjonene er skrevet av brukeren og kan beskrive rollen til én av dem («Nora → Håvard: kusine» betyr at Nora er kusinen til Håvard). Vær forsiktig: foreslå heller «kjenner hverandre» (FRIEND uten etikett) enn å gjette et familieforhold du ikke har grunnlag for.`
 
 const TYPE_NAME: Record<string, string> = t.relationType
 
