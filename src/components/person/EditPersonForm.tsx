@@ -19,6 +19,7 @@ export function EditPersonForm({ person, allTags, photosEnabled }: PersonEditDat
   const router = useRouter()
   const [name, setName] = useState(person.name)
   const [notes, setNotes] = useState(person.notes ?? '')
+  const [relationLabel, setRelationLabel] = useState(person.relationLabel ?? '')
   const [type, setType] = useState<RelationshipType>(person.type)
   const [cadence, setCadence] = useState<CadenceOption>(cadenceToOption(person.cadenceWeeks))
   // Velgeren runder kadenser som ikke finnes i lista. Sendes den bare når
@@ -52,6 +53,7 @@ export function EditPersonForm({ person, allTags, photosEnabled }: PersonEditDat
       name,
       notes,
       type,
+      relationLabel: relationLabel.trim() || null,
       tagIds,
       primaryTagId,
       birthday: birthday || null,
@@ -84,6 +86,13 @@ export function EditPersonForm({ person, allTags, photosEnabled }: PersonEditDat
       {photosEnabled && <PhotoField personId={person.id} name={name || person.name} tint={person.tint} photoUrl={person.photoUrl} />}
       <TextField label={t.person.name} isRequired value={name} onChange={setName} />
       <ChipGroup label={t.person.relationship} value={type} onChange={chooseType} options={TYPE_OPTIONS} />
+      <TextField
+        label={t.person.relationLabel}
+        description={t.common.optional}
+        value={relationLabel}
+        onChange={setRelationLabel}
+        placeholder={t.person.relationLabelPlaceholder}
+      />
       <TagField
         allTags={allTags}
         value={tagIds}

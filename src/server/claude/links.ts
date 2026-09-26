@@ -33,6 +33,7 @@ function describe(
   n: number,
   c: LinkCandidate,
   names: Map<string, string>,
+  mine: Map<string, string>,
   tagNames: Map<string, string>,
   rels: { from: string; to: string; type: string; label: string | null }[],
 ) {
@@ -43,8 +44,11 @@ function describe(
   }
   const via = c.shared.flatMap((h) => [rel(h, c.a), rel(h, c.b)]).filter(Boolean)
   const tags = c.sharedTags.map((id) => tagNames.get(id)).filter(Boolean)
+  // Hva de er for brukeren («fetter»): ofte det sterkeste hintet om familie.
+  const me = [c.a, c.b].flatMap((id) => (mine.has(id) ? [`${names.get(id)} er brukerens ${mine.get(id)}`] : []))
   return [
     `#${n}: ${names.get(c.a)} og ${names.get(c.b)}`,
+    ...me.map((m) => `  ${m}`),
     ...via.map((v) => `  ${v}`),
     tags.length ? `  Felles miljø: ${tags.join(', ')}` : null,
   ]
@@ -65,9 +69,12 @@ export async function assessLinks(userId: string): Promise<void> {
     if (fresh.length === 0) return
 
     const names = new Map(people.map((p) => [p.id, p.name]))
+    const mine = new Map(
+      people.map((p) => [p.id, p.relationLabel ?? (p.type === 'FRIEND' ? '' : TYPE_NAME[p.type].toLowerCase())] as const).filter(([, v]) => v),
+    )
     const tags = await prisma.tag.findMany({ where: { userId }, select: { id: true, name: true } })
     const tagNames = new Map(tags.map((x) => [x.id, x.name]))
-    const prompt = fresh.map((c, i) => describe(i + 1, c, names, tagNames, rels)).join('\n\n')
+    const prompt = fresh.map((c, i) => describe(i + 1, c, names, mine, tagNames, rels)).join('\n\n')
 
     const response = await claude().messages.parse({
       model: suggestModel(),

@@ -195,7 +195,8 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
             target: p.id,
             targetHandle: 'center',
             type: 'relationship',
-            data: { type: p.type, variant: 'spoke', dimmed: pathMode } satisfies RelationshipEdgeData,
+            // Hva de er for deg («fetter») står på strålen, som på kantene mellom andre.
+            data: { type: p.type, variant: 'spoke', label: p.relationLabel, dimmed: pathMode } satisfies RelationshipEdgeData,
           }))
         : []
 

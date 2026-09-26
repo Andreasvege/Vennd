@@ -2,7 +2,6 @@ import { z } from 'zod'
 import { TAG_COLORS } from '@/lib/palette'
 import { MAP_MODES } from '@/domain/mapMode'
 import { LOG_TYPES } from '@/domain/logTypes'
-import { CLOSENESS } from '@/domain/sorting'
 
 // Alt som kommer inn i en server action, valideres her. Skjemaene er rene
 // og testes direkte; handlingene bare kaller safeParse.
@@ -28,9 +27,13 @@ export const tagName = z.string().trim().min(1).max(40)
 export const tagColor = z.enum(TAG_COLORS)
 export const tagInput = z.object({ name: tagName, color: tagColor })
 
+// Hva de er for deg, med dine ord («fetter», «barndomsvenn»). Tomt = ingen.
+const relationLabel = z.string().trim().max(60).nullable()
+
 export const personInput = z.object({
   name: z.string().trim().min(1).max(120),
   type: z.enum(RELATIONSHIP_TYPES),
+  relationLabel: relationLabel.optional(),
   cadenceWeeks: cadenceWeeks.optional(),
   notes: z.string().max(10_000).optional(),
   birthday: isoDate.nullable().optional(),
@@ -205,7 +208,11 @@ export type LogEdit = z.infer<typeof logEdit>
 // Sortering: kortstokken, miljø for miljø og Venter-bunken.
 export const sortPersonInput = z.object({
   personId: id,
-  closeness: z.enum(CLOSENESS),
+  type: z.enum(RELATIONSHIP_TYPES),
+  relationLabel,
+  cadenceWeeks,
+  // Bare for romantiske: hvor dere er nå, også «eks» (ENDED).
+  phase: z.enum(PHASES).nullable(),
   tagIds: z.array(id).max(20),
   knows: z.array(id).max(50),
 })

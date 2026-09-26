@@ -24,6 +24,7 @@ export const getGraph = cache(async function getGraph(userId: string) {
         id: true,
         name: true,
         type: true,
+        relationLabel: true,
         photoUrl: true,
         positionX: true,
         positionY: true,

@@ -11,7 +11,8 @@ import {
   type AssignGroupInput,
   type SortPersonInput,
 } from '@/server/schemas'
-import { assertPersonsOwned, assertTagsOwned, markSorted, parseId, refreshAll } from './shared'
+import { assertPersonsOwned, assertTagsOwned, fromDateInput, markSorted, parseId, refreshAll } from './shared'
+import { todayISO } from '@/domain/format'
 import { fail, type ActionError, type ActionResult } from './result'
 import { scheduleLinkAssessment } from '@/server/claude/links'
 
@@ -41,14 +42,15 @@ async function owned<T>(
 }
 
 /**
- * Ett kort i kortstokken: hvor nær, hvilke miljøer, hvem de kjenner. Etterpå
- * står personen på kartet.
+ * Ett kort i kortstokken: hvem de er for deg (type, dine ord, og for
+ * romantiske: fasen), hvor ofte du vil holde kontakten, miljøene og hvem de
+ * kjenner. Etterpå står personen på kartet.
  */
 export async function sortPerson(raw: SortPersonInput): Promise<ActionResult<{ relationships: number }>> {
   const userId = await requireUserId()
   const parsed = sortPersonInput.safeParse(raw)
   if (!parsed.success) return fail('invalid')
-  const { personId, closeness, tagIds, knows } = parsed.data
+  const { personId, type, relationLabel, cadenceWeeks, phase, tagIds, knows } = parsed.data
   const tags = [...new Set(tagIds)]
   const others = [...new Set(knows)].filter((id) => id !== personId)
 
@@ -59,16 +61,22 @@ export async function sortPerson(raw: SortPersonInput): Promise<ActionResult<{ r
     },
     () =>
       prisma.$transaction(async (tx) => {
-        const { type, cadenceWeeks } = closenessPreset(closeness)
         await tx.person.update({
           where: { id: personId },
           data: {
             type,
+            relationLabel: relationLabel || null,
             cadenceWeeks,
+            snoozedUntil: null,
             primaryTagId: tags[0] ?? null,
             tags: { deleteMany: {}, create: tags.map((tagId) => ({ tagId })) },
           },
         })
+        // Fasen legges til som i fasestripen på profilen, men bare når den er ny.
+        if (type === 'ROMANTIC' && phase) {
+          const last = await tx.romanticPhaseEntry.findFirst({ where: { personId }, orderBy: { at: 'desc' }, select: { phase: true } })
+          if (last?.phase !== phase) await tx.romanticPhaseEntry.create({ data: { personId, phase, at: fromDateInput(todayISO()) } })
+        }
         await markSorted(userId, [personId, ...others], tx)
         const have = await existingPairs(tx, [personId, ...others])
         const pairs = missingPairs([personId, ...others], have).filter(([a, b]) => a === personId || b === personId)

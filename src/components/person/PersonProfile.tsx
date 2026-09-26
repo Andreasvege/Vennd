@@ -104,7 +104,8 @@ export function PersonProfile({ person }: { person: PersonProfileData }) {
         <Avatar name={person.name} tint={person.tint} src={person.photoUrl} size="xl" decorative />
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <p className="text-[12px] uppercase tracking-[0.14em] text-ink-muted">
-            {t.relationType[person.type]}
+            {/* Dine ord først («Fetter · Familie»); typen alene når du ikke har skrevet noe. */}
+            {[person.relationLabel, t.relationType[person.type]].filter(Boolean).join(' · ')}
           </p>
           <h1 className="font-display text-[34px] leading-[1.05] tracking-tight text-balance sm:text-[46px]">
             {person.name}

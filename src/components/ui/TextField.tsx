@@ -12,6 +12,8 @@ import type { TextFieldProps as AriaTextFieldProps } from 'react-aria-components
 
 export type TextFieldProps = Omit<AriaTextFieldProps, 'children' | 'className'> & {
   label: string
+  /** Skjul etiketten visuelt når konteksten sier hva feltet er (skjermlesere får den). */
+  hideLabel?: boolean
   description?: string
   errorMessage?: string
   multiline?: boolean
@@ -35,6 +37,7 @@ export const fieldControl = [
 
 export function TextField({
   label,
+  hideLabel = false,
   description,
   errorMessage,
   multiline = false,
@@ -57,7 +60,7 @@ export function TextField({
       isInvalid={isInvalid ?? Boolean(errorMessage)}
       className={['flex flex-col', className].filter(Boolean).join(' ')}
     >
-      <Label className={fieldLabel}>{label}</Label>
+      <Label className={hideLabel ? 'sr-only' : fieldLabel}>{label}</Label>
 
       {multiline ? (
         <TextArea placeholder={placeholder} rows={rows} className={`${control} resize-none`} />

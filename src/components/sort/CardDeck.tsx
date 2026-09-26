@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
-import { Label, Radio, RadioGroup, ToggleButton, ToggleButtonGroup } from 'react-aria-components'
+import { ToggleButton, ToggleButtonGroup } from 'react-aria-components'
 import { Undo2 } from 'lucide-react'
 import { Avatar, Button } from '@/components/ui'
 import { chipBase } from '@/components/ui/Chip'
@@ -10,7 +10,8 @@ import { fieldLabel } from '@/components/ui/TextField'
 import { buttonClass } from '@/components/ui/button-styles'
 import { ParticipantPicker } from '@/components/composer/ParticipantPicker'
 import { formatDate } from '@/domain/format'
-import { CLOSENESS, networkHints, pullRelated, type Closeness } from '@/domain/sorting'
+import { defaultCadence, networkHints, pullRelated, rankKnows } from '@/domain/sorting'
+import { WhoFields, type Who } from './WhoFields'
 import { createPerson } from '@/server/actions/person'
 import { archivePersons, restorePerson, sortPerson } from '@/server/actions/sort'
 import { settle } from '@/server/actions/result'
@@ -20,10 +21,13 @@ import { TagPicker, type PickerTag } from './TagPicker'
 import { t } from '@/i18n'
 import { uniqueById } from '@/lib/uniqueById'
 
+type CardForm = Who & { tagIds: string[]; knows: string[] }
 type Known = { id: string; name: string; tint: TagColor; tagIds: string[] }
 type Done = { id: string; archived: boolean }
 
-const SUGGESTIONS = 12
+// Forslag i starten, og hvor mange flere hvert kryss åpner for.
+const SUGGESTIONS = 8
+const PER_TICK = 4
 
 // Bursdag uten år lagres som år 1900: da vises bare dag og måned.
 const birthdayText = (d: Date) =>
@@ -34,10 +38,9 @@ const birthdayText = (d: Date) =>
 function Card({
   person,
   tags,
-  known,
   everyone,
+  pairs,
   already,
-  network,
   initialTags,
   onTagCreated,
   onSubmit,
@@ -48,41 +51,45 @@ function Card({
 }: {
   person: UnsortedPerson
   tags: PickerTag[]
-  known: Known[]
-  everyone: { id: string; name: string; tint: TagColor }[]
+  /** Alle som kan foreslås (på kartet og i bunken), med miljøene sine. */
+  everyone: Known[]
+  /** Alle forbindelser vi kjenner til, også fra denne runden. */
+  pairs: [string, string][]
   /** Dem hun allerede er koblet til (f.eks. fra forrige kort). */
   already: Known[]
-  /** Dem de hun kjenner, kjenner: flest felles først. */
-  network: Known[]
   /** Miljøet hun får fra start: hennes egne, ellers det de hun kjenner deler. */
   initialTags: string[]
   onTagCreated: (tag: PickerTag) => void
-  onSubmit: (form: { closeness: Closeness; tagIds: string[]; knows: string[] }) => void
+  onSubmit: (form: CardForm) => void
   onSkip: () => void
   onArchive: () => void
   canSkip: boolean
   busy: boolean
 }) {
-  const [closeness, setCloseness] = useState<Closeness>('sometimes')
+  const [who, setWho] = useState<Who>(() => ({
+    type: 'FRIEND',
+    relationLabel: null,
+    phase: null,
+    cadenceWeeks: defaultCadence('FRIEND'),
+  }))
   const [tagIds, setTagIds] = useState<string[]>(initialTags)
   const [knows, setKnows] = useState<string[]>([])
   const [extra, setExtra] = useState<{ id: string; name: string; tint: TagColor }[]>([])
 
-  // Forslag: de som står på kartet i samme miljø. Uten miljø: ingen gjetting.
-  // Forslag: først nettverket (de hun kjenner, kjenner), så dem på kartet i
-  // samme miljø. Dem hun allerede kjenner, står for seg over.
-  const suggested = useMemo(() => {
-    const skip = new Set([person.id, ...already.map((a) => a.id)])
-    const inGroup = known.filter((k) => k.tagIds.some((id) => tagIds.includes(id)))
-    const seen = new Set<string>()
-    return [...network, ...inGroup]
-      .filter((k) => !skip.has(k.id) && !seen.has(k.id) && seen.add(k.id))
-      .slice(0, SUGGESTIONS)
-  }, [known, network, already, person.id, tagIds])
-  const chips = [
-    ...suggested,
-    ...uniqueById([...everyone, ...extra]).filter((p) => knows.includes(p.id) && !suggested.some((s) => s.id === p.id)),
-  ]
+  const [more, setMore] = useState(0)
+
+  // Forslagene vokser med det du krysser av: dem hun allerede kjenner og
+  // dem du har valgt, peker på sine bekjente. Flest felles først.
+  const pool = useMemo(() => uniqueById([...everyone, ...extra.map((p) => ({ ...p, tagIds: [] }))]), [everyone, extra])
+  const byId = useMemo(() => new Map(pool.map((p) => [p.id, p])), [pool])
+  const ranked = useMemo(
+    () => rankKnows(person.id, [...already.map((a) => a.id), ...knows], pairs, tagIds, pool).filter((id) => !knows.includes(id)),
+    [person.id, already, knows, pairs, tagIds, pool],
+  )
+  const room = SUGGESTIONS + PER_TICK * knows.length + more
+  // De valgte står først og blir stående; så forslagene, så mange det er plass til.
+  const chips = [...knows, ...ranked.slice(0, room)].flatMap((id) => byId.get(id) ?? [])
+  const hiddenCount = Math.max(0, ranked.length - room)
   const meta = [
     person.birthday && t.sort.birthday(birthdayText(new Date(person.birthday))),
     person.phone,
@@ -94,12 +101,12 @@ function Card({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !busy) {
         e.preventDefault()
-        onSubmit({ closeness, tagIds, knows })
+        onSubmit({ ...who, tagIds, knows })
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [closeness, tagIds, knows, busy, onSubmit])
+  }, [who, tagIds, knows, busy, onSubmit])
 
   return (
     <article
@@ -117,21 +124,7 @@ function Card({
       </header>
       {person.notes && <p className="-mt-2 font-display text-[16px] italic leading-relaxed text-ink-muted">{person.notes}</p>}
 
-      <RadioGroup value={closeness} onChange={(v) => setCloseness(v as Closeness)} className="flex flex-col gap-2">
-        <Label className={fieldLabel}>{t.sort.closeness}</Label>
-        <div className="grid grid-cols-2 gap-2">
-          {CLOSENESS.map((c) => (
-            <Radio
-              key={c}
-              value={c}
-              className="flex min-h-14 cursor-pointer flex-col justify-center rounded-[12px] border border-rule px-3.5 py-2 outline-none transition-colors data-[hovered]:border-ink-muted data-[selected]:border-ink data-[selected]:bg-ink data-[selected]:text-paper data-[focus-visible]:ring-2 data-[focus-visible]:ring-pen data-[focus-visible]:ring-offset-2 data-[focus-visible]:ring-offset-paper-raised"
-            >
-              <span className="text-[15px] font-medium">{t.sort.closenessOptions[c].label}</span>
-              <span className="text-[12px] opacity-75">{t.sort.closenessOptions[c].hint}</span>
-            </Radio>
-          ))}
-        </div>
-      </RadioGroup>
+      <WhoFields value={who} onChange={setWho} />
 
       <TagPicker label={t.sort.group} tags={tags} value={tagIds} onChange={setTagIds} onCreated={onTagCreated} />
 
@@ -166,8 +159,13 @@ function Card({
               ))}
             </ToggleButtonGroup>
           )}
+          {hiddenCount > 0 && (
+            <Button variant="quiet" size="sm" onPress={() => setMore((m) => m + SUGGESTIONS)}>
+              {t.sort.showMore(hiddenCount)}
+            </Button>
+          )}
           <ParticipantPicker
-            persons={uniqueById([...everyone, ...extra]).filter((p) => p.id !== person.id)}
+            persons={pool.filter((p) => p.id !== person.id)}
             selected={knows}
             onAdd={(id) => setKnows((prev) => (prev.includes(id) ? prev : [...prev, id]))}
             onCreate={async (name) => {
@@ -187,7 +185,7 @@ function Card({
         <Button variant="quiet" size="sm" onPress={onSkip} isDisabled={busy || !canSkip}>
           {t.sort.skip}
         </Button>
-        <Button variant="primary" size="lg" isDisabled={busy} onPress={() => onSubmit({ closeness, tagIds, knows })} className="ml-auto">
+        <Button variant="primary" size="lg" isDisabled={busy} onPress={() => onSubmit({ ...who, tagIds, knows })} className="ml-auto">
           {t.sort.next}
           <kbd className="hidden font-sans text-[12px] opacity-60 desk:inline">⌘↵</kbd>
         </Button>
@@ -226,11 +224,6 @@ export function CardDeck({ data, only }: { data: SortingData; only?: string[] })
     return map
   }, [data.unsorted, data.sorted, sortedNow])
   const current = queue[0] ? byId.get(queue[0]) : undefined
-  // Nylig sorterte først; når siden er hentet på nytt, står de også i data.sorted.
-  const known = useMemo(
-    () => [...sortedNow, ...data.sorted.filter((p) => !sortedNow.some((s) => s.id === p.id))],
-    [sortedNow, data.sorted],
-  )
   const everyone = useMemo(
     () => [...data.sorted, ...data.unsorted.map((p) => ({ id: p.id, name: p.name, tint: p.tint, tagIds: p.tagIds }))],
     [data.sorted, data.unsorted],
@@ -242,7 +235,7 @@ export function CardDeck({ data, only }: { data: SortingData; only?: string[] })
     setQueue((prev) => (archived ? prev.slice(1) : pullRelated(prev.slice(1), { ...person, hasBirthday: false }, deckPeople)))
   }
 
-  const submit = (form: { closeness: Closeness; tagIds: string[]; knows: string[] }) => {
+  const submit = (form: CardForm) => {
     if (!current) return
     const person = current
     setError('')
@@ -283,13 +276,14 @@ export function CardDeck({ data, only }: { data: SortingData; only?: string[] })
     })
   }
 
+  const allPairs = useMemo(() => [...data.pairs, ...sessionPairs], [data.pairs, sessionPairs])
   const hints = useMemo(() => {
     if (!current) return null
     const tagsOf = new Map([...people].map(([id, p]) => [id, p.tagIds]))
-    const h = networkHints(current.id, [...data.pairs, ...sessionPairs], tagsOf)
+    const h = networkHints(current.id, allPairs, tagsOf)
     const pick = (ids: string[]) => ids.flatMap((id) => people.get(id) ?? [])
-    return { already: pick(h.already), network: pick(h.suggested), tagIds: h.tagIds }
-  }, [current, people, data.pairs, sessionPairs])
+    return { already: pick(h.already), tagIds: h.tagIds }
+  }, [current, people, allPairs])
 
   const progress = total ? done.length / total : 1
 
@@ -325,10 +319,9 @@ export function CardDeck({ data, only }: { data: SortingData; only?: string[] })
             key={current.id}
             person={current}
             tags={tags}
-            known={known}
             everyone={everyone}
+            pairs={allPairs}
             already={hints?.already ?? []}
-            network={hints?.network ?? []}
             initialTags={current.tagIds.length ? current.tagIds : (hints?.tagIds ?? [])}
             onTagCreated={(tag) => setTags((prev) => [...prev, tag])}
             onSubmit={submit}

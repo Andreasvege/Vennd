@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { closenessPreset, deckOrder, missingPairs, networkHints, newPairs, pullRelated } from './sorting'
+import { closenessPreset, deckOrder, defaultCadence, missingPairs, networkHints, newPairs, pullRelated, rankKnows } from './sorting'
 
 const p = (id: string, name: string, extra: Partial<{ logCount: number; birthday: boolean; email: string | null }> = {}) => ({
   id,
@@ -96,21 +96,44 @@ describe('networkHints', () => {
     ['p3', ['vennefamilie']],
   ])
 
-  it('viser hvem neste kort allerede kjenner, og foreslår resten av nettverket', () => {
-    const h = networkHints('p2', pairs, tagsOf)
-    expect(h.already).toEqual(['p1'])
-    expect(h.suggested).toEqual(expect.arrayContaining(['p3', 'p4', 'mamma', 'meg']))
-    expect(h.suggested).not.toContain('p2')
-  })
-
-  it('rangerer dem med flest felles først', () => {
-    // x kjenner a og b; d kjenner begge, c bare a.
-    const net: [string, string][] = [['x', 'a'], ['x', 'b'], ['a', 'c'], ['a', 'd'], ['b', 'd']]
-    expect(networkHints('x', net, new Map()).suggested).toEqual(['d', 'c'])
+  it('viser hvem neste kort allerede kjenner', () => {
+    expect(networkHints('p2', pairs, tagsOf).already).toEqual(['p1'])
   })
 
   it('velger miljøet flertallet av dem hun kjenner er i', () => {
     expect(networkHints('p2', pairs, tagsOf).tagIds).toEqual(['vennefamilie'])
-    expect(networkHints('ny', pairs, tagsOf)).toEqual({ already: [], suggested: [], tagIds: [] })
+    expect(networkHints('ny', pairs, tagsOf)).toEqual({ already: [], tagIds: [] })
+  })
+})
+
+describe('defaultCadence', () => {
+  it('følger typen, og en eks eller bekjent får ingen påminnelse', () => {
+    expect(defaultCadence('FRIEND')).toBe(4)
+    expect(defaultCadence('FAMILY')).toBe(4)
+    expect(defaultCadence('COLLEAGUE')).toBe(12)
+    expect(defaultCadence('ROMANTIC', 'PARTNER')).toBe(2)
+    expect(defaultCadence('ROMANTIC')).toBe(2)
+    expect(defaultCadence('ROMANTIC', 'ENDED')).toBeNull()
+    expect(defaultCadence('ACQUAINTANCE')).toBeNull()
+  })
+})
+
+describe('rankKnows', () => {
+  const people = ['a', 'b', 'c', 'd', 'e'].map((id) => ({ id, tagIds: id === 'e' ? ['radio'] : [] }))
+  const pairs: [string, string][] = [
+    ['a', 'c'],
+    ['b', 'c'],
+    ['b', 'd'],
+  ]
+
+  it('vokser med det du krysser av: hver kjent gir sine bekjente', () => {
+    expect(rankKnows('x', [], pairs, [], people)).toEqual([])
+    expect(rankKnows('x', ['a'], pairs, [], people)).toEqual(['c'])
+    // Med b også: c kjenner begge (høyest), d kjenner b.
+    expect(rankKnows('x', ['a', 'b'], pairs, [], people)).toEqual(['c', 'd'])
+  })
+
+  it('tar med samme miljø, men under nettverket', () => {
+    expect(rankKnows('x', ['a'], pairs, ['radio'], people)).toEqual(['c', 'e'])
   })
 })
