@@ -108,9 +108,15 @@ export async function assignGroup(raw: AssignGroupInput): Promise<ActionResult<{
 
           await tx.personTag.deleteMany({ where: { tagId, personId: { in: removed } } })
           // Mistet de hovedtaggen, blir en av de andre taggene deres hovedtagg.
+          // Samlet per ny hovedtagg, så mange fjernede ikke gir mange rundturer.
+          const rest = await tx.personTag.findMany({ where: { personId: { in: removed } }, select: { personId: true, tagId: true } })
+          const nextPrimary = new Map<string | null, string[]>()
           for (const personId of removed) {
-            const rest = await tx.personTag.findFirst({ where: { personId }, select: { tagId: true } })
-            await tx.person.updateMany({ where: { id: personId, userId, primaryTagId: tagId }, data: { primaryTagId: rest?.tagId ?? null } })
+            const next = rest.find((r) => r.personId === personId)?.tagId ?? null
+            nextPrimary.set(next, [...(nextPrimary.get(next) ?? []), personId])
+          }
+          for (const [next, ids] of nextPrimary) {
+            await tx.person.updateMany({ where: { id: { in: ids }, userId, primaryTagId: tagId }, data: { primaryTagId: next } })
           }
           await tx.personTag.createMany({ data: added.map((personId) => ({ personId, tagId })), skipDuplicates: true })
           await tx.person.updateMany({ where: { id: { in: members }, userId, primaryTagId: null }, data: { primaryTagId: tagId } })

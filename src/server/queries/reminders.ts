@@ -49,12 +49,14 @@ export async function getReminders(userId: string, now: Date = new Date()): Prom
     prisma.thread.findMany({
       // Datoer lagres kl. 12 UTC. «I dag» betyr hele dagen, ikke bare fram
       // til nå — ellers dukket dagens tråder først opp klokka 14 norsk tid.
-      where: { userId, status: 'OPEN', dueDate: { lte: endOfUtcDay(now) } },
+      // Bare tråder med noen som står på kartet; resten venter med personen.
+      where: { userId, status: 'OPEN', dueDate: { lte: endOfUtcDay(now) }, persons: { some: { person: onMap } } },
       orderBy: { dueDate: 'asc' },
       select: {
         id: true,
         title: true,
         persons: {
+          where: { person: onMap },
           take: 1,
           select: { person: { select: { id: true, name: true, primaryTag: { select: { color: true } } } } },
         },

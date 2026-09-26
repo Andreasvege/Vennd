@@ -190,7 +190,11 @@ export function CardDeck({ data, only }: { data: SortingData; only?: string[] })
 
   const total = deck.length
   const current = queue[0] ? byId.get(queue[0]) : undefined
-  const known = useMemo(() => [...sortedNow, ...data.sorted], [sortedNow, data.sorted])
+  // Nylig sorterte først; når siden er hentet på nytt, står de også i data.sorted.
+  const known = useMemo(
+    () => [...sortedNow, ...data.sorted.filter((p) => !sortedNow.some((s) => s.id === p.id))],
+    [sortedNow, data.sorted],
+  )
   const everyone = useMemo(
     () => [...data.sorted, ...data.unsorted.map((p) => ({ id: p.id, name: p.name, tint: p.tint, tagIds: p.tagIds }))],
     [data.sorted, data.unsorted],

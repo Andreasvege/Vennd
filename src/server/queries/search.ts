@@ -80,7 +80,7 @@ export async function searchAll(userId: string, q: string) {
         date: true,
         type: true,
         body: true,
-        participants: { select: { person: { select: { id: true, name: true } } } },
+        participants: { where: { person: notArchived }, select: { person: { select: { id: true, name: true } } } },
       },
     }),
     prisma.thread.findMany({
@@ -96,7 +96,7 @@ export async function searchAll(userId: string, q: string) {
         title: true,
         status: true,
         resolution: true,
-        persons: { select: { person: { select: { id: true, name: true } } } },
+        persons: { where: { person: notArchived }, select: { person: { select: { id: true, name: true } } } },
       },
     }),
     prisma.plan.findMany({
@@ -108,7 +108,7 @@ export async function searchAll(userId: string, q: string) {
         at: true,
         hasTime: true,
         title: true,
-        persons: { select: { person: { select: { id: true, name: true } } } },
+        persons: { where: { person: notArchived }, select: { person: { select: { id: true, name: true } } } },
       },
     }),
   ])
