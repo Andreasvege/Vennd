@@ -9,7 +9,11 @@ import { claude, isClaudeEnabled, suggestModel } from './client'
 import { t } from '@/i18n'
 
 // Nok til å dekke det du nettopp tegnet, uten å sende hele nettverket hver gang.
-const PER_CALL = 30
+const PER_CALL = 20
+// Maks felles bekjente som beskrives per par; flere sier ikke Claude mer.
+const SHARED_SHOWN = 4
+// Én vurdering om gangen: en ny starter tidligst så lenge etter forrige.
+const COOLDOWN_MS = 60_000
 const TYPES = ['FRIEND', 'FAMILY', 'COLLEAGUE', 'ROMANTIC', 'ACQUAINTANCE', 'OTHER'] as const
 
 const output = z.object({
@@ -42,7 +46,8 @@ function describe(
     if (!r) return null
     return `${names.get(r.from)} → ${names.get(r.to)}: ${TYPE_NAME[r.type] ?? r.type}${r.label ? `, «${r.label}»` : ''}`
   }
-  const via = c.shared.flatMap((h) => [rel(h, c.a), rel(h, c.b)]).filter(Boolean)
+  const via = c.shared.slice(0, SHARED_SHOWN).flatMap((h) => [rel(h, c.a), rel(h, c.b)]).filter(Boolean)
+  const more = c.shared.length - SHARED_SHOWN
   const tags = c.sharedTags.map((id) => tagNames.get(id)).filter(Boolean)
   // Hva de er for brukeren («fetter»): ofte det sterkeste hintet om familie.
   const me = [c.a, c.b].flatMap((id) => (mine.has(id) ? [`${names.get(id)} er brukerens ${mine.get(id)}`] : []))
@@ -50,6 +55,7 @@ function describe(
     `#${n}: ${names.get(c.a)} og ${names.get(c.b)}`,
     ...me.map((m) => `  ${m}`),
     ...via.map((v) => `  ${v}`),
+    more > 0 ? `  … og ${more} felles bekjente til` : null,
     tags.length ? `  Felles miljø: ${tags.join(', ')}` : null,
   ]
     .filter(Boolean)
@@ -62,6 +68,14 @@ function describe(
  * bare ingen vurdering; regelforslaget står.
  */
 export async function assessLinks(userId: string): Promise<void> {
+  // Ta «stafettpinnen»: bare én vurdering per bruker innenfor pausen. To kort
+  // på rad ville ellers sendt de samme parene til Claude to ganger. Det som
+  // ikke blir vurdert nå, tas neste gang noe endrer seg eller siden åpnes.
+  const { count } = await prisma.user.updateMany({
+    where: { id: userId, OR: [{ linksAssessedAt: null }, { linksAssessedAt: { lt: new Date(Date.now() - COOLDOWN_MS) } }] },
+    data: { linksAssessedAt: new Date() },
+  })
+  if (count === 0) return
   try {
     const { people, rels, rows, candidates } = await loadLinkState(userId)
     const assessed = new Set(rows.filter((r) => r.assessed).map((r) => `${r.aId}|${r.bId}`))
