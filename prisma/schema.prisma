@@ -73,6 +73,8 @@ model Person {
   // Din relasjon til personen, og hvor ofte du vil minnes om å ta kontakt.
   // cadenceWeeks = null betyr eksplisitt «aldri auto-påminn».
   type          RelationshipType @default(FRIEND)
+  // Hva de er for deg, med dine ord: «fetter», «barndomsvenn», «sjefen min».
+  relationLabel String?
   cadenceWeeks  Int?             @default(4)
   snoozedUntil  DateTime?
 

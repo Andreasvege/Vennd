@@ -132,6 +132,7 @@ export async function getPersonForEdit(userId: string, id: string) {
         cadenceWeeks: true,
         primaryTagId: true,
         photoUrl: true,
+        relationLabel: true,
         primaryTag: { select: { color: true } },
         tags: { select: { tagId: true } },
       },

@@ -12,7 +12,15 @@ export async function loadLinkState(userId: string) {
   const [persons, relations, rows] = await Promise.all([
     prisma.person.findMany({
       where: { userId, ...onMap },
-      select: { id: true, name: true, photoUrl: true, primaryTag: { select: { color: true } }, tags: { select: { tagId: true } } },
+      select: {
+        id: true,
+        name: true,
+        photoUrl: true,
+        type: true,
+        relationLabel: true,
+        primaryTag: { select: { color: true } },
+        tags: { select: { tagId: true } },
+      },
     }),
     prisma.relationship.findMany({
       where: { fromPerson: { userId, ...onMap }, toPerson: { userId, ...onMap } },

@@ -92,8 +92,8 @@ export function closenessPreset(choice: Closeness): { type: RelationshipType; ca
 
 /**
  * Hva nettverket allerede vet om personen på kortet: hvem hun er koblet
- * til, hvem de igjen kjenner (flest felles først), og miljøet de deler.
- * Etter første kort i en familie er resten av familien da ett trykk unna.
+ * til, og miljøet flertallet av dem deler. Forslagene til hvem hun kjenner,
+ * lager rankKnows ut fra dette.
  */
 export function networkHints(personId: string, pairs: [string, string][], tagsOf: Map<string, string[]>) {
   const neighbours = new Map<string, Set<string>>()
@@ -106,19 +106,63 @@ export function networkHints(personId: string, pairs: [string, string][], tagsOf
   }
   const already = [...(neighbours.get(personId) ?? [])]
 
-  const counts = new Map<string, number>()
-  for (const n of already) {
-    for (const m of neighbours.get(n) ?? []) {
-      if (m === personId || already.includes(m)) continue
-      counts.set(m, (counts.get(m) ?? 0) + 1)
-    }
-  }
-  const suggested = [...counts].sort((x, y) => y[1] - x[1]).map(([id]) => id)
-
   // Miljøet flertallet av dem hun kjenner er i.
   const tagCounts = new Map<string, number>()
   for (const n of already) for (const tag of tagsOf.get(n) ?? []) tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1)
   const tagIds = [...tagCounts].filter(([, c]) => c * 2 >= already.length && c > 0).map(([id]) => id)
 
-  return { already, suggested, tagIds }
+  return { already, tagIds }
+}
+
+/** «Hvor ofte vil du holde kontakten?»: uker mellom påminnelser, eller aldri. */
+export const CADENCE_CHOICES = [2, 4, 12, 26, null] as const
+export type CadenceChoice = (typeof CADENCE_CHOICES)[number]
+
+/** Typene kortet spør om; «Annet» finnes, men hører hjemme på profilen. */
+export const CARD_TYPES = ['FRIEND', 'FAMILY', 'COLLEAGUE', 'ROMANTIC', 'ACQUAINTANCE'] as const satisfies readonly RelationshipType[]
+
+/**
+ * Standard for hvor ofte, ut fra hvem de er for deg: nærmeste valg til
+ * typens kadens. En eks får ingen påminnelse.
+ */
+export function defaultCadence(type: RelationshipType, phase?: string | null): CadenceChoice {
+  if (type === 'ROMANTIC' && phase === 'ENDED') return null
+  if (type === 'ACQUAINTANCE') return null
+  const weeks = DEFAULT_CADENCE_WEEKS[type]
+  const options = CADENCE_CHOICES.filter((c): c is 2 | 4 | 12 | 26 => c !== null)
+  // Uavgjort: det sjeldneste. En påminnelse for lite er bedre enn mas.
+  return options.reduce((best, c) => (Math.abs(c - weeks) <= Math.abs(best - weeks) ? c : best))
+}
+
+/**
+ * Forslag til «Kjenner» som vokser med det du krysser av: hver kjent
+ * (ankrene: dem hun allerede er koblet til og dem du har valgt) peker på
+ * sine bekjente. Flest ankre først; samme miljø teller litt.
+ */
+export function rankKnows(
+  personId: string,
+  anchors: string[],
+  pairs: [string, string][],
+  tagIds: string[],
+  candidates: { id: string; tagIds: string[] }[],
+): string[] {
+  const anchorSet = new Set(anchors)
+  const score = new Map<string, number>()
+  for (const [a, b] of pairs) {
+    for (const [anchor, other] of [
+      [a, b],
+      [b, a],
+    ]) {
+      if (anchorSet.has(anchor) && other !== personId && !anchorSet.has(other)) score.set(other, (score.get(other) ?? 0) + 2)
+    }
+  }
+  for (const c of candidates) {
+    if (c.id === personId || anchorSet.has(c.id)) continue
+    if (c.tagIds.some((id) => tagIds.includes(id))) score.set(c.id, (score.get(c.id) ?? 0) + 1)
+  }
+  const known = new Set(candidates.map((c) => c.id))
+  return [...score]
+    .filter(([id]) => known.has(id))
+    .sort((x, y) => y[1] - x[1])
+    .map(([id]) => id)
 }
