@@ -87,3 +87,21 @@ it('viser ferdig-skjermen når stokken er tom', async () => {
   await user.click(screen.getByRole('button', { name: /^Neste/ }))
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Alle har en plass' })).toBeInTheDocument())
 })
+
+it('neste kort vet hvem hun kjenner, foreslår nettverket og velger miljøet med en gang', async () => {
+  const user = userEvent.setup()
+  // Berit er allerede koblet til Anders.
+  render(<CardDeck data={{ ...data, pairs: [['b', 'a']] }} />)
+
+  // Kort 1: Anders er i Studentradio og kjenner Sofie.
+  await user.click(screen.getByRole('button', { name: 'Studentradio' }))
+  await user.click(screen.getByRole('button', { name: /Sofie Lund/ }))
+  await user.click(screen.getByRole('button', { name: /^Neste/ }))
+  await waitFor(() => expect(current()).toBe('Berit Berg'))
+
+  // Kort 2: uten å gjøre noe står Anders som kjent, Sofie som forslag, og miljøet er valgt.
+  expect(screen.getByText('Kjenner allerede')).toBeInTheDocument()
+  expect(screen.getByText('Anders Aas')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /Sofie Lund/ })).toHaveAttribute('aria-pressed', 'false')
+  expect(screen.getByRole('button', { name: 'Studentradio' })).toHaveAttribute('aria-pressed', 'true')
+})
