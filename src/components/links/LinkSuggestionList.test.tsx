@@ -46,16 +46,6 @@ it('på profilen står bare den andre personen', () => {
   expect(screen.queryByText(/Håvard Vege og/)).not.toBeInTheDocument()
 })
 
-it('legger til alle med ett trykk', async () => {
-  const user = setup({ bulk: true })
-  await user.click(screen.getByRole('button', { name: 'Legg til alle 2' }))
-  expect(acceptLinks).toHaveBeenCalledWith([
-    ['h', 's'],
-    ['h', 'a'],
-  ])
-  await waitFor(() => expect(screen.getByText('La til 2 forbindelser.')).toBeInTheDocument())
-})
-
 it('avviser ett forslag, og viser det igjen hvis det feilet', async () => {
   dismissLink.mockResolvedValue({ ok: false, error: 'failed' })
   const user = setup()

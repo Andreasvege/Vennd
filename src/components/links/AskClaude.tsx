@@ -22,7 +22,7 @@ export function AskClaude({ lastAt }: { lastAt: Date | null }) {
       const res = await settle(askClaudeForLinks())
       if (!res.ok) return setMessage(t.errors[res.error])
       const r = res.data.result
-      setMessage(r.status === 'done' ? t.links.askDone(r.assessed, r.found) : r.status === 'busy' ? t.links.askBusy : t.links.askFailed)
+      setMessage(r.status === 'done' ? t.links.askDone(r.found) : r.status === 'busy' ? t.links.askBusy : t.links.askFailed)
     })
 
   return (

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { answeredPairs, claudeExtras, idByName, linkCandidates, resolveAssessments, withAssessments, type LinkCandidate, type LinkPerson, type LinkRelation, type LinkRow } from './linkSuggestions'
+import { answeredPairs, hubClusters, idByName, insightPairs, linkCandidates, withAssessments, type LinkCandidate, type LinkPerson, type LinkRelation, type LinkRow } from './linkSuggestions'
 
 const person = (id: string, name: string, tagIds: string[] = []): LinkPerson => ({ id, name, tagIds })
 const rel = (from: string, to: string, type: LinkRelation['type'] = 'FRIEND', label: string | null = null): LinkRelation => ({
@@ -94,38 +94,7 @@ describe('withAssessments', () => {
   })
 })
 
-describe('resolveAssessments', () => {
-  const list: LinkCandidate[] = [{ a: 'a', b: 'b', score: 4, shared: [], sameSurname: false, sharedTags: [], type: 'FRIEND' }]
-
-  it('knytter nummer til par, ignorerer ukjente og doble, og kutter tekst', () => {
-    const out = resolveAssessments(list, [
-      { n: 1, keep: true, type: 'FAMILY', label: '  søsken  ', reason: 'x'.repeat(300) },
-      { n: 1, keep: false, type: 'FRIEND', label: null, reason: 'dobbel' },
-      { n: 7, keep: true, type: 'FRIEND', label: null, reason: 'finnes ikke' },
-    ])
-    expect(out).toHaveLength(1)
-    expect(out[0]).toMatchObject({ aId: 'a', bId: 'b', label: 'søsken', keep: true })
-    expect(out[0].reason).toHaveLength(200)
-  })
-})
-
-describe('claudeExtras og idByName', () => {
-  const row = (aId: string, bId: string, extra: Partial<LinkRow> = {}): LinkRow => ({
-    aId, bId, status: 'OPEN', assessed: true, keep: true, type: 'FAMILY', label: 'søsken', reason: 'Samme etternavn.', ...extra,
-  })
-
-  it('viser Claudes egne forslag som ikke er regelforslag, koblet eller utenfor kartet', () => {
-    const rule: LinkCandidate = { a: 'a', b: 'b', score: 2, shared: [], sameSurname: false, sharedTags: [], type: 'FRIEND' }
-    const out = claudeExtras(
-      [row('a', 'b'), row('c', 'd'), row('e', 'f'), row('g', 'h', { keep: false }), row('i', 'x')],
-      [rule],
-      new Set(['e|f']),
-      new Set(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']),
-    )
-    expect(out.map((v) => `${v.a}${v.b}`)).toEqual(['cd'])
-    expect(out[0]).toMatchObject({ label: 'søsken', fromClaude: true })
-  })
-
+describe('idByName', () => {
   it('slår opp navn bare når de er entydige', () => {
     const find = idByName([
       { id: '1', name: 'Håvard Vege' },
@@ -135,5 +104,36 @@ describe('claudeExtras og idByName', () => {
     expect(find(' håvard vege ')).toBe('1')
     expect(find('Anna Berg')).toBeNull()
     expect(find('Ukjent')).toBeNull()
+  })
+})
+
+describe('hubClusters', () => {
+  it('samler Noras fire søsken til ett spørsmål, ikke seks par', () => {
+    const family = ['nora', 'havard', 'hanne', 'selma', 'august'].map((id) => ({ id, name: id === 'nora' ? 'Nora Hjorthaug' : `${id} Vege`, tagIds: [] }))
+    const rels = ['havard', 'hanne', 'selma', 'august'].map((id) => ({ from: 'nora', to: id, type: 'FAMILY' as const, label: 'kusine' }))
+    const clusters = hubClusters(linkCandidates(family, rels))
+    expect(clusters).toHaveLength(1)
+    expect(clusters[0]).toMatchObject({ hub: 'nora', type: 'FAMILY' })
+    expect(clusters[0].members.sort()).toEqual(['august', 'hanne', 'havard', 'selma'])
+    expect(clusters[0].pairs).toHaveLength(6)
+  })
+
+  it('gir hvert par til én gruppe, den største først', () => {
+    const c = (a: string, b: string, shared: string[]): LinkCandidate => ({ a, b, score: 2, shared, sameSurname: false, sharedTags: [], type: 'FRIEND' })
+    const clusters = hubClusters([c('a', 'b', ['x', 'y']), c('a', 'c', ['x']), c('b', 'c', ['x']), c('d', 'e', ['y'])])
+    expect(clusters.map((k) => [k.hub, k.pairs.length])).toEqual([
+      ['x', 3],
+      ['y', 1],
+    ])
+  })
+})
+
+describe('insightPairs', () => {
+  it('group gir alle par, hub gir navet til hver', () => {
+    expect(insightPairs('group', null, ['a', 'b', 'c'])).toHaveLength(3)
+    expect(insightPairs('hub', 'n', ['a', 'b', 'n'])).toEqual([
+      ['n', 'a'],
+      ['n', 'b'],
+    ])
   })
 })

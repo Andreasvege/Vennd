@@ -21,15 +21,13 @@ type Props = {
   items: LinkSuggestionItem[]
   /** På profilen: vis bare den andre personen, ikke paret. */
   personId?: string
-  /** «Legg til alle» for store familier og gjenger. */
-  bulk?: boolean
 }
 
 /**
  * Forslag til forbindelser: hvem som trolig kjenner hverandre, og hvorfor.
  * Legg til eller avvis med ett trykk; besvarte forsvinner med en gang.
  */
-export function LinkSuggestionList({ items, personId, bulk }: Props) {
+export function LinkSuggestionList({ items, personId }: Props) {
   const toast = useToast()
   const [answered, setAnswered] = useState<Set<string>>(new Set())
   const [error, setError] = useState('')
@@ -105,11 +103,6 @@ export function LinkSuggestionList({ items, personId, bulk }: Props) {
           )
         })}
       </ul>
-      {bulk && shown.length > 1 && (
-        <Button variant="primary" className="self-start" onPress={() => accept(shown)} isDisabled={busy}>
-          {t.links.addAll(shown.length)}
-        </Button>
-      )}
       {error && (
         <p role="alert" className="text-[14px] text-redpencil">
           {error}

@@ -58,6 +58,7 @@ model User {
   plans         Plan[]
   suggestions   Suggestion[]
   links         LinkSuggestion[]
+  linkInsights  LinkInsight[]
   // Sist Claude vurderte forbindelser: én vurdering om gangen, med pause,
   // så raske endringer (kort etter kort) ikke betaler for det samme to ganger.
   linksAssessedAt DateTime?
@@ -381,4 +382,27 @@ enum LinkStatus {
   OPEN
   ACCEPTED
   DISMISSED
+}
+
+// En innsikt fra Claude om en gruppe i nettverket: «Vege-søsknene», «Disse
+// fra Danvik kjenner hverandre». Ett svar gjelder alle forbindelsene i den.
+// kind 'group': alle medlemmene kjenner hverandre. 'hub': én person (hubId)
+// kjenner alle medlemmene. memberIds er Json (liste med person-id-er).
+model LinkInsight {
+  id        String            @id @default(cuid())
+  userId    String
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  reason    String
+  kind      String
+  hubId     String?
+  memberIds Json
+  type      RelationshipType
+  label     String?
+  // Et miljø Claude foreslår å lage for gruppen, f.eks. «Danvik».
+  groupName String?
+  status    LinkStatus        @default(OPEN)
+  createdAt DateTime          @default(now())
+
+  @@index([userId, status])
 }

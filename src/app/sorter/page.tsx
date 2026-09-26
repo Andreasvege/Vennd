@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { ArrowRight, Inbox, Layers, Sparkles, Users } from 'lucide-react'
 import { requireUserId } from '@/server/session'
 import { getSortingData } from '@/server/queries/sorting'
-import { getLinkSuggestions } from '@/server/queries/links'
+import { getGroupSuggestions } from '@/server/queries/links'
 import { t } from '@/i18n'
 
 const WAYS = [
@@ -15,7 +15,8 @@ const WAYS = [
 /** «Bygg kartet ditt»: tre måter å gi folk en plass, samme sted. */
 export default async function SortPage() {
   const userId = await requireUserId()
-  const [data, links] = await Promise.all([getSortingData(userId), getLinkSuggestions(userId)])
+  const [data, groups] = await Promise.all([getSortingData(userId), getGroupSuggestions(userId)])
+  const linkGroups = groups.fromClaude.length + groups.fromRules.length
   const n = data.unsorted.length
 
   return (
@@ -43,8 +44,8 @@ export default async function SortPage() {
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="font-display text-[20px] leading-tight">
                   {title}
-                  {href === '/sorter/forbindelser' && links.length > 0 && (
-                    <span className="ml-2 font-sans text-[13px] text-ink-muted">{t.links.count(links.length)}</span>
+                  {href === '/sorter/forbindelser' && linkGroups > 0 && (
+                    <span className="ml-2 font-sans text-[13px] text-ink-muted">{t.links.count(linkGroups)}</span>
                   )}
                 </span>
                 <span className={`text-[14px] ${i === 0 ? 'text-paper/75' : 'text-ink-muted'}`}>{body}</span>

@@ -125,56 +125,6 @@ export function withAssessments(candidates: LinkCandidate[], rows: LinkRow[]): L
   })
 }
 
-export type Assessment = { n: number; keep: boolean; type: RelationshipType; label: string | null; reason: string }
-
-/**
- * Claudes svar til rader: nummeret peker på kandidaten i lista Claude fikk.
- * Ukjente nummer ignoreres, og tekstene kuttes til det skjermen tåler.
- */
-export function resolveAssessments(numbered: LinkCandidate[], out: Assessment[]) {
-  const seen = new Set<number>()
-  return out.flatMap((x) => {
-    const c = numbered[x.n - 1]
-    if (!c || seen.has(x.n)) return []
-    seen.add(x.n)
-    const label = x.label?.trim().slice(0, 40) || null
-    return [{ aId: c.a, bId: c.b, keep: x.keep, type: x.type, label, reason: x.reason.trim().slice(0, 200) || null }]
-  })
-}
-
-/**
- * Forslag Claude fant selv, utenfor reglene (f.eks. samme etternavn uten
- * felles bekjente). De vises når paret ikke allerede er et regelforslag,
- * ikke er koblet, og begge står på kartet.
- */
-export function claudeExtras(
-  rows: LinkRow[],
-  candidates: LinkCandidate[],
-  linked: Set<string>,
-  onMap: Set<string>,
-): LinkView[] {
-  const fromRules = new Set(candidates.map((c) => pairKey(c.a, c.b)))
-  return rows.flatMap((r): LinkView[] => {
-    const key = pairKey(r.aId, r.bId)
-    if (r.status !== 'OPEN' || !r.assessed || !r.keep || fromRules.has(key) || linked.has(key)) return []
-    if (!onMap.has(r.aId) || !onMap.has(r.bId)) return []
-    return [
-      {
-        a: r.aId,
-        b: r.bId,
-        score: 0,
-        shared: [],
-        sameSurname: false,
-        sharedTags: [],
-        type: r.type ?? 'FRIEND',
-        label: r.label,
-        reason: r.reason,
-        fromClaude: true,
-      },
-    ]
-  })
-}
-
 /** Et navn fra Claude til én person: fullt navn, og bare når det er entydig. */
 export function idByName(persons: { id: string; name: string }[]): (name: string) => string | null {
   const byName = new Map<string, string[]>()
@@ -186,4 +136,52 @@ export function idByName(persons: { id: string; name: string }[]): (name: string
     const ids = byName.get(name.trim().toLocaleLowerCase('nb')) ?? []
     return ids.length === 1 ? ids[0] : null
   }
+}
+
+export type HubCluster = {
+  /** Personen de alle kjenner: «Kjenner vennene til Nora hverandre?» */
+  hub: string
+  members: string[]
+  /** Parene i gruppen som ikke er koblet ennå. */
+  pairs: [string, string][]
+  type: RelationshipType
+}
+
+/**
+ * Hundrevis av enkeltpar samlet til en håndfull spørsmål: grupper av folk
+ * som samme person kjenner, men som ikke er koblet til hverandre. Grådig:
+ * den som samler flest ubesvarte par, først; hvert par hører til én gruppe.
+ */
+export function hubClusters(candidates: LinkCandidate[]): HubCluster[] {
+  const byHub = new Map<string, LinkCandidate[]>()
+  for (const c of candidates) for (const h of c.shared) byHub.set(h, [...(byHub.get(h) ?? []), c])
+  const covered = new Set<string>()
+  const clusters: HubCluster[] = []
+  for (;;) {
+    let best: { hub: string; pairs: LinkCandidate[] } | null = null
+    for (const [hub, list] of byHub) {
+      const open = list.filter((c) => !covered.has(pairKey(c.a, c.b)))
+      if (!best || open.length > best.pairs.length || (open.length === best.pairs.length && hub < best.hub)) best = { hub, pairs: open }
+    }
+    if (!best || best.pairs.length === 0) break
+    for (const c of best.pairs) covered.add(pairKey(c.a, c.b))
+    const members = [...new Set(best.pairs.flatMap((c) => [c.a, c.b]))]
+    const family = best.pairs.filter((c) => c.type === 'FAMILY').length
+    clusters.push({
+      hub: best.hub,
+      members,
+      pairs: best.pairs.map((c) => [c.a, c.b]),
+      type: family * 2 >= best.pairs.length ? 'FAMILY' : 'FRIEND',
+    })
+  }
+  return clusters
+}
+
+/** Forbindelsene en innsikt står for: alle par i gruppen, eller navet til hver. */
+export function insightPairs(kind: 'group' | 'hub', hubId: string | null, members: string[]): [string, string][] {
+  const unique = [...new Set(members)].filter((id) => id !== hubId)
+  if (kind === 'hub') return hubId ? unique.map((m) => [hubId, m]) : []
+  const pairs: [string, string][] = []
+  for (let i = 0; i < unique.length; i++) for (let j = i + 1; j < unique.length; j++) pairs.push([unique[i], unique[j]])
+  return pairs
 }
