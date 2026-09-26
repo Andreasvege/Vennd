@@ -52,6 +52,8 @@ export function useMapModel(graph: Graph, mode: MapMode, filter: MapFilter, now:
       freshness: fresh.get(p.id) ?? 0,
     }))
     const tagById = new Map(graph.tags.map((tag) => [tag.id, tag]))
+    // Relasjonene styrer rekkefølgen innenfor en gruppe: familien side om side.
+    const pairs = relationships.map((r) => [r.fromPersonId, r.toPersonId] as [string, string])
 
     let targets: Map<string, Point>
     let backdrop: Backdrop
@@ -60,7 +62,7 @@ export function useMapModel(graph: Graph, mode: MapMode, filter: MapFilter, now:
     if (mode === 'nearness') {
       // Ferske i samme gruppe havner tett på den innerste ringen; et lite
       // frastøtingspass hindrer at de legger seg oppå hverandre.
-      targets = relax(nearness(layoutPersons, groups), NODE_GAP)
+      targets = relax(nearness(layoutPersons, groups, NEARNESS_DEFAULTS, pairs), NODE_GAP)
       backdrop = {
         kind: 'rings',
         rings: nearnessRings(NEARNESS_DEFAULTS).map((ring) => ({ r: ring.r, label: t.map.rings[ring.label] })),
@@ -68,7 +70,7 @@ export function useMapModel(graph: Graph, mode: MapMode, filter: MapFilter, now:
     } else if (mode === 'circles') {
       // Sirkelen vokser med antallet, så avatarene aldri overlapper.
       const r = Math.max(CIRCLE_R, (layoutPersons.length * NODE_GAP) / (2 * Math.PI * 0.9))
-      const c = circles(layoutPersons, groups, { r })
+      const c = circles(layoutPersons, groups, { r }, pairs)
       targets = c.positions
       edgePath = c.edgePath
       backdrop = {

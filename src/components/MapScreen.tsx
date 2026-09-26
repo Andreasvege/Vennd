@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ReactFlowProvider } from '@xyflow/react'
-import { Link2, UserPlus, Layers } from 'lucide-react'
+import { Layers, Link2, Sparkles, Undo2, UserPlus } from 'lucide-react'
 import { Button, EmptyState } from '@/components/ui'
 import { VennekartCanvas } from '@/components/graph/VennekartCanvas'
 import { MapControls } from '@/components/graph/MapControls'
@@ -21,6 +21,11 @@ import type { TagSummary } from '@/server/queries/tags'
 import type { SavedView } from '@/server/queries/views'
 import { t } from '@/i18n'
 import { buttonClass } from '@/components/ui/button-styles'
+import { tidyNetwork } from '@/domain/layouts/tidy'
+import { movePersons } from '@/server/actions/person'
+import { settle } from '@/server/actions/result'
+import type { PositionList } from '@/server/schemas'
+import { Button as AriaButton } from 'react-aria-components'
 
 type Props = { graph: Graph; tags: TagSummary[]; views: SavedView[]; highlight?: string[] }
 
@@ -45,6 +50,33 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
   const [sheet, setSheet] = useState<'person' | 'relationship' | null>(null)
   const [pair, setPair] = useState<[string, string] | null>(null)
   const [error, setError] = useState('')
+  // «Rydd opp» i Nettverk: plasseringene fra før, så «Angre» kan sette dem tilbake.
+  const [before, setBefore] = useState<PositionList | null>(null)
+  const [refit, setRefit] = useState(0)
+  const [tidying, startTidy] = useTransition()
+
+  const tidy = () =>
+    startTidy(async () => {
+      setError('')
+      const prior = graph.persons.map((p) => ({ id: p.id, x: p.positionX, y: p.positionY }))
+      const layout = tidyNetwork(
+        graph.persons.map((p) => ({ id: p.id, name: p.name, groupId: p.primaryTag?.id ?? p.tagIds[0] ?? null })),
+        graph.tags.map((tag) => ({ id: tag.id, name: tag.name })),
+        graph.relationships.map((r) => [r.fromPersonId, r.toPersonId] as [string, string]),
+      )
+      const res = await settle(movePersons([...layout].map(([id, p]) => ({ id, ...p }))))
+      if (!res.ok) return setError(t.errors[res.error])
+      setBefore(prior)
+      setRefit((n) => n + 1)
+    })
+  const undoTidy = () =>
+    startTidy(async () => {
+      if (!before) return
+      const res = await settle(movePersons(before))
+      if (!res.ok) return setError(t.errors[res.error])
+      setBefore(null)
+      setRefit((n) => n + 1)
+    })
   const close = () => {
     setSheet(null)
     setPair(null)
@@ -70,6 +102,7 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
             }}
             onProximities={notice}
             onError={setError}
+            refit={refit}
           />
         </ReactFlowProvider>
 
@@ -83,6 +116,31 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
             views={views}
             activeViewId={state.activeViewId}
             onView={state.applyView}
+            actions={
+              state.mode === 'network' &&
+              graph.persons.length > 1 && (
+                <>
+                  <AriaButton
+                    onPress={tidy}
+                    isDisabled={tidying}
+                    className="flex min-h-11 items-center gap-1.5 rounded-[10px] border border-rule bg-paper-raised px-3 text-[13px] text-ink outline-none data-[hovered]:border-ink-muted data-[disabled]:opacity-50 data-[focus-visible]:ring-2 data-[focus-visible]:ring-pen desk:min-h-9"
+                  >
+                    <Sparkles aria-hidden size={15} strokeWidth={1.75} />
+                    {t.map.tidy}
+                  </AriaButton>
+                  {before && (
+                    <AriaButton
+                      onPress={undoTidy}
+                      isDisabled={tidying}
+                      className="flex min-h-11 items-center gap-1.5 rounded-[10px] px-2 text-[13px] text-ink-muted outline-none data-[hovered]:text-ink data-[focus-visible]:ring-2 data-[focus-visible]:ring-pen desk:min-h-9"
+                    >
+                      <Undo2 aria-hidden size={14} strokeWidth={1.75} />
+                      {t.map.tidyUndo}
+                    </AriaButton>
+                  )}
+                </>
+              )
+            }
           />
           {graph.unsorted > 0 && (
             <Link

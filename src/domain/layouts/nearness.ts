@@ -16,10 +16,15 @@ export function nearnessRings({ rMin, rMax } = NEARNESS_DEFAULTS) {
  * Nærhet: vinkelen er gruppen (hovedtaggen), avstanden er hvor fersk
  * kontakten er. Deg i midten; de du nettopp har sett, innerst.
  */
-export function nearness(persons: LayoutPerson[], groups: Group[], { rMin, rMax } = NEARNESS_DEFAULTS): Map<string, Point> {
+export function nearness(
+  persons: LayoutPerson[],
+  groups: Group[],
+  { rMin, rMax } = NEARNESS_DEFAULTS,
+  pairs: [string, string][] = [],
+): Map<string, Point> {
   const fresh = new Map(persons.map((p) => [p.id, p.freshness]))
   const out = new Map<string, Point>()
-  for (const s of sectors(groups, persons)) {
+  for (const s of sectors(groups, persons, pairs)) {
     s.members.forEach((id, i) => {
       const r = rMin + (1 - (fresh.get(id) ?? 0)) * (rMax - rMin)
       out.set(id, polar(r, angleWithin(s, i)))

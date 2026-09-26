@@ -5,7 +5,7 @@ import { placeNewPerson } from '@/domain/placement'
 import { requireUserId } from '@/server/session'
 import { removeBlob } from '@/server/blob'
 import { NotOwnedError } from '@/server/ownership'
-import { personInput, personPatch, type PersonInput, type PersonPatch } from '@/server/schemas'
+import { personInput, personPatch, positionList, type PersonInput, type PersonPatch, type PositionList } from '@/server/schemas'
 import { revalidatePath } from 'next/cache'
 import { assertTagsOwned, fromDateInput, parseId, refreshAll, markSorted } from './shared'
 import { fail, type ActionResult } from './result'
@@ -126,6 +126,21 @@ export async function deletePerson(rawId: string): Promise<ActionResult> {
  * på nytt fra dataene når du bytter syn eller filter, og da må den nye
  * plassen være med — ellers glir personen tilbake dit den sto.
  */
+/**
+ * Mange plasseringer på én gang: «Rydd opp» i Nettverk, og «Angre» etterpå.
+ * Bare dine egne personer flyttes; ukjente id-er hoppes over.
+ */
+export async function movePersons(raw: PositionList): Promise<ActionResult<{ moved: number }>> {
+  const userId = await requireUserId()
+  const parsed = positionList.safeParse(raw)
+  if (!parsed.success) return fail('invalid')
+  const results = await prisma.$transaction(
+    parsed.data.map(({ id, x, y }) => prisma.person.updateMany({ where: { id, userId }, data: { positionX: x, positionY: y } })),
+  )
+  refreshAll()
+  return { ok: true, data: { moved: results.reduce((n, r) => n + r.count, 0) } }
+}
+
 export async function movePerson(rawId: string, x: number, y: number): Promise<ActionResult> {
   const userId = await requireUserId()
   const id = parseId(rawId)

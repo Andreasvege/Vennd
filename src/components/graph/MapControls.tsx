@@ -39,6 +39,8 @@ type Props = {
   views: SavedView[]
   activeViewId: string | null
   onView: (v: SavedView | null) => void
+  /** Handlinger som hører til synet (f.eks. «Rydd opp» i Nettverk), etter filteret. */
+  actions?: React.ReactNode
 }
 
 function ViewMenu({ view }: { view: SavedView }) {
@@ -98,7 +100,7 @@ function ViewMenu({ view }: { view: SavedView }) {
  * Øverst på kartet: synsvalget, filteret og de lagrede visningene. Tre
  * syn over de samme dataene — valget sier bare hvilken vinkel du ser fra.
  */
-export function MapControls({ mode, onMode, filter, onFilter, tags, views, activeViewId, onView }: Props) {
+export function MapControls({ mode, onMode, filter, onFilter, tags, views, activeViewId, onView, actions }: Props) {
   const count = activeCount(filter)
   const [filterOpen, setFilterOpen] = useState(false)
 
@@ -159,6 +161,7 @@ export function MapControls({ mode, onMode, filter, onFilter, tags, views, activ
             </Dialog>
           </Popover>
         </DialogTrigger>
+        {actions}
       </div>
 
       {views.length > 0 && (
