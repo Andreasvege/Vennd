@@ -1,0 +1,89 @@
+import { it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+
+const sortPerson = vi.fn()
+const archivePersons = vi.fn()
+const restorePerson = vi.fn()
+vi.mock('@/server/actions/sort', () => ({
+  sortPerson: (...a: unknown[]) => sortPerson(...a),
+  archivePersons: (...a: unknown[]) => archivePersons(...a),
+  restorePerson: (...a: unknown[]) => restorePerson(...a),
+}))
+vi.mock('@/server/actions/person', () => ({ createPerson: vi.fn() }))
+vi.mock('@/server/actions/tag', () => ({ createTag: vi.fn() }))
+
+import { CardDeck } from './CardDeck'
+import type { SortingData } from '@/server/queries/sorting'
+
+const person = (id: string, name: string) => ({
+  id,
+  name,
+  birthday: null,
+  notes: null,
+  photoUrl: null,
+  tint: 'stone' as const,
+  tagIds: [],
+  phone: null,
+  email: null,
+  logCount: 0,
+})
+
+const data: SortingData = {
+  unsorted: [person('a', 'Anders Aas'), person('b', 'Berit Berg')],
+  sorted: [{ id: 's', name: 'Sofie Lund', tint: 'ochre', tagIds: ['radio'] }],
+  tags: [{ id: 'radio', name: 'Studentradio', color: 'ochre', count: 1 }],
+  pairs: [],
+  archived: [],
+}
+
+beforeEach(() => {
+  sortPerson.mockReset().mockResolvedValue({ ok: true, data: { relationships: 1 } })
+  archivePersons.mockReset().mockResolvedValue({ ok: true, data: { count: 1 } })
+  restorePerson.mockReset().mockResolvedValue({ ok: true })
+})
+
+const current = () => screen.getByRole('heading', { level: 1 }).textContent
+
+it('lagrer nærhet, miljø og hvem de kjenner, og går til neste kort', async () => {
+  const user = userEvent.setup()
+  render(<CardDeck data={data} />)
+  expect(current()).toBe('Anders Aas')
+
+  await user.click(screen.getByRole('radio', { name: /Nær/ }))
+  await user.click(screen.getByRole('button', { name: 'Studentradio' }))
+  // Med et miljø valgt foreslås de som alt står på kartet i det miljøet.
+  await user.click(screen.getByRole('button', { name: /Sofie Lund/ }))
+  await user.click(screen.getByRole('button', { name: /^Neste/ }))
+
+  await waitFor(() => expect(current()).toBe('Berit Berg'))
+  expect(sortPerson).toHaveBeenCalledWith({ personId: 'a', closeness: 'close', tagIds: ['radio'], knows: ['s'] })
+  expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuetext', '1 av 2')
+})
+
+it('hopper over ved å legge kortet bakerst', async () => {
+  const user = userEvent.setup()
+  render(<CardDeck data={data} />)
+  await user.click(screen.getByRole('button', { name: 'Hopp over' }))
+  expect(current()).toBe('Berit Berg')
+  expect(sortPerson).not.toHaveBeenCalled()
+})
+
+it('tar ut av kartet, og Angre henter personen tilbake', async () => {
+  const user = userEvent.setup()
+  render(<CardDeck data={data} />)
+  await user.click(screen.getByRole('button', { name: 'Ikke i kartet' }))
+  await waitFor(() => expect(current()).toBe('Berit Berg'))
+  expect(archivePersons).toHaveBeenCalledWith(['a'])
+
+  await user.click(screen.getByRole('button', { name: 'Angre' }))
+  await waitFor(() => expect(current()).toBe('Anders Aas'))
+  expect(restorePerson).toHaveBeenCalledWith('a')
+})
+
+it('viser ferdig-skjermen når stokken er tom', async () => {
+  const user = userEvent.setup()
+  render(<CardDeck data={{ ...data, unsorted: [person('a', 'Anders Aas')] }} />)
+  await user.click(screen.getByRole('button', { name: /^Neste/ }))
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'Alle har en plass' })).toBeInTheDocument())
+})

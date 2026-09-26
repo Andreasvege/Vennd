@@ -16,7 +16,7 @@ const MAX_DERIVED = 40
  * cache(): forsiden og panelet kan spørre i samme forespørsel.
  */
 export const getGraph = cache(async function getGraph(userId: string) {
-  const [persons, relationships, tags, lastContact, sharedLogs] = await Promise.all([
+  const [persons, relationships, tags, lastContact, sharedLogs, unsorted] = await Promise.all([
     prisma.person.findMany({
       where: { userId, ...onMap },
       orderBy: { name: 'asc' },
@@ -50,6 +50,7 @@ export const getGraph = cache(async function getGraph(userId: string) {
       take: DERIVED_FROM_LAST,
       select: { participants: { select: { personId: true } } },
     }),
+    prisma.person.count({ where: { userId, sortedAt: null, archivedAt: null } }),
   ])
 
   // Bare logger med flere personer kan si noe om hvem som er sammen; de
@@ -75,6 +76,8 @@ export const getGraph = cache(async function getGraph(userId: string) {
     relationships,
     tags: tags.map((t) => ({ ...t, color: isTagColor(t.color) ? t.color : ('stone' as const) })),
     derived,
+    // Står i Venter-bunken, ikke på kartet: kartet viser en vei dit.
+    unsorted,
   }
 })
 

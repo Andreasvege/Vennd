@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { ArrowRight, CalendarPlus, Cake, PenLine } from 'lucide-react'
+import { ArrowRight, CalendarPlus, Cake, Layers, PenLine } from 'lucide-react'
 import { Avatar, Button, EmptyState, SectionHeading } from '@/components/ui'
 import { useComposer, usePlanner } from '@/components/composer/ComposerProvider'
 import { BriefSheet } from './BriefSheet'
@@ -177,6 +177,20 @@ export function TodayView({ data }: { data: TodayData }) {
         <p role="alert" className="text-[14px] text-redpencil">
           {error}
         </p>
+      )}
+
+      {data.unsorted > 0 && (
+        <Link
+          href="/sorter"
+          className="group flex items-center gap-3 rounded-[16px] border border-ink bg-ink p-4 text-paper outline-none transition-colors hover:bg-ink/90 focus-visible:ring-2 focus-visible:ring-pen focus-visible:ring-offset-2"
+        >
+          <Layers aria-hidden size={20} strokeWidth={1.5} className="shrink-0" />
+          <span className="flex-1 text-[15px]">{t.sort.todayCard(data.unsorted)}</span>
+          <span className="flex items-center gap-1 text-[14px] font-medium">
+            {t.sort.begin}
+            <ArrowRight aria-hidden size={15} strokeWidth={1.75} className="transition-transform group-hover:translate-x-0.5" />
+          </span>
+        </Link>
       )}
 
       {/* Rett under skriveboksen: forslagene hører til det du nettopp skrev. */}

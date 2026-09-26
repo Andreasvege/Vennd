@@ -3,7 +3,8 @@
 import { useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { Checkbox } from 'react-aria-components'
-import { Button, CheckMark, checkRow, Toggle } from '@/components/ui'
+import { Button, CheckMark, checkRow, TextField, Toggle } from '@/components/ui'
+import { fold } from '@/domain/search'
 import { formatDate } from '@/domain/format'
 import { parseVCards } from '@/domain/import/vcard'
 import { contactStatus, type KnownPerson } from '@/domain/import/match'
@@ -25,6 +26,7 @@ export function ContactImport({ persons, tags }: { persons: KnownPerson[]; tags:
   const [text, setText] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [tagIds, setTagIds] = useState<string[]>([])
+  const [query, setQuery] = useState('')
   const [remind, setRemind] = useState(false)
   const [result, setResult] = useState<ContactImportResult | null>(null)
   const [error, setError] = useState('')
@@ -35,6 +37,8 @@ export function ContactImport({ persons, tags }: { persons: KnownPerson[]; tags:
     [text, persons],
   )
   const importable = rows.filter((r) => r.status.kind !== 'exists')
+  const q = fold(query.trim())
+  const shown = q ? rows.filter((r) => fold(r.name).includes(q)) : rows
 
   const load = (value: string) => {
     const parsed = parseVCards(value).map((c) => ({ ...c, status: contactStatus(c, persons) }))
@@ -81,8 +85,9 @@ export function ContactImport({ persons, tags }: { persons: KnownPerson[]; tags:
       <div role="status" className="flex flex-col items-start gap-4">
         <p className="font-display text-[19px] text-ink">{t.import.doneContacts(result.created, result.birthdays, result.skipped)}</p>
         <div className="flex gap-3">
-          <Link href="/kart" className="text-[15px] text-pen underline-offset-4 hover:underline">
-            {t.import.toMap}
+          {/* De nye står i Venter-bunken, ikke på kartet: neste steg er å gi dem en plass. */}
+          <Link href={result.created ? '/sorter' : '/kart'} className="text-[15px] text-pen underline-offset-4 hover:underline">
+            {result.created ? t.sort.sortNow : t.import.toMap}
           </Link>
           <button type="button" onClick={() => setResult(null)} className="text-[15px] text-ink-muted underline-offset-4 hover:underline">
             {t.import.otherFile}
@@ -105,6 +110,8 @@ export function ContactImport({ persons, tags }: { persons: KnownPerson[]; tags:
 
   return (
     <div className="flex flex-col gap-6">
+      <p className="text-[14px] text-ink-muted">{t.sort.importHint}</p>
+      <TextField label={t.sort.searchPeople} type="search" value={query} onChange={setQuery} />
       <div className="flex flex-wrap items-center justify-between gap-3 text-[14px] text-ink-muted">
         <span>{t.import.selected(count, rows.length)}</span>
         <div className="flex gap-1">
@@ -124,7 +131,7 @@ export function ContactImport({ persons, tags }: { persons: KnownPerson[]; tags:
               seg inne i lista. Ellers havner de langt ned på siden, lager tom plass,
               og nettleseren scroller dit når du trykker. */}
           <ul className="relative flex max-h-[50vh] flex-col divide-y divide-rule overflow-y-auto overscroll-contain border-y border-rule">
-        {rows.map((r) => {
+        {shown.map((r) => {
           const exists = r.status.kind === 'exists'
           return (
             <li key={r.key} className="px-1">
