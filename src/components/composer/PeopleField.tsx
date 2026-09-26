@@ -10,6 +10,7 @@ import { settle } from '@/server/actions/result'
 import type { ComposerPerson } from '@/server/queries/composer'
 import { t } from '@/i18n'
 import { ParticipantPicker } from './ParticipantPicker'
+import { uniqueById } from '@/lib/uniqueById'
 
 type Props = {
   label: string
@@ -25,7 +26,7 @@ type Props = {
  */
 export function PeopleField({ label, persons: known, value, onChange, onError }: Props) {
   const [extra, setExtra] = useState<ComposerPerson[]>([])
-  const persons = useMemo(() => [...known, ...extra], [known, extra])
+  const persons = useMemo(() => uniqueById([...known, ...extra]), [known, extra])
   const byId = useMemo(() => new Map(persons.map((p) => [p.id, p])), [persons])
 
   return (

@@ -18,6 +18,7 @@ import type { SortingData, UnsortedPerson } from '@/server/queries/sorting'
 import type { TagColor } from '@/lib/palette'
 import { TagPicker, type PickerTag } from './TagPicker'
 import { t } from '@/i18n'
+import { uniqueById } from '@/lib/uniqueById'
 
 type Known = { id: string; name: string; tint: TagColor; tagIds: string[] }
 type Done = { id: string; archived: boolean }
@@ -80,7 +81,7 @@ function Card({
   }, [known, network, already, person.id, tagIds])
   const chips = [
     ...suggested,
-    ...[...everyone, ...extra].filter((p) => knows.includes(p.id) && !suggested.some((s) => s.id === p.id)),
+    ...uniqueById([...everyone, ...extra]).filter((p) => knows.includes(p.id) && !suggested.some((s) => s.id === p.id)),
   ]
   const meta = [
     person.birthday && t.sort.birthday(birthdayText(new Date(person.birthday))),
@@ -166,7 +167,7 @@ function Card({
             </ToggleButtonGroup>
           )}
           <ParticipantPicker
-            persons={[...everyone, ...extra].filter((p) => p.id !== person.id)}
+            persons={uniqueById([...everyone, ...extra]).filter((p) => p.id !== person.id)}
             selected={knows}
             onAdd={(id) => setKnows((prev) => (prev.includes(id) ? prev : [...prev, id]))}
             onCreate={async (name) => {
