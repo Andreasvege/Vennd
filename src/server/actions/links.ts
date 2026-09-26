@@ -6,7 +6,8 @@ import { requireUserId } from '@/server/session'
 import { NotOwnedError } from '@/server/ownership'
 import { linkPair, linkPairs } from '@/server/schemas'
 import { loadLinkState } from '@/server/queries/links'
-import { scheduleLinkAssessment } from '@/server/claude/links'
+import { assessNetwork, type AssessResult } from '@/server/claude/links'
+import { isClaudeEnabled } from '@/server/claude/client'
 import { assertPersonsOwned, refreshAll } from './shared'
 import { fail, type ActionResult } from './result'
 
@@ -55,8 +56,6 @@ export async function acceptLinks(raw: [string, string][]): Promise<ActionResult
     return fresh.length
   })
 
-  // Nye forbindelser kan åpne for nye forslag.
-  scheduleLinkAssessment(userId)
   refreshAll()
   return { ok: true, data: { created } }
 }
@@ -80,4 +79,16 @@ export async function dismissLink(raw: [string, string]): Promise<ActionResult> 
   })
   refreshAll()
   return { ok: true }
+}
+
+/**
+ * «Spør Claude»: hele nettverket vurderes i ett kall. Venter på svaret, så
+ * siden kan vise de nye forslagene med en gang.
+ */
+export async function askClaudeForLinks(): Promise<ActionResult<{ result: AssessResult }>> {
+  const userId = await requireUserId()
+  if (!isClaudeEnabled()) return fail('failed')
+  const result = await assessNetwork(userId)
+  if (result.status === 'done') refreshAll()
+  return { ok: true, data: { result } }
 }

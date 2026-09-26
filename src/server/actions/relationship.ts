@@ -7,7 +7,6 @@ import { relationshipInput, relationshipPatch, type RelationshipInput, type Rela
 import { proximitiesAfterNew, type Proximity } from '@/server/queries/proximity'
 import { assertPersonsOwned, fromDateInput, parseId, refreshAll, markSorted } from './shared'
 import { fail, type ActionResult } from './result'
-import { scheduleLinkAssessment } from '@/server/claude/links'
 
 export async function createRelationship(
   raw: RelationshipInput,
@@ -38,8 +37,6 @@ export async function createRelationship(
   await markSorted(userId, [fromPersonId, toPersonId])
   // Gjorde dette verden mindre? Klienten sier fra om det.
   const proximities = await proximitiesAfterNew(userId, rel.id)
-  // Nettverket endret seg: Claude ser på nye kandidater i bakgrunnen.
-  scheduleLinkAssessment(userId)
   refreshAll()
   return { ok: true, data: { id: rel.id, proximities } }
 }
@@ -62,8 +59,6 @@ export async function updateRelationship(rawId: string, raw: RelationshipPatch):
     },
   })
   if (count === 0) return fail('not-found')
-  // Nettverket endret seg: Claude ser på nye kandidater i bakgrunnen.
-  scheduleLinkAssessment(userId)
   refreshAll()
   return { ok: true }
 }
@@ -76,8 +71,6 @@ export async function deleteRelationship(rawId: string): Promise<ActionResult> {
     where: { id, fromPerson: { userId }, toPerson: { userId } },
   })
   if (count === 0) return fail('not-found')
-  // Nettverket endret seg: Claude ser på nye kandidater i bakgrunnen.
-  scheduleLinkAssessment(userId)
   refreshAll()
   return { ok: true }
 }

@@ -260,7 +260,14 @@ export const nb = {
     addAll: (n: number) => `Legg til alle ${n}`,
     added: (n: number) => (n === 1 ? 'La til forbindelsen.' : `La til ${n} forbindelser.`),
     empty: 'Ingen forslag akkurat nå. De kommer etter hvert som du tegner relasjoner.',
-    thinking: 'Claude ser på nye forslag i bakgrunnen.',
+    askLead: 'Claude leser hele nettverket ditt én gang: vurderer forslagene over og finner forbindelser reglene ikke ser. Koster noen få cent.',
+    ask: 'Spør Claude',
+    asking: 'Claude ser på nettverket …',
+    lastAsked: 'Sist:',
+    askDone: (assessed: number, found: number) =>
+      `Claude vurderte ${assessed} ${assessed === 1 ? 'forslag' : 'forslag'} og fant ${found} ${found === 1 ? 'ny forbindelse' : 'nye forbindelser'}.`,
+    askBusy: 'Claude så på nettverket for litt siden. Prøv igjen om noen minutter.',
+    askFailed: 'Claude svarte ikke denne gangen. Forslagene fra reglene står som før.',
   },
 
   rhythm: {
