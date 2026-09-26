@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getLastContact } from './lastContact'
 import { computeAutoReminders } from '@/domain/reminders'
 import { personTint, type TagColor } from '@/lib/palette'
+import { onMap } from './visibility'
 
 function endOfUtcDay(d: Date): Date {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999))
@@ -27,7 +28,8 @@ export type ReminderItem = {
 export async function getReminders(userId: string, now: Date = new Date()): Promise<ReminderItem[]> {
   const [persons, logs, dueThreads] = await Promise.all([
     prisma.person.findMany({
-      where: { userId },
+      // Bare folk på kartet: en usortert har ikke fått en nærhet å bli påminnet etter.
+      where: { userId, ...onMap },
       select: {
         id: true,
         name: true,

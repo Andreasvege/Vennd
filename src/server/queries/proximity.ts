@@ -1,6 +1,7 @@
 import 'server-only'
 import { prisma } from '@/lib/prisma'
 import { newProximities, shortestPath } from '@/domain/paths'
+import { notArchived } from './visibility'
 
 type Edge = [string, string]
 export type Proximity = { a: string; b: string; path: { id: string; name: string }[] }
@@ -8,7 +9,7 @@ export type Proximity = { a: string; b: string; path: { id: string; name: string
 /** Nettverket mellom andre, og hvem som er «interessante»: dem du dater, og dem som dater noen. */
 export async function loadNetwork(userId: string) {
   const [persons, relationships] = await Promise.all([
-    prisma.person.findMany({ where: { userId }, select: { id: true, name: true, type: true } }),
+    prisma.person.findMany({ where: { userId, ...notArchived }, select: { id: true, name: true, type: true } }),
     prisma.relationship.findMany({
       where: { fromPerson: { userId }, toPerson: { userId } },
       select: { id: true, fromPersonId: true, toPersonId: true, type: true },

@@ -5,16 +5,18 @@ import { getRecentLogs } from './log'
 import { prisma } from '@/lib/prisma'
 import { getAhead } from './plans'
 import { getPendingSuggestions } from './suggestions'
+import { notArchived } from './visibility'
 
 /**
  * Det «I dag» viser, i prioritert rekkefølge. cache(): på forsiden ber både
  * siden (mobil) og panelet (PC) om det i samme forespørsel.
  */
 export const getToday = cache(async function getToday(userId: string) {
-  const [reminders, recent, personCount, ahead, suggestions] = await Promise.all([
+  const [reminders, recent, personCount, unsorted, ahead, suggestions] = await Promise.all([
     getReminders(userId),
     getRecentLogs(userId, 5),
-    prisma.person.count({ where: { userId } }),
+    prisma.person.count({ where: { userId, ...notArchived } }),
+    prisma.person.count({ where: { userId, sortedAt: null, ...notArchived } }),
     getAhead(userId),
     getPendingSuggestions(userId),
   ])
@@ -25,6 +27,7 @@ export const getToday = cache(async function getToday(userId: string) {
     ahead,
     suggestions,
     isEmpty: personCount === 0,
+    unsorted,
   }
 })
 

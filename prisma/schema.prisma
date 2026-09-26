@@ -79,6 +79,10 @@ model Person {
   primaryTagId  String?
   primaryTag    Tag?     @relation("PrimaryTag", fields: [primaryTagId], references: [id], onDelete: SetNull)
 
+  // null = usortert: importert, men ikke gitt en plass i kartet ennå.
+  sortedAt      DateTime?
+  // Satt = «ikke i kartet»: skjult overalt, men gjenkjent av importen.
+  archivedAt    DateTime?
   positionX     Float    @default(0)
   positionY     Float    @default(0)
   createdAt     DateTime @default(now())

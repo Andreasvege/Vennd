@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { requireUserId } from '@/server/session'
 import { NotOwnedError } from '@/server/ownership'
 import { planInput, type PlanInput } from '@/server/schemas'
-import { assertPersonsOwned, fromDateInput, parseId, refreshAll } from './shared'
+import { assertPersonsOwned, fromDateInput, parseId, refreshAll, markSorted } from './shared'
 import { fail, type ActionResult } from './result'
 
 /** Planlegg noe: hvem, hva og når (klokkeslett er valgfritt). */
@@ -33,6 +33,7 @@ export async function createPlan(raw: PlanInput): Promise<ActionResult<{ id: str
     },
     select: { id: true },
   })
+  await markSorted(userId, unique)
   refreshAll()
   return { ok: true, data: { id: plan.id } }
 }
@@ -56,6 +57,7 @@ export async function updatePlan(rawId: string, raw: PlanInput): Promise<ActionR
       if (count !== 1) throw new NotOwnedError()
       await tx.planPerson.deleteMany({ where: { planId: id } })
       await tx.planPerson.createMany({ data: unique.map((personId) => ({ planId: id, personId })) })
+      await markSorted(userId, unique, tx)
     })
   } catch (e) {
     if (e instanceof NotOwnedError) return fail('not-found')

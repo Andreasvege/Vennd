@@ -5,7 +5,7 @@ import { requireUserId } from '@/server/session'
 import { NotOwnedError } from '@/server/ownership'
 import { relationshipInput, relationshipPatch, type RelationshipInput, type RelationshipPatch } from '@/server/schemas'
 import { proximitiesAfterNew, type Proximity } from '@/server/queries/proximity'
-import { assertPersonsOwned, fromDateInput, parseId, refreshAll } from './shared'
+import { assertPersonsOwned, fromDateInput, parseId, refreshAll, markSorted } from './shared'
 import { fail, type ActionResult } from './result'
 
 export async function createRelationship(
@@ -34,6 +34,7 @@ export async function createRelationship(
     },
     select: { id: true },
   })
+  await markSorted(userId, [fromPersonId, toPersonId])
   // Gjorde dette verden mindre? Klienten sier fra om det.
   const proximities = await proximitiesAfterNew(userId, rel.id)
   refreshAll()

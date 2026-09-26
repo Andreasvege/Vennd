@@ -1,6 +1,7 @@
 import 'server-only'
 import { prisma } from '@/lib/prisma'
 import { suggestionPayload } from '@/server/schemas'
+import { notArchived } from './visibility'
 
 // Et forslag som har ligget i to uker uten svar, er ikke lenger relevant.
 const FRESH_DAYS = 14
@@ -25,7 +26,7 @@ export async function getPendingSuggestions(userId: string, personId?: string): 
       orderBy: { createdAt: 'desc' },
       select: { id: true, kind: true, payload: true, logEntry: { select: { body: true } } },
     }),
-    prisma.person.findMany({ where: { userId }, select: { id: true, name: true } }),
+    prisma.person.findMany({ where: { userId, ...notArchived }, select: { id: true, name: true } }),
   ])
   const nameOf = new Map(persons.map((p) => [p.id, p.name]))
 

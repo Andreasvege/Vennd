@@ -38,3 +38,15 @@ export async function assertTagsOwned(userId: string, ids: string[]) {
 export function fromDateInput(date: string): Date {
   return new Date(`${date}T12:00:00.000Z`)
 }
+
+type Db = Pick<typeof prisma, 'person'>
+
+/**
+ * Gir usorterte en plass: de er ikke lenger i Venter-bunken, men på kartet.
+ * Kalles når du gjør noe med dem som viser at de hører til nettverket ditt
+ * (tagg, relasjon, logg, plan). Allerede sorterte røres ikke.
+ */
+export async function markSorted(userId: string, personIds: string[], db: Db = prisma) {
+  if (personIds.length === 0) return
+  await db.person.updateMany({ where: { userId, id: { in: personIds }, sortedAt: null }, data: { sortedAt: new Date() } })
+}

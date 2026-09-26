@@ -2,6 +2,7 @@ import 'server-only'
 import { prisma } from '@/lib/prisma'
 import { upcomingBirthdays } from '@/domain/birthdays'
 import { personTint } from '@/lib/palette'
+import { onMap } from './visibility'
 
 const personSelect = { select: { id: true, name: true, primaryTag: { select: { color: true } } } } as const
 
@@ -31,7 +32,7 @@ export async function getAhead(userId: string, now: Date = new Date()) {
       },
     }),
     prisma.person.findMany({
-      where: { userId, birthday: { not: null } },
+      where: { userId, birthday: { not: null }, ...onMap },
       select: { id: true, name: true, birthday: true, primaryTag: { select: { color: true } } },
     }),
   ])

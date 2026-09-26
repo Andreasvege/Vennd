@@ -6,7 +6,7 @@ import { fold } from '@/domain/search'
 import { requireUserId } from '@/server/session'
 import { assertAllOwned, NotOwnedError } from '@/server/ownership'
 import { suggestionPayload } from '@/server/schemas'
-import { fromDateInput, parseId, refreshAll } from './shared'
+import { fromDateInput, parseId, refreshAll, markSorted } from './shared'
 import { fail, type ActionResult } from './result'
 
 type Kind = keyof typeof suggestionPayload
@@ -63,6 +63,7 @@ export async function acceptSuggestion(rawId: string): Promise<ActionResult<{ ki
           const p = suggestionPayload.PARTICIPANT.parse(suggestion.payload)
           await owned([p.personId])
           await tx.logParticipant.createMany({ data: [{ logEntryId, personId: p.personId }], skipDuplicates: true })
+          await markSorted(userId, [p.personId], tx)
           break
         }
         case 'PERSON': {
@@ -74,6 +75,7 @@ export async function acceptSuggestion(rawId: string): Promise<ActionResult<{ ki
             data: {
               userId,
               name: p.name,
+              sortedAt: new Date(),
               positionX: spot.x,
               positionY: spot.y,
               participations: { create: { logEntryId } },

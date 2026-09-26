@@ -3,6 +3,7 @@ import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { interpretQuery, snippet, type Interpretation, type Segment } from '@/domain/search'
 import { personTint } from '@/lib/palette'
+import { notArchived } from './visibility'
 
 const LIMIT = { persons: 5, logs: 8, threads: 5, plans: 3 }
 const MAX_QUERY = 100
@@ -23,8 +24,8 @@ export function logFilter({ people, terms }: Interpretation): Prisma.LogEntryWhe
 /** Tolker et søk mot brukerens egne personer. */
 export async function interpretFor(userId: string, q: string) {
   const persons = await prisma.person.findMany({
-    where: { userId },
-    select: { id: true, name: true, primaryTag: { select: { color: true } } },
+    where: { userId, ...notArchived },
+    select: { id: true, name: true, sortedAt: true, primaryTag: { select: { color: true } } },
   })
   return { persons, interpretation: interpretQuery(q.slice(0, MAX_QUERY), persons) }
 }
@@ -47,6 +48,7 @@ export async function searchAll(userId: string, q: string) {
       ? prisma.person.findMany({
           where: {
             userId,
+            ...notArchived,
             AND: terms.map((term) => ({
               OR: [
                 { name: has(term) },
@@ -62,6 +64,7 @@ export async function searchAll(userId: string, q: string) {
             id: true,
             name: true,
             notes: true,
+            sortedAt: true,
             primaryTag: { select: { color: true } },
             facts: { select: { label: true, value: true } },
             tags: { select: { tag: { select: { name: true } } } },
@@ -124,10 +127,10 @@ export async function searchAll(userId: string, q: string) {
 
   const byName = persons
     .filter((p) => named.has(p.id))
-    .map((p) => ({ id: p.id, name: p.name, tint: personTint(p), where: null as Segment[] | null }))
+    .map((p) => ({ id: p.id, name: p.name, tint: personTint(p), unsorted: !p.sortedAt, where: null as Segment[] | null }))
   const byText = textPersons
     .filter((p) => !named.has(p.id))
-    .map((p) => ({ id: p.id, name: p.name, tint: personTint(p), where: where(p) }))
+    .map((p) => ({ id: p.id, name: p.name, tint: personTint(p), unsorted: !p.sortedAt, where: where(p) }))
 
   return {
     terms,

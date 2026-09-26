@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { requireUserId } from '@/server/session'
 import { assertAllOwned, NotOwnedError } from '@/server/ownership'
 import { logEdit, logInput, type LogEdit, type LogInput } from '@/server/schemas'
-import { assertPersonsOwned, fromDateInput, parseId, refreshAll } from './shared'
+import { assertPersonsOwned, fromDateInput, parseId, refreshAll, markSorted } from './shared'
 import { fail, type ActionResult } from './result'
 import { after } from 'next/server'
 import { isClaudeEnabled } from '@/server/claude/client'
@@ -56,6 +56,7 @@ export async function createLog(raw: LogInput): Promise<ActionResult<LogSaved>> 
       },
       select: { id: true },
     })
+    await markSorted(userId, unique, tx)
     for (const threadId of closeIds) {
       // Vakten gjentas her: ble tråden lukket et annet sted i mellomtiden,
       // rulles hele loggen tilbake i stedet for å skrive over den.
@@ -117,6 +118,7 @@ export async function updateLog(rawId: string, raw: LogEdit): Promise<ActionResu
       if (count !== 1) throw new NotOwnedError()
       await tx.logParticipant.deleteMany({ where: { logEntryId: id, personId: { notIn: unique } } })
       await tx.logParticipant.createMany({ data: unique.map((personId) => ({ logEntryId: id, personId })), skipDuplicates: true })
+      await markSorted(userId, unique, tx)
     })
   } catch (e) {
     if (e instanceof NotOwnedError) return fail('not-found')
