@@ -191,13 +191,6 @@ export const nb = {
     phaseEx: 'Eks',
     howOften: 'Hvor ofte vil du holde kontakten?',
     cadence: { 2: 'Hver 2. uke', 4: 'Hver måned', 12: 'Hver 3. måned', 26: 'Hvert halvår', never: 'Aldri' } as Record<string, string>,
-    closeness: 'Hvor nær?',
-    closenessOptions: {
-      close: { label: 'Nær', hint: 'påminnelse hver 4. uke' },
-      family: { label: 'Familie', hint: 'hver 3. uke' },
-      sometimes: { label: 'Innimellom', hint: 'hver 12. uke' },
-      peripheral: { label: 'Perifer', hint: 'ingen påminnelse' },
-    },
     group: 'Miljø',
     newGroup: 'Nytt miljø',
     newGroupPlaceholder: 'Studentradio',
