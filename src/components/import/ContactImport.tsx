@@ -120,7 +120,10 @@ export function ContactImport({ persons, tags }: { persons: KnownPerson[]; tags:
         </div>
       </div>
 
-      <ul className="flex max-h-[50vh] flex-col divide-y divide-rule overflow-y-auto overscroll-contain border-y border-rule">
+      {/* relative: avkrysningsboksenes skjulte felt er absolutt plassert og må holde
+              seg inne i lista. Ellers havner de langt ned på siden, lager tom plass,
+              og nettleseren scroller dit når du trykker. */}
+          <ul className="relative flex max-h-[50vh] flex-col divide-y divide-rule overflow-y-auto overscroll-contain border-y border-rule">
         {rows.map((r) => {
           const exists = r.status.kind === 'exists'
           return (
