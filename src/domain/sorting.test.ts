@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { closenessPreset, deckOrder, missingPairs, newPairs, pullRelated } from './sorting'
+import { closenessPreset, deckOrder, missingPairs, networkHints, newPairs, pullRelated } from './sorting'
 
 const p = (id: string, name: string, extra: Partial<{ logCount: number; birthday: boolean; email: string | null }> = {}) => ({
   id,
@@ -78,5 +78,39 @@ describe('closenessPreset', () => {
     expect(closenessPreset('family')).toEqual({ type: 'FAMILY', cadenceWeeks: 3 })
     expect(closenessPreset('sometimes')).toEqual({ type: 'FRIEND', cadenceWeeks: 12 })
     expect(closenessPreset('peripheral')).toEqual({ type: 'ACQUAINTANCE', cadenceWeeks: null })
+  })
+})
+
+describe('networkHints', () => {
+  // Første kort: Per (p1) kjenner hele familien sin og to av dine.
+  const pairs: [string, string][] = [
+    ['p1', 'p2'],
+    ['p1', 'p3'],
+    ['p1', 'p4'],
+    ['p1', 'mamma'],
+    ['p1', 'meg'],
+    ['p3', 'p4'],
+  ]
+  const tagsOf = new Map([
+    ['p1', ['vennefamilie']],
+    ['p3', ['vennefamilie']],
+  ])
+
+  it('viser hvem neste kort allerede kjenner, og foreslår resten av nettverket', () => {
+    const h = networkHints('p2', pairs, tagsOf)
+    expect(h.already).toEqual(['p1'])
+    expect(h.suggested).toEqual(expect.arrayContaining(['p3', 'p4', 'mamma', 'meg']))
+    expect(h.suggested).not.toContain('p2')
+  })
+
+  it('rangerer dem med flest felles først', () => {
+    // x kjenner a og b; d kjenner begge, c bare a.
+    const net: [string, string][] = [['x', 'a'], ['x', 'b'], ['a', 'c'], ['a', 'd'], ['b', 'd']]
+    expect(networkHints('x', net, new Map()).suggested).toEqual(['d', 'c'])
+  })
+
+  it('velger miljøet flertallet av dem hun kjenner er i', () => {
+    expect(networkHints('p2', pairs, tagsOf).tagIds).toEqual(['vennefamilie'])
+    expect(networkHints('ny', pairs, tagsOf)).toEqual({ already: [], suggested: [], tagIds: [] })
   })
 })

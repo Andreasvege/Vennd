@@ -190,6 +190,7 @@ export const nb = {
     newGroupPlaceholder: 'Studentradio',
     knows: 'Kjenner',
     knowsHint: 'Hvem kjenner de av dem som står på kartet?',
+    alreadyKnows: 'Kjenner allerede',
     next: 'Neste',
     skip: 'Hopp over',
     archive: 'Ikke i kartet',

@@ -89,3 +89,36 @@ export function closenessPreset(choice: Closeness): { type: RelationshipType; ca
       return { type: 'ACQUAINTANCE', cadenceWeeks: null }
   }
 }
+
+/**
+ * Hva nettverket allerede vet om personen på kortet: hvem hun er koblet
+ * til, hvem de igjen kjenner (flest felles først), og miljøet de deler.
+ * Etter første kort i en familie er resten av familien da ett trykk unna.
+ */
+export function networkHints(personId: string, pairs: [string, string][], tagsOf: Map<string, string[]>) {
+  const neighbours = new Map<string, Set<string>>()
+  for (const [a, b] of pairs) {
+    if (a === b) continue
+    if (!neighbours.has(a)) neighbours.set(a, new Set())
+    if (!neighbours.has(b)) neighbours.set(b, new Set())
+    neighbours.get(a)!.add(b)
+    neighbours.get(b)!.add(a)
+  }
+  const already = [...(neighbours.get(personId) ?? [])]
+
+  const counts = new Map<string, number>()
+  for (const n of already) {
+    for (const m of neighbours.get(n) ?? []) {
+      if (m === personId || already.includes(m)) continue
+      counts.set(m, (counts.get(m) ?? 0) + 1)
+    }
+  }
+  const suggested = [...counts].sort((x, y) => y[1] - x[1]).map(([id]) => id)
+
+  // Miljøet flertallet av dem hun kjenner er i.
+  const tagCounts = new Map<string, number>()
+  for (const n of already) for (const tag of tagsOf.get(n) ?? []) tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1)
+  const tagIds = [...tagCounts].filter(([, c]) => c * 2 >= already.length && c > 0).map(([id]) => id)
+
+  return { already, suggested, tagIds }
+}
