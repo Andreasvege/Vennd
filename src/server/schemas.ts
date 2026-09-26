@@ -238,3 +238,7 @@ export type PositionList = z.infer<typeof positionList>
 // «Legg til» på en innsikt: hvem av medlemmene, og om miljøet skal lages.
 export const acceptInsightInput = z.object({ id, memberIds: z.array(id).max(200), createGroup: z.boolean() })
 export type AcceptInsightInput = z.infer<typeof acceptInsightInput>
+
+// Slå sammen to personer: hvem som blir stående, og hvilket navn.
+export const mergeInput = z.object({ keepId: id, dropId: id, name: z.string().trim().min(1).max(120) }).refine((m) => m.keepId !== m.dropId)
+export type MergeInput = z.infer<typeof mergeInput>

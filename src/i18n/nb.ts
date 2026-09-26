@@ -287,6 +287,24 @@ export const nb = {
     askFailed: 'Claude svarte ikke denne gangen. Forslagene fra reglene står som før.',
   },
 
+  dupes: {
+    title: 'Mulige duplikater',
+    lead: 'Samme person med litt ulike navn, typisk fra import. Slå dem sammen, så samles logger, relasjoner og fakta på én.',
+    way: { title: 'Duplikater', body: 'Samme person to ganger? Slå dem sammen.' },
+    count: (n: number) => `${n} ${n === 1 ? 'par' : 'par'}`,
+    reasonSame: 'Samme navn, bare skrevet litt ulikt.',
+    reasonMiddle: 'Samme for- og etternavn; det ene har et mellomnavn.',
+    keepLabel: 'Hvem skal bli stående?',
+    stats: (logs: number, relations: number, group: string | null) =>
+      [`${logs} ${logs === 1 ? 'logg' : 'logger'}`, `${relations} ${relations === 1 ? 'relasjon' : 'relasjoner'}`, group].filter(Boolean).join(' · '),
+    explain: (keep: string, drop: string) => `${keep} blir stående, med alt fra ${drop}.`,
+    merge: 'Slå sammen',
+    notSame: 'Ikke samme person',
+    merged: (name: string) => `Slått sammen til ${name}.`,
+    keptApart: 'Holdes adskilt.',
+    empty: 'Ingen mulige duplikater.',
+  },
+
   rhythm: {
     every: (days: number) => {
       if (days <= 1) return 'hver dag'
