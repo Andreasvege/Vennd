@@ -111,6 +111,8 @@ export function useMapModel(graph: Graph, mode: MapMode, filter: MapFilter, now:
       }
     }
 
-    return { visible, relationships, derived, fresh, targets, backdrop, edgePath }
+    // Hvilken gruppe (øy i Nettverk) hver person hører til.
+    const groupById = new Map(layoutPersons.map((p) => [p.id, p.groupId]))
+    return { visible, relationships, derived, fresh, targets, backdrop, edgePath, groupById }
   }, [graph, mode, filter, now])
 }
