@@ -141,3 +141,49 @@ export function resolveAssessments(numbered: LinkCandidate[], out: Assessment[])
     return [{ aId: c.a, bId: c.b, keep: x.keep, type: x.type, label, reason: x.reason.trim().slice(0, 200) || null }]
   })
 }
+
+/**
+ * Forslag Claude fant selv, utenfor reglene (f.eks. samme etternavn uten
+ * felles bekjente). De vises når paret ikke allerede er et regelforslag,
+ * ikke er koblet, og begge står på kartet.
+ */
+export function claudeExtras(
+  rows: LinkRow[],
+  candidates: LinkCandidate[],
+  linked: Set<string>,
+  onMap: Set<string>,
+): LinkView[] {
+  const fromRules = new Set(candidates.map((c) => pairKey(c.a, c.b)))
+  return rows.flatMap((r): LinkView[] => {
+    const key = pairKey(r.aId, r.bId)
+    if (r.status !== 'OPEN' || !r.assessed || !r.keep || fromRules.has(key) || linked.has(key)) return []
+    if (!onMap.has(r.aId) || !onMap.has(r.bId)) return []
+    return [
+      {
+        a: r.aId,
+        b: r.bId,
+        score: 0,
+        shared: [],
+        sameSurname: false,
+        sharedTags: [],
+        type: r.type ?? 'FRIEND',
+        label: r.label,
+        reason: r.reason,
+        fromClaude: true,
+      },
+    ]
+  })
+}
+
+/** Et navn fra Claude til én person: fullt navn, og bare når det er entydig. */
+export function idByName(persons: { id: string; name: string }[]): (name: string) => string | null {
+  const byName = new Map<string, string[]>()
+  for (const p of persons) {
+    const k = p.name.trim().toLocaleLowerCase('nb')
+    byName.set(k, [...(byName.get(k) ?? []), p.id])
+  }
+  return (name) => {
+    const ids = byName.get(name.trim().toLocaleLowerCase('nb')) ?? []
+    return ids.length === 1 ? ids[0] : null
+  }
+}

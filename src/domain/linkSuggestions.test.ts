@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { answeredPairs, linkCandidates, resolveAssessments, withAssessments, type LinkCandidate, type LinkPerson, type LinkRelation, type LinkRow } from './linkSuggestions'
+import { answeredPairs, claudeExtras, idByName, linkCandidates, resolveAssessments, withAssessments, type LinkCandidate, type LinkPerson, type LinkRelation, type LinkRow } from './linkSuggestions'
 
 const person = (id: string, name: string, tagIds: string[] = []): LinkPerson => ({ id, name, tagIds })
 const rel = (from: string, to: string, type: LinkRelation['type'] = 'FRIEND', label: string | null = null): LinkRelation => ({
@@ -106,5 +106,34 @@ describe('resolveAssessments', () => {
     expect(out).toHaveLength(1)
     expect(out[0]).toMatchObject({ aId: 'a', bId: 'b', label: 'søsken', keep: true })
     expect(out[0].reason).toHaveLength(200)
+  })
+})
+
+describe('claudeExtras og idByName', () => {
+  const row = (aId: string, bId: string, extra: Partial<LinkRow> = {}): LinkRow => ({
+    aId, bId, status: 'OPEN', assessed: true, keep: true, type: 'FAMILY', label: 'søsken', reason: 'Samme etternavn.', ...extra,
+  })
+
+  it('viser Claudes egne forslag som ikke er regelforslag, koblet eller utenfor kartet', () => {
+    const rule: LinkCandidate = { a: 'a', b: 'b', score: 2, shared: [], sameSurname: false, sharedTags: [], type: 'FRIEND' }
+    const out = claudeExtras(
+      [row('a', 'b'), row('c', 'd'), row('e', 'f'), row('g', 'h', { keep: false }), row('i', 'x')],
+      [rule],
+      new Set(['e|f']),
+      new Set(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']),
+    )
+    expect(out.map((v) => `${v.a}${v.b}`)).toEqual(['cd'])
+    expect(out[0]).toMatchObject({ label: 'søsken', fromClaude: true })
+  })
+
+  it('slår opp navn bare når de er entydige', () => {
+    const find = idByName([
+      { id: '1', name: 'Håvard Vege' },
+      { id: '2', name: 'Anna Berg' },
+      { id: '3', name: 'Anna Berg' },
+    ])
+    expect(find(' håvard vege ')).toBe('1')
+    expect(find('Anna Berg')).toBeNull()
+    expect(find('Ukjent')).toBeNull()
   })
 })

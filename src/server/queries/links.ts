@@ -1,7 +1,7 @@
 import 'server-only'
 import { prisma } from '@/lib/prisma'
 import { personTint } from '@/lib/palette'
-import { answeredPairs, linkCandidates, withAssessments, type LinkRow } from '@/domain/linkSuggestions'
+import { answeredPairs, claudeExtras, linkCandidates, pairKey, withAssessments, type LinkRow } from '@/domain/linkSuggestions'
 import { onMap } from './visibility'
 
 /**
@@ -18,6 +18,7 @@ export async function loadLinkState(userId: string) {
         photoUrl: true,
         type: true,
         relationLabel: true,
+        primaryTagId: true,
         primaryTag: { select: { color: true } },
         tags: { select: { tagId: true } },
       },
@@ -42,13 +43,18 @@ export async function loadLinkState(userId: string) {
  * gjelder personen (til profilen).
  */
 export async function getLinkSuggestions(userId: string, personId?: string, limit?: number) {
-  const { people, rows, candidates } = await loadLinkState(userId)
+  const { people, rels, rows, candidates } = await loadLinkState(userId)
   const byId = new Map(people.map((p) => [p.id, p]))
   const person = (id: string) => {
     const p = byId.get(id)!
     return { id: p.id, name: p.name, tint: p.tint, photoUrl: p.photoUrl }
   }
-  const views = withAssessments(candidates, rows).filter((v) => !personId || v.a === personId || v.b === personId)
+  // Regelforslagene (med Claudes vurdering oppå), og forslagene Claude fant selv.
+  const linked = new Set(rels.map((r) => pairKey(r.from, r.to)))
+  const views = [
+    ...withAssessments(candidates, rows),
+    ...claudeExtras(rows, candidates, linked, new Set(people.map((p) => p.id))),
+  ].filter((v) => !personId || v.a === personId || v.b === personId)
   return views.slice(0, limit ?? views.length).map((v) => ({
     a: person(v.a),
     b: person(v.b),

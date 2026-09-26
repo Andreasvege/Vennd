@@ -1,117 +1,106 @@
 import 'server-only'
-import { after } from 'next/server'
 import { z } from 'zod/v4'
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod'
 import { prisma } from '@/lib/prisma'
-import { resolveAssessments, type LinkCandidate } from '@/domain/linkSuggestions'
+import { idByName, pairKey, resolveAssessments } from '@/domain/linkSuggestions'
+import { summarizeNetwork } from '@/domain/networkSummary'
 import { loadLinkState } from '@/server/queries/links'
-import { claude, isClaudeEnabled, suggestModel } from './client'
+import { claude, suggestModel } from './client'
 import { t } from '@/i18n'
 
-// Nok til å dekke det du nettopp tegnet, uten å sende hele nettverket hver gang.
-const PER_CALL = 20
-// Maks felles bekjente som beskrives per par; flere sier ikke Claude mer.
-const SHARED_SHOWN = 4
-// Én vurdering om gangen: en ny starter tidligst så lenge etter forrige.
-const COOLDOWN_MS = 60_000
+// Regelforslagene Claude får vurdere, og hvor mange egne forslag det kan gi.
+const CANDIDATES = 40
+const EXTRAS = 25
+// Maks én vurdering per bruker så ofte: to trykk skal ikke koste dobbelt.
+const COOLDOWN_MS = 5 * 60_000
 const TYPES = ['FRIEND', 'FAMILY', 'COLLEAGUE', 'ROMANTIC', 'ACQUAINTANCE', 'OTHER'] as const
 
 const output = z.object({
-  assessments: z.array(
+  candidates: z.array(
     z.object({ n: z.number(), keep: z.boolean(), type: z.enum(TYPES), label: z.string().nullable(), reason: z.string() }),
+  ),
+  extra: z.array(
+    z.object({ a: z.string(), b: z.string(), type: z.enum(TYPES), label: z.string().nullable(), reason: z.string() }),
   ),
 })
 
-const SYSTEM = `Du hjelper med Vennekart, en personlig oversikt over folk brukeren kjenner og hvordan de henger sammen. Du får par av personer som ikke er koblet sammen ennå, men som har felles bekjente, samme etternavn eller samme miljø. For hvert par, vurder om de sannsynligvis kjenner hverandre, og i så fall hva forbindelsen er.
+const SYSTEM = `Du hjelper med Vennekart, en personlig oversikt over folk brukeren kjenner og hvordan de henger sammen. Du får hele nettverket: miljøene med medlemmer, relasjonene mellom folk (med type og etikett), og hva enkelte er for brukeren. Du får også kandidater som enkle regler har funnet (par med felles bekjente, samme etternavn eller samme miljø).
 
-- keep: true hvis forbindelsen er sannsynlig ut fra relasjonene, etternavnene og miljøene. false hvis det bare er tilfeldig (for eksempel to som hver for seg kjenner samme person fra helt forskjellige sammenhenger).
-- type: FAMILY, FRIEND, COLLEAGUE, ROMANTIC, ACQUAINTANCE eller OTHER.
-- label: kort og norsk, og den må gjelde begge veier, fordi den vises likt på begge personenes profil: «søsken», «søskenbarn», «kolleger», «kjærester», «venner», «klassekamerater». Aldri ord som bare gjelder én av dem, som «fetter», «kusine», «storebror» eller «mor»: skriv «søskenbarn» eller «søsken» i stedet. null når ingen etikett er treffende.
-- reason: én kort setning på norsk som forklarer hvorfor, med navn. For eksempel «Begge er søskenbarn av Nora og heter Vege.»
+Oppgaven:
+1. candidates: vurder hver kandidat (n er nummeret). keep: true hvis forbindelsen er sannsynlig, false hvis den bare er tilfeldig. Gi type, en etikett og én setning om hvorfor.
+2. extra: foreslå forbindelser reglene ikke fant, men som nettverket tydelig peker på (for eksempel familie med samme etternavn, eller et kull der mange kjenner hverandre). Bruk fulle navn nøyaktig slik de står. Bare par som ikke allerede er koblet. Maks ${EXTRAS}, de sikreste først. Ingen forslag er et godt svar når grunnlaget er tynt.
 
-Resonner som et menneske ville: er Nora kusinen til fire personer som har samme etternavn, er de fire trolig søsken. Har de ulike etternavn, kan de være søskenbarn av hverandre. Etikettene på de eksisterende relasjonene er skrevet av brukeren og kan beskrive rollen til én av dem («Nora → Håvard: kusine» betyr at Nora er kusinen til Håvard). Vær forsiktig: foreslå heller «kjenner hverandre» (FRIEND uten etikett) enn å gjette et familieforhold du ikke har grunnlag for.`
+Etiketten vises likt på begge personenes profil, så den må gjelde begge veier: «søsken», «søskenbarn», «kolleger», «kjærester», «venner», «klassekamerater». Aldri «fetter», «kusine», «storebror» eller lignende som bare gjelder én av dem. null når ingen etikett er treffende. type er FAMILY, FRIEND, COLLEAGUE, ROMANTIC, ACQUAINTANCE eller OTHER. Begrunnelsen er én kort setning på norsk, med navn. Resonner som et menneske: er Nora kusinen til fire som heter Vege, er de fire trolig søsken. Foreslå heller «kjenner hverandre» (FRIEND uten etikett) enn å gjette et familieforhold uten grunnlag.`
 
-const TYPE_NAME: Record<string, string> = t.relationType
-
-function describe(
-  n: number,
-  c: LinkCandidate,
-  names: Map<string, string>,
-  mine: Map<string, string>,
-  tagNames: Map<string, string>,
-  rels: { from: string; to: string; type: string; label: string | null }[],
-) {
-  const rel = (x: string, y: string) => {
-    const r = rels.find((q) => (q.from === x && q.to === y) || (q.from === y && q.to === x))
-    if (!r) return null
-    return `${names.get(r.from)} → ${names.get(r.to)}: ${TYPE_NAME[r.type] ?? r.type}${r.label ? `, «${r.label}»` : ''}`
-  }
-  const via = c.shared.slice(0, SHARED_SHOWN).flatMap((h) => [rel(h, c.a), rel(h, c.b)]).filter(Boolean)
-  const more = c.shared.length - SHARED_SHOWN
-  const tags = c.sharedTags.map((id) => tagNames.get(id)).filter(Boolean)
-  // Hva de er for brukeren («fetter»): ofte det sterkeste hintet om familie.
-  const me = [c.a, c.b].flatMap((id) => (mine.has(id) ? [`${names.get(id)} er brukerens ${mine.get(id)}`] : []))
-  return [
-    `#${n}: ${names.get(c.a)} og ${names.get(c.b)}`,
-    ...me.map((m) => `  ${m}`),
-    ...via.map((v) => `  ${v}`),
-    more > 0 ? `  … og ${more} felles bekjente til` : null,
-    tags.length ? `  Felles miljø: ${tags.join(', ')}` : null,
-  ]
-    .filter(Boolean)
-    .join('\n')
-}
+export type AssessResult = { status: 'done'; assessed: number; found: number } | { status: 'busy' } | { status: 'failed' }
 
 /**
- * Lar Claude vurdere nye kandidater: hva forbindelsen er, og om den gir
- * mening. Bare par som ikke er vurdert før, så hvert kall er lite. Feil gir
- * bare ingen vurdering; regelforslaget står.
+ * Claude leser hele nettverket én gang og gir et samlet sett forslag: en
+ * vurdering av regelforslagene og nye forbindelser reglene ikke så. Kjøres
+ * når du ber om det, ikke etter hver endring, så det er ett kall, ikke mange.
  */
-export async function assessLinks(userId: string): Promise<void> {
-  // Ta «stafettpinnen»: bare én vurdering per bruker innenfor pausen. To kort
-  // på rad ville ellers sendt de samme parene til Claude to ganger. Det som
-  // ikke blir vurdert nå, tas neste gang noe endrer seg eller siden åpnes.
+export async function assessNetwork(userId: string): Promise<AssessResult> {
   const { count } = await prisma.user.updateMany({
     where: { id: userId, OR: [{ linksAssessedAt: null }, { linksAssessedAt: { lt: new Date(Date.now() - COOLDOWN_MS) } }] },
     data: { linksAssessedAt: new Date() },
   })
-  if (count === 0) return
+  if (count === 0) return { status: 'busy' }
+
   try {
     const { people, rels, rows, candidates } = await loadLinkState(userId)
-    const assessed = new Set(rows.filter((r) => r.assessed).map((r) => `${r.aId}|${r.bId}`))
-    const fresh = candidates.filter((c) => !assessed.has(`${c.a}|${c.b}`)).slice(0, PER_CALL)
-    if (fresh.length === 0) return
-
+    const tags = await prisma.tag.findMany({ where: { userId }, orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }], select: { id: true, name: true } })
     const names = new Map(people.map((p) => [p.id, p.name]))
-    const mine = new Map(
-      people.map((p) => [p.id, p.relationLabel ?? (p.type === 'FRIEND' ? '' : TYPE_NAME[p.type].toLowerCase())] as const).filter(([, v]) => v),
+    const summary = summarizeNetwork(
+      people.map((p) => ({ id: p.id, name: p.name, groupId: p.primaryTagId, mine: p.relationLabel })),
+      rels,
+      tags,
+      (type) => (t.relationType as Record<string, string>)[type]?.toLowerCase() ?? type,
     )
-    const tags = await prisma.tag.findMany({ where: { userId }, select: { id: true, name: true } })
-    const tagNames = new Map(tags.map((x) => [x.id, x.name]))
-    const prompt = fresh.map((c, i) => describe(i + 1, c, names, mine, tagNames, rels)).join('\n\n')
+    const answered = new Set(rows.filter((r) => r.status !== 'OPEN').map((r) => pairKey(r.aId, r.bId)))
+    const list = candidates.slice(0, CANDIDATES)
+    const listed = list
+      .map((c, i) => {
+        const shared = c.shared.slice(0, 4).map((id) => names.get(id))
+        const more = c.shared.length > 4 ? ` og ${c.shared.length - 4} til` : ''
+        return `#${i + 1}: ${names.get(c.a)} og ${names.get(c.b)}${shared.length ? ` (felles: ${shared.join(', ')}${more})` : ''}`
+      })
+      .join('\n')
 
     const response = await claude().messages.parse({
       model: suggestModel(),
-      max_tokens: 4000,
+      max_tokens: 6000,
       system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: 'user', content: `# Nettverket\n\n${summary}\n\n# Kandidater fra reglene\n\n${listed || '(ingen)'}` }],
       output_config: { effort: 'low', format: zodOutputFormat(output) },
     })
-    if (response.stop_reason === 'refusal' || !response.parsed_output) return
+    if (response.stop_reason === 'refusal' || !response.parsed_output) return { status: 'failed' }
 
-    for (const r of resolveAssessments(fresh, response.parsed_output.assessments)) {
-      await prisma.linkSuggestion.upsert({
-        where: { userId_aId_bId: { userId, aId: r.aId, bId: r.bId } },
-        create: { userId, ...r, assessed: true },
-        update: { keep: r.keep, type: r.type, label: r.label, reason: r.reason, assessed: true },
-      })
-    }
+    const assessed = resolveAssessments(list, response.parsed_output.candidates)
+    const find = idByName(people)
+    const linked = new Set(rels.map((r) => pairKey(r.from, r.to)))
+    const fromRules = new Set(list.map((c) => pairKey(c.a, c.b)))
+    const extras = response.parsed_output.extra.slice(0, EXTRAS).flatMap((x) => {
+      const a = find(x.a)
+      const b = find(x.b)
+      if (!a || !b || a === b) return []
+      const key = pairKey(a, b)
+      if (linked.has(key) || answered.has(key) || fromRules.has(key)) return []
+      const [aId, bId] = a < b ? [a, b] : [b, a]
+      return [{ aId, bId, keep: true, type: x.type, label: x.label?.trim().slice(0, 40) || null, reason: x.reason.trim().slice(0, 200) || null }]
+    })
+
+    await prisma.$transaction(
+      [...assessed, ...extras].map((r) =>
+        prisma.linkSuggestion.upsert({
+          where: { userId_aId_bId: { userId, aId: r.aId, bId: r.bId } },
+          create: { userId, ...r, assessed: true },
+          update: { keep: r.keep, type: r.type, label: r.label, reason: r.reason, assessed: true },
+        }),
+      ),
+    )
+    return { status: 'done', assessed: assessed.length, found: extras.length }
   } catch (e) {
     console.error('[claude] forbindelser feilet', e)
+    return { status: 'failed' }
   }
-}
-
-/** Etter en endring i nettverket: la Claude se på nye kandidater, uten at svaret venter. */
-export function scheduleLinkAssessment(userId: string) {
-  if (isClaudeEnabled()) after(() => assessLinks(userId))
 }
