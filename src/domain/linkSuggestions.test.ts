@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { answeredPairs, hubClusters, idByName, insightPairs, linkCandidates, withAssessments, type LinkCandidate, type LinkPerson, type LinkRelation, type LinkRow } from './linkSuggestions'
+import { answeredPairs, groupClusters, idByName, insightPairs, linkCandidates, withAssessments, type LinkCandidate, type LinkPerson, type LinkRelation, type LinkRow } from './linkSuggestions'
 
 const person = (id: string, name: string, tagIds: string[] = []): LinkPerson => ({ id, name, tagIds })
 const rel = (from: string, to: string, type: LinkRelation['type'] = 'FRIEND', label: string | null = null): LinkRelation => ({
@@ -107,24 +107,44 @@ describe('idByName', () => {
   })
 })
 
-describe('hubClusters', () => {
-  it('samler Noras fire søsken til ett spørsmål, ikke seks par', () => {
-    const family = ['nora', 'havard', 'hanne', 'selma', 'august'].map((id) => ({ id, name: id === 'nora' ? 'Nora Hjorthaug' : `${id} Vege`, tagIds: [] }))
-    const rels = ['havard', 'hanne', 'selma', 'august'].map((id) => ({ from: 'nora', to: id, type: 'FAMILY' as const, label: 'kusine' }))
-    const clusters = hubClusters(linkCandidates(family, rels))
+describe('groupClusters', () => {
+  const rel = (from: string, to: string, type: LinkRelation['type'] = 'FRIEND'): LinkRelation => ({ from, to, type, label: null })
+
+  it('Noras kusiner blir ett spørsmål om Vege-ene', () => {
+    const family = ['nora', 'havard', 'hanne', 'selma', 'august'].map((id) => ({
+      id,
+      name: id === 'nora' ? 'Nora Hjorthaug' : `${id} Vege`,
+      tagIds: [],
+      groupId: null,
+    }))
+    const rels = ['havard', 'hanne', 'selma', 'august'].map((id) => rel('nora', id, 'FAMILY'))
+    const clusters = groupClusters(linkCandidates(family, rels), family, rels, new Map())
     expect(clusters).toHaveLength(1)
-    expect(clusters[0]).toMatchObject({ hub: 'nora', type: 'FAMILY' })
-    expect(clusters[0].members.sort()).toEqual(['august', 'hanne', 'havard', 'selma'])
+    expect(clusters[0]).toMatchObject({ b: null, type: 'FAMILY', hubs: ['nora'] })
+    expect(clusters[0].a.label).toBe('Vege')
     expect(clusters[0].pairs).toHaveLength(6)
   })
 
-  it('gir hvert par til én gruppe, den største først', () => {
-    const c = (a: string, b: string, shared: string[]): LinkCandidate => ({ a, b, score: 2, shared, sameSurname: false, sharedTags: [], type: 'FRIEND' })
-    const clusters = hubClusters([c('a', 'b', ['x', 'y']), c('a', 'c', ['x']), c('b', 'c', ['x']), c('d', 'e', ['y'])])
-    expect(clusters.map((k) => [k.hub, k.pairs.length])).toEqual([
-      ['x', 3],
-      ['y', 1],
-    ])
+  it('en som kjenner nesten alle, er ikke et tegn: da blir det ingen spørsmål', () => {
+    const people = Array.from({ length: 20 }, (_, i) => ({ id: `p${i}`, name: `P${i} Navn${i}`, tagIds: [], groupId: null }))
+    const hub = { id: 'mari', name: 'Mari Hub', tagIds: [], groupId: null }
+    const rels = people.map((p) => rel('mari', p.id))
+    expect(groupClusters(linkCandidates([hub, ...people], rels), [hub, ...people], rels, new Map())).toEqual([])
+  })
+
+  it('deler i spørsmål innad i et miljø og mellom to miljøer', () => {
+    const people = [
+      { id: 'a', name: 'A A', tagIds: ['radio'], groupId: 'radio' },
+      { id: 'b', name: 'B B', tagIds: ['radio'], groupId: 'radio' },
+      { id: 'c', name: 'C C', tagIds: ['klatring'], groupId: 'klatring' },
+      { id: 'x', name: 'X X', tagIds: [], groupId: null },
+      { id: 'y', name: 'Y Y', tagIds: [], groupId: null },
+    ]
+    const rels = [rel('x', 'a'), rel('x', 'b'), rel('x', 'c'), rel('y', 'a'), rel('y', 'b'), rel('y', 'c')]
+    const clusters = groupClusters(linkCandidates(people, rels), people, rels, new Map([['radio', 'Radio Nova'], ['klatring', 'Klatring']]))
+    const labels = clusters.map((c) => [c.a.label, c.b?.label ?? null, c.pairs.length])
+    expect(labels).toContainEqual(['Klatring', 'Radio Nova', 2])
+    expect(labels).toContainEqual(['Radio Nova', null, 1])
   })
 })
 

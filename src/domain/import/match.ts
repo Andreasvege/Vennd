@@ -1,4 +1,5 @@
 import { fold } from '../search'
+import { normalizeName } from '../duplicates'
 import type { Contact } from './vcard'
 import type { CalEvent } from './ics'
 
@@ -6,8 +7,8 @@ export type KnownPerson = { id: string; name: string; birthday: Date | null; ema
 
 export type ContactStatus = { kind: 'new' } | { kind: 'exists'; personId: string } | { kind: 'add-birthday'; personId: string }
 
-const collapse = (s: string) => s.trim().replace(/\s+/g, ' ')
-const foldName = (s: string) => fold(collapse(s))
+// Samme sammenligning som duplikatsjekken: «Broby-Bergem» er «Broby Bergem».
+const foldName = normalizeName
 
 /** Finner personen kontakten matcher navnet eller e-posten til, om noen. */
 function findMatch(c: Contact, persons: KnownPerson[]): KnownPerson | undefined {

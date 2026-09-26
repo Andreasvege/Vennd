@@ -35,10 +35,17 @@ const data: Data = {
   ],
   fromRules: [
     {
-      key: 'hub:m',
-      hub: p('m', 'Martin Nilsen'),
-      members: [p('i', 'Ingrid Aas'), p('e', 'Emil Haug')],
-      pairs: [['e', 'i']],
+      key: 'tag:radio|tag:klatring',
+      sides: [
+        { label: 'Klatring', members: [p('e', 'Emil Haug')] },
+        { label: 'Radio Nova', members: [p('i', 'Ingrid Aas'), p('j', 'Jonas Rud')] },
+      ],
+      pairs: [
+        ['e', 'i'],
+        ['e', 'j'],
+      ],
+      hubs: ['Martin Nilsen', 'Sofie Lund'],
+      sameSurname: false,
       type: 'FRIEND',
     },
   ],
@@ -71,10 +78,24 @@ it('én innsikt, ett svar: velg bort én, og miljøet lages', async () => {
   await waitFor(() => expect(screen.queryByText('Vege-søsknene')).not.toBeInTheDocument())
 })
 
-it('reglenes gruppe: to personer får et tydelig spørsmål, og «Nei takk» avviser parene', async () => {
+it('reglenes gruppe er ett spørsmål mellom to miljøer, med to rader', async () => {
   const user = setup()
-  const card = screen.getByText('Kjenner Ingrid og Emil hverandre?').closest('li')!
-  expect(within(card).getByText('Begge kjenner Martin.')).toBeInTheDocument()
+  const card = screen.getByText('Klatring og Radio Nova: kjenner de hverandre?').closest('li')!
+  expect(within(card).getByText('De kjenner begge Martin og Sofie.')).toBeInTheDocument()
+  expect(within(card).getByRole('button', { name: 'Legg til 2 forbindelser' })).toBeInTheDocument()
+  // Velg bort Jonas: bare Emil–Ingrid står igjen.
+  await user.click(within(card).getByRole('button', { name: 'Velg hvem' }))
+  await user.click(within(card).getByRole('button', { name: /Jonas Rud/ }))
+  await user.click(within(card).getByRole('button', { name: 'Legg til forbindelsen' }))
+  expect(acceptLinks).toHaveBeenCalledWith([['e', 'i']])
+})
+
+it('«Nei takk» avviser alle parene i gruppen', async () => {
+  const user = setup()
+  const card = screen.getByText('Klatring og Radio Nova: kjenner de hverandre?').closest('li')!
   await user.click(within(card).getByRole('button', { name: 'Nei takk' }))
-  expect(dismissLinks).toHaveBeenCalledWith([['e', 'i']])
+  expect(dismissLinks).toHaveBeenCalledWith([
+    ['e', 'i'],
+    ['e', 'j'],
+  ])
 })

@@ -1,7 +1,7 @@
 import 'server-only'
 import { prisma } from '@/lib/prisma'
 import { personTint } from '@/lib/palette'
-import { answeredPairs, hubClusters, insightPairs, linkCandidates, pairKey, withAssessments, type LinkRow } from '@/domain/linkSuggestions'
+import { answeredPairs, groupClusters, insightPairs, linkCandidates, pairKey, withAssessments, type LinkRow } from '@/domain/linkSuggestions'
 import { onMap } from './visibility'
 
 /**
@@ -71,9 +71,10 @@ export type LinkSuggestionItem = Awaited<ReturnType<typeof getLinkSuggestions>>[
  * faktisk er nytt, og bare folk som står på kartet.
  */
 export async function getGroupSuggestions(userId: string) {
-  const [{ people, rels, candidates }, insights] = await Promise.all([
+  const [{ people, rels, candidates }, insights, tags] = await Promise.all([
     loadLinkState(userId),
     prisma.linkInsight.findMany({ where: { userId, status: 'OPEN' }, orderBy: { createdAt: 'asc' } }),
+    prisma.tag.findMany({ where: { userId }, select: { id: true, name: true } }),
   ])
   const byId = new Map(people.map((p) => [p.id, p]))
   const person = (id: string) => {
@@ -92,11 +93,20 @@ export async function getGroupSuggestions(userId: string) {
     return [{ id: i.id, title: i.title, reason: i.reason, kind, hub, members, type: i.type, label: i.label, groupName: i.groupName, count: fresh.length }]
   })
 
-  const fromRules = hubClusters(candidates).flatMap((c) => {
-    const hub = person(c.hub)[0]
-    if (!hub) return []
-    return [{ key: `hub:${c.hub}`, hub, members: c.members.flatMap(person), pairs: c.pairs, type: c.type }]
-  })
+  const clusters = groupClusters(
+    candidates,
+    people.map((p) => ({ id: p.id, name: p.name, groupId: p.primaryTagId })),
+    rels,
+    new Map(tags.map((tag) => [tag.id, tag.name])),
+  )
+  const fromRules = clusters.map((c) => ({
+    key: c.key,
+    sides: [c.a, ...(c.b ? [c.b] : [])].map((side) => ({ label: side.label, members: side.ids.flatMap(person) })),
+    pairs: c.pairs,
+    hubs: c.hubs.flatMap((id) => person(id).map((p) => p.name)),
+    sameSurname: c.sameSurname,
+    type: c.type,
+  }))
 
   return { fromClaude, fromRules }
 }
