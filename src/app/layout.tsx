@@ -11,6 +11,7 @@ import { getUserId } from '@/server/session'
 import { getComposerData } from '@/server/queries/composer'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
+import { prisma } from '@/lib/prisma'
 
 // Fraunces bærer dagbok-stemmen: navn, overskrifter og selve loggteksten.
 // SOFT og WONK gir de runde, litt skjeve formene som skiller den fra en
@@ -54,7 +55,13 @@ export default async function RootLayout({
   // Skriv-arket skal kunne åpnes fra hvor som helst, så dataene det trenger
   // hentes her. Handlingene revaliderer layouten, så de holdes ferske.
   const userId = await getUserId()
-  const composer = userId ? await getComposerData(userId) : null
+  const [composer, unsorted] = userId
+    ? await Promise.all([
+        getComposerData(userId),
+        // Antallet i Venter-bunken, vist på «Bygg kartet» i toppen.
+        prisma.person.count({ where: { userId, sortedAt: null, archivedAt: null } }),
+      ])
+    : [null, 0]
 
   return (
     // suppressHydrationWarning: temaskriptet setter data-theme på <html>
@@ -70,7 +77,7 @@ export default async function RootLayout({
           {themeScript}
         </Script>
         <Providers composer={composer}>
-          <AppHeader />
+          <AppHeader unsorted={unsorted} />
           {/* PC: innholdet til venstre og et sidepanel (I dag eller en profil)
               til høyre. Mobil: innholdet alene, med fanelinjen under; en
               profil legger seg over som et ark. */}

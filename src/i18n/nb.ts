@@ -28,6 +28,9 @@ export const nb = {
     account: 'Konto',
     main: 'Hovedmeny',
     insight: 'Innsikt',
+    sort: 'Bygg kartet',
+    sortWaiting: (n: number) => `Bygg kartet, ${n} venter`,
+    waitingCount: (n: number) => (n > 99 ? '99+' : String(n)),
   },
 
   search: {
