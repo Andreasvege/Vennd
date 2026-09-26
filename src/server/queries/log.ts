@@ -1,6 +1,7 @@
 import 'server-only'
 import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
+import { notArchived } from './visibility'
 
 /** De siste loggene, nyeste først, med alle som var med. */
 export async function getRecentLogs(userId: string, limit = 10) {
@@ -15,7 +16,7 @@ export async function getRecentLogs(userId: string, limit = 10) {
       date: true,
       type: true,
       body: true,
-      participants: { select: { person: { select: { id: true, name: true } } } },
+      participants: { where: { person: notArchived }, select: { person: { select: { id: true, name: true } } } },
     },
   })
   return entries.map(({ participants, ...e }) => ({
@@ -50,7 +51,7 @@ export async function getLogPage(userId: string, before?: { date: Date; id: stri
       date: true,
       type: true,
       body: true,
-      participants: { select: { person: { select: { id: true, name: true } } } },
+      participants: { where: { person: notArchived }, select: { person: { select: { id: true, name: true } } } },
       threadsClosed: { select: { id: true, title: true, resolution: true } },
       threadsOpened: { select: { id: true, title: true } },
     },

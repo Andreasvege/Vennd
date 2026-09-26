@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { byPrimaryTag, byType, rhythm, topPeople, unseenBands, weekly } from '@/domain/insight'
 import { isTagColor, personTint, type TagColor } from '@/lib/palette'
 import { getLastContact } from './lastContact'
+import { onMap } from './visibility'
 
 export const PERIODS = [30, 90, 365] as const
 export type Period = (typeof PERIODS)[number]
@@ -25,7 +26,8 @@ export async function getInsight(userId: string, days: Period, now: Date = new D
       select: { date: true, type: true, participants: { select: { personId: true } } },
     }),
     prisma.person.findMany({
-      where: { userId },
+      // Innsikten gjelder kartet ditt; usorterte ville fylt «Aldri logget».
+      where: { userId, ...onMap },
       orderBy: { name: 'asc' },
       select: {
         id: true,

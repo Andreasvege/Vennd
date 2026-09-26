@@ -7,7 +7,7 @@ import { removeBlob } from '@/server/blob'
 import { NotOwnedError } from '@/server/ownership'
 import { personInput, personPatch, type PersonInput, type PersonPatch } from '@/server/schemas'
 import { revalidatePath } from 'next/cache'
-import { assertTagsOwned, fromDateInput, parseId, refreshAll } from './shared'
+import { assertTagsOwned, fromDateInput, parseId, refreshAll, markSorted } from './shared'
 import { fail, type ActionResult } from './result'
 
 // Hovedtaggen må være en av personens tagger. Har personen tagger, men ingen
@@ -43,6 +43,8 @@ export async function createPerson(raw: PersonInput): Promise<ActionResult<{ id:
       birthday: birthday ? fromDateInput(birthday) : null,
       positionX: spot.x,
       positionY: spot.y,
+      // Lagt til med vilje: rett på kartet, ikke i Venter-bunken.
+      sortedAt: new Date(),
       primaryTagId: resolvePrimary(tagIds, primaryTagId),
       tags: { create: [...new Set(tagIds)].map((tagId) => ({ tagId })) },
     },
@@ -85,6 +87,8 @@ export async function updatePerson(rawId: string, raw: PersonPatch): Promise<Act
       }),
     },
   })
+  // Å gi noen et miljø er å gi dem en plass på kartet.
+  if (tagIds?.length) await markSorted(userId, [id])
 
   refreshAll()
   return { ok: true }

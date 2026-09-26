@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getLastContact } from './lastContact'
 import { computeAutoReminders } from '@/domain/reminders'
 import { personTint, type TagColor } from '@/lib/palette'
+import { onMap } from './visibility'
 
 function endOfUtcDay(d: Date): Date {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999))
@@ -27,7 +28,8 @@ export type ReminderItem = {
 export async function getReminders(userId: string, now: Date = new Date()): Promise<ReminderItem[]> {
   const [persons, logs, dueThreads] = await Promise.all([
     prisma.person.findMany({
-      where: { userId },
+      // Bare folk på kartet: en usortert har ikke fått en nærhet å bli påminnet etter.
+      where: { userId, ...onMap },
       select: {
         id: true,
         name: true,
@@ -47,12 +49,14 @@ export async function getReminders(userId: string, now: Date = new Date()): Prom
     prisma.thread.findMany({
       // Datoer lagres kl. 12 UTC. «I dag» betyr hele dagen, ikke bare fram
       // til nå — ellers dukket dagens tråder først opp klokka 14 norsk tid.
-      where: { userId, status: 'OPEN', dueDate: { lte: endOfUtcDay(now) } },
+      // Bare tråder med noen som står på kartet; resten venter med personen.
+      where: { userId, status: 'OPEN', dueDate: { lte: endOfUtcDay(now) }, persons: { some: { person: onMap } } },
       orderBy: { dueDate: 'asc' },
       select: {
         id: true,
         title: true,
         persons: {
+          where: { person: onMap },
           take: 1,
           select: { person: { select: { id: true, name: true, primaryTag: { select: { color: true } } } } },
         },

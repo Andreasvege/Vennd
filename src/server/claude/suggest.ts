@@ -43,7 +43,7 @@ async function buildContext(userId: string, logId: string) {
         },
       },
     }),
-    prisma.person.findMany({ where: { userId }, orderBy: { name: 'asc' }, select: { id: true, name: true } }),
+    prisma.person.findMany({ where: { userId, archivedAt: null }, orderBy: { name: 'asc' }, select: { id: true, name: true } }),
   ])
   if (!log?.body?.trim()) return null
   const context: SuggestContext = {

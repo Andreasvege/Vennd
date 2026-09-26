@@ -7,6 +7,7 @@ import { getProximities } from './proximity'
 import { getPersonPlans } from './plans'
 import { getPendingSuggestions } from './suggestions'
 import { isPhotosEnabled } from '@/server/blob'
+import { notArchived } from './visibility'
 
 /** Alt profilen viser om én person. null hvis den ikke finnes eller er en annens. */
 export async function getPersonProfile(userId: string, id: string) {
@@ -77,7 +78,7 @@ export async function getPersonProfile(userId: string, id: string) {
       distinct: ['label'],
       select: { label: true },
     }),
-    prisma.person.findMany({ where: { userId, id: { not: id } }, orderBy: { name: 'asc' }, select: { id: true, name: true } }),
+    prisma.person.findMany({ where: { userId, id: { not: id }, ...notArchived }, orderBy: { name: 'asc' }, select: { id: true, name: true } }),
     getProximities(userId, id),
     getPersonPlans(userId, id),
     getPendingSuggestions(userId, id),

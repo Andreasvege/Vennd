@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ReactFlowProvider } from '@xyflow/react'
-import { Link2, UserPlus } from 'lucide-react'
+import { Link2, UserPlus, Layers } from 'lucide-react'
 import { Button, EmptyState } from '@/components/ui'
 import { VennekartCanvas } from '@/components/graph/VennekartCanvas'
 import { MapControls } from '@/components/graph/MapControls'
@@ -20,6 +20,7 @@ import type { Graph } from '@/server/queries/graph'
 import type { TagSummary } from '@/server/queries/tags'
 import type { SavedView } from '@/server/queries/views'
 import { t } from '@/i18n'
+import { buttonClass } from '@/components/ui/button-styles'
 
 type Props = { graph: Graph; tags: TagSummary[]; views: SavedView[]; highlight?: string[] }
 
@@ -83,6 +84,15 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
             activeViewId={state.activeViewId}
             onView={state.applyView}
           />
+          {graph.unsorted > 0 && (
+            <Link
+              href="/sorter"
+              className="flex min-h-9 items-center gap-2 rounded-full border border-ink bg-ink px-3.5 text-[13px] text-paper shadow-float outline-none transition-colors hover:bg-ink/90 focus-visible:ring-2 focus-visible:ring-pen focus-visible:ring-offset-2"
+            >
+              <Layers aria-hidden size={14} strokeWidth={1.75} />
+              {t.sort.chip(graph.unsorted)}
+            </Link>
+          )}
           {highlight.length > 1 && (
             <div className="flex items-center gap-2 rounded-[10px] border border-redpencil/40 bg-paper-raised py-1.5 pl-3 pr-1 text-[14px]">
               <span className="text-redpencil">{t.smallWorld.pathLabel(highlight.map(nameOf).join(' → '))}</span>
@@ -154,17 +164,32 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
 
         {graph.persons.length === 0 && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
-            <EmptyState
-              title={t.map.emptyTitle}
-              body={t.map.emptyBody}
-              className="pointer-events-auto"
-              action={
-                <Button variant="primary" size="lg" onPress={() => setSheet('person')}>
-                  <UserPlus aria-hidden size={18} strokeWidth={1.75} />
-                  {t.map.newPerson}
-                </Button>
-              }
-            />
+            {/* Tomt kart, men folk i bunken: begynn der, ikke med å legge til én og én. */}
+            {graph.unsorted > 0 ? (
+              <EmptyState
+                title={t.sort.title}
+                body={t.sort.waiting(graph.unsorted)}
+                className="pointer-events-auto"
+                action={
+                  <Link href="/sorter/kort" className={buttonClass('primary', 'lg')}>
+                    <Layers aria-hidden size={18} strokeWidth={1.75} />
+                    {t.sort.begin}
+                  </Link>
+                }
+              />
+            ) : (
+              <EmptyState
+                title={t.map.emptyTitle}
+                body={t.map.emptyBody}
+                className="pointer-events-auto"
+                action={
+                  <Button variant="primary" size="lg" onPress={() => setSheet('person')}>
+                    <UserPlus aria-hidden size={18} strokeWidth={1.75} />
+                    {t.map.newPerson}
+                  </Button>
+                }
+              />
+            )}
           </div>
         )}
         {hiddenByFilter && (

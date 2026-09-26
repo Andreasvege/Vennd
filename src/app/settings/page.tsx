@@ -8,12 +8,17 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { TagSettings } from '@/components/TagSettings'
 import { isClaudeEnabled, suggestModel } from '@/server/claude/client'
 import { t } from '@/i18n'
+import { prisma } from '@/lib/prisma'
 
 const section = 'border-t border-rule pt-6'
 
 export default async function SettingsPage() {
   const userId = await requireUserId()
-  const [session, tags] = await Promise.all([auth(), getTags(userId)])
+  const [session, tags, unsorted] = await Promise.all([
+    auth(),
+    getTags(userId),
+    prisma.person.count({ where: { userId, sortedAt: null, archivedAt: null } }),
+  ])
   const user = session!.user
 
   return (
@@ -47,9 +52,14 @@ export default async function SettingsPage() {
       <section className={section}>
         <SectionHeading>{t.import.title}</SectionHeading>
         <p className="mb-2 text-[14px] text-ink-muted">{t.import.settingsHint}</p>
-        <Link href="/import" className="text-[15px] text-pen underline-offset-4 hover:underline">
-          {t.import.link}
-        </Link>
+        <div className="flex flex-col items-start gap-1">
+          <Link href="/import" className="text-[15px] text-pen underline-offset-4 hover:underline">
+            {t.import.link}
+          </Link>
+          <Link href="/sorter" className="text-[15px] text-pen underline-offset-4 hover:underline">
+            {t.sort.settingsLink(unsorted)}
+          </Link>
+        </div>
       </section>
 
       <section className={section}>

@@ -2,6 +2,7 @@ import 'server-only'
 import { prisma } from '@/lib/prisma'
 import { personTint } from '@/lib/palette'
 import { isClaudeEnabled } from '@/server/claude/client'
+import { notArchived } from './visibility'
 
 /**
  * Det skriv-arket trenger for å kjenne igjen folk og vise trådene deres:
@@ -11,7 +12,7 @@ import { isClaudeEnabled } from '@/server/claude/client'
 export async function getComposerData(userId: string) {
   const [persons, threads] = await Promise.all([
     prisma.person.findMany({
-      where: { userId },
+      where: { userId, ...notArchived },
       orderBy: { name: 'asc' },
       select: { id: true, name: true, primaryTag: { select: { color: true } } },
     }),

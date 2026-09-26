@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { TAG_COLORS } from '@/lib/palette'
 import { MAP_MODES } from '@/domain/mapMode'
 import { LOG_TYPES } from '@/domain/logTypes'
+import { CLOSENESS } from '@/domain/sorting'
 
 // Alt som kommer inn i en server action, valideres her. Skjemaene er rene
 // og testes direkte; handlingene bare kaller safeParse.
@@ -200,3 +201,20 @@ export const logEdit = z.object({
   body: z.string().max(20_000),
 })
 export type LogEdit = z.infer<typeof logEdit>
+
+// Sortering: kortstokken, miljø for miljø og Venter-bunken.
+export const sortPersonInput = z.object({
+  personId: id,
+  closeness: z.enum(CLOSENESS),
+  tagIds: z.array(id).max(20),
+  knows: z.array(id).max(50),
+})
+export const assignGroupInput = z.object({
+  tagId: id,
+  personIds: z.array(id).max(500),
+  connect: z.enum(['all', 'pairs', 'none']),
+  pairs: z.array(z.tuple([id, id])).max(5000).optional(),
+})
+export const personIdList = z.array(id).min(1).max(1000)
+export type SortPersonInput = z.infer<typeof sortPersonInput>
+export type AssignGroupInput = z.infer<typeof assignGroupInput>

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { derivePairs } from '@/domain/derivePairs'
 import { isTagColor, personTint } from '@/lib/palette'
 import { getLastContact } from './lastContact'
+import { onMap } from './visibility'
 
 // Nok til å se hvem som ofte er sammen, uten å lese hele dagboken for hvert kart.
 const DERIVED_FROM_LAST = 1000
@@ -15,9 +16,9 @@ const MAX_DERIVED = 40
  * cache(): forsiden og panelet kan spørre i samme forespørsel.
  */
 export const getGraph = cache(async function getGraph(userId: string) {
-  const [persons, relationships, tags, lastContact, sharedLogs] = await Promise.all([
+  const [persons, relationships, tags, lastContact, sharedLogs, unsorted] = await Promise.all([
     prisma.person.findMany({
-      where: { userId },
+      where: { userId, ...onMap },
       orderBy: { name: 'asc' },
       select: {
         id: true,
@@ -34,7 +35,7 @@ export const getGraph = cache(async function getGraph(userId: string) {
     // Begge ender må eies av brukeren, ellers kunne en relasjon lekke en
     // annen brukers person.
     prisma.relationship.findMany({
-      where: { fromPerson: { userId }, toPerson: { userId } },
+      where: { fromPerson: { userId, ...onMap }, toPerson: { userId, ...onMap } },
       select: { id: true, fromPersonId: true, toPersonId: true, type: true, label: true, until: true },
     }),
     prisma.tag.findMany({
@@ -49,16 +50,21 @@ export const getGraph = cache(async function getGraph(userId: string) {
       take: DERIVED_FROM_LAST,
       select: { participants: { select: { personId: true } } },
     }),
+    prisma.person.count({ where: { userId, sortedAt: null, archivedAt: null } }),
   ])
 
   // Bare logger med flere personer kan si noe om hvem som er sammen; de
   // tydeligste parene først, og ikke flere enn kartet tåler å vise.
+  // Par med noen som ikke står på kartet, har ingen ende å tegnes mellom.
+  const shown = new Set(persons.map((p) => p.id))
   const derived = derivePairs(
     sharedLogs
       .map((l) => ({ personIds: l.participants.map((p) => p.personId) }))
       .filter((l) => l.personIds.length > 1),
     relationships.map((r) => [r.fromPersonId, r.toPersonId] as [string, string]),
-  ).slice(0, MAX_DERIVED)
+  )
+    .filter((d) => shown.has(d.a) && shown.has(d.b))
+    .slice(0, MAX_DERIVED)
 
   return {
     persons: persons.map(({ tags: personTags, ...p }) => ({
@@ -70,6 +76,8 @@ export const getGraph = cache(async function getGraph(userId: string) {
     relationships,
     tags: tags.map((t) => ({ ...t, color: isTagColor(t.color) ? t.color : ('stone' as const) })),
     derived,
+    // Står i Venter-bunken, ikke på kartet: kartet viser en vei dit.
+    unsorted,
   }
 })
 
