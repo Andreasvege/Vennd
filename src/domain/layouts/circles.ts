@@ -11,14 +11,14 @@ const fmt = (n: number) => Math.round(n * 10) / 10
  * ankrene, så relasjonene mellom de samme miljøene samles i én «kabel»
  * (hierarkisk kantbunting med to nivåer).
  */
-export function circles(persons: LayoutPerson[], groups: Group[], { r } = { r: 420 }) {
+export function circles(persons: LayoutPerson[], groups: Group[], { r } = { r: 420 }, pairs: [string, string][] = []) {
   const positions = new Map<string, Point>()
   const anchors = new Map<string | null, Point>()
   const inner = new Map<string | null, Point>()
   const arcs: { groupId: string | null; start: number; end: number }[] = []
   const groupOf = new Map<string, string | null>()
 
-  for (const s of sectors(groups, persons)) {
+  for (const s of sectors(groups, persons, pairs)) {
     const mid = (s.start + s.end) / 2
     anchors.set(s.groupId, polar(r * ANCHOR, mid))
     inner.set(s.groupId, polar(r * SAME_GROUP, mid))

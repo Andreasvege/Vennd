@@ -461,6 +461,8 @@ export const nb = {
   },
 
   map: {
+    tidy: 'Rydd opp',
+    tidyUndo: 'Angre',
     newPerson: 'Ny person',
     newRelationship: 'Relasjon',
     logContact: 'Logg',

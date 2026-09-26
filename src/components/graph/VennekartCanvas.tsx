@@ -67,6 +67,8 @@ type Props = {
   onDerivedClick: (a: string, b: string) => void
   onProximities: (p: Proximity[]) => void
   onError: (message: string) => void
+  /** Øk for å tilpasse utsnittet når nodene har glidd på plass (f.eks. etter «Rydd opp»). */
+  refit?: number
 }
 
 /**
@@ -74,7 +76,7 @@ type Props = {
  * bare hvor folk står; når det byttes, glir de til nye plasser, så du ser
  * at det er det samme kartet fra en annen vinkel.
  */
-export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedClick, onProximities, onError }: Props) {
+export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedClick, onProximities, onError, refit = 0 }: Props) {
   const router = useRouter()
   const { data: session } = useSession()
   const flow = useReactFlow()
@@ -87,6 +89,7 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
   const [settledMode, setSettledMode] = useState<MapMode | null>(mode)
   const settled = settledMode === mode
   const lastMode = useRef<MapMode | null>(null)
+  const lastRefit = useRef(refit)
 
   const { visible, targets, fresh, relationships, derived, edgePath } = model
 
@@ -138,8 +141,10 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
       }),
     ]
 
-    const modeChanged = lastMode.current !== null && lastMode.current !== mode
+    // Nytt syn, eller et ønske om å se alt (etter «Rydd opp»): tilpass utsnittet.
+    const modeChanged = (lastMode.current !== null && lastMode.current !== mode) || lastRefit.current !== refit
     lastMode.current = mode
+    lastRefit.current = refit
     const from = new Map([...current].map(([id, n]) => [id, n.position]))
     const to = new Map(target.map((n) => [n.id, n.position]))
     const moves = [...to].some(([id, p]) => {
@@ -179,7 +184,7 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
       step(now)
     })
     return () => cancelAnimationFrame(raf)
-  }, [visible, targets, fresh, mode, session, onAddLog, router, flow, setNodes, reducedMotion])
+  }, [visible, targets, fresh, mode, session, onAddLog, router, flow, setNodes, reducedMotion, refit])
 
   // Kanter: stråler fra deg (bare i Nettverk), relasjoner og «ofte sammen».
   // Vises en sti, tegnes den med rødblyant og alt annet tones ned.

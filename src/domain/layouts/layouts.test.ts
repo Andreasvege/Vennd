@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest'
+import { connectionOrder } from './order'
+import { tidyNetwork } from './tidy'
 import { sectors } from './sectors'
 import { nearness } from './nearness'
 import { circles, bundlePath } from './circles'
@@ -114,5 +116,67 @@ describe('relax', () => {
     const out = relax(new Map([['a', { x: 0, y: 0 }], ['b', { x: 0, y: 0 }]]), 80)
     expect(Number.isFinite(out.get('a')!.x)).toBe(true)
     expect(Math.hypot(out.get('a')!.x - out.get('b')!.x, out.get('a')!.y - out.get('b')!.y)).toBeGreaterThanOrEqual(79)
+  })
+})
+
+describe('connectionOrder', () => {
+  const m = (id: string, name = id) => ({ id, name })
+
+  it('uten relasjoner: alfabetisk', () => {
+    expect(connectionOrder([m('c', 'Cecilie'), m('a', 'Anders'), m('b', 'Bjørn')], [])).toEqual(['a', 'b', 'c'])
+  })
+
+  it('setter de som henger sammen, ved siden av hverandre, største klynge først', () => {
+    // Familien (a–d–e) og paret (b–c) skal ikke blandes alfabetisk.
+    const order = connectionOrder(
+      [m('a', 'A'), m('b', 'B'), m('c', 'C'), m('d', 'D'), m('e', 'E'), m('f', 'F')],
+      [
+        ['a', 'd'],
+        ['d', 'e'],
+        ['b', 'c'],
+      ],
+    )
+    expect(order).toEqual(['d', 'a', 'e', 'b', 'c', 'f'])
+  })
+
+  it('ignorerer relasjoner til folk utenfor gruppen', () => {
+    expect(connectionOrder([m('a', 'A'), m('b', 'B')], [['a', 'x']])).toEqual(['a', 'b'])
+  })
+})
+
+describe('tidyNetwork', () => {
+  const groups = [
+    { id: 'fam', name: 'Familie' },
+    { id: 'radio', name: 'Studentradio' },
+  ]
+  const persons = [
+    ...['a', 'b', 'c', 'd', 'e'].map((id) => ({ id, name: id, groupId: 'fam' })),
+    ...['p', 'q', 'r', 's'].map((id) => ({ id, name: id, groupId: 'radio' })),
+    { id: 'z', name: 'z', groupId: null },
+  ]
+  const pairs: [string, string][] = [
+    ['a', 'b'],
+    ['b', 'c'],
+    ['c', 'd'],
+    ['p', 'q'],
+    ['q', 'r'],
+  ]
+  const pos = tidyNetwork(persons, groups, pairs)
+  const dist = (x: string, y: string) => Math.hypot(pos.get(x)!.x - pos.get(y)!.x, pos.get(x)!.y - pos.get(y)!.y)
+
+  it('plasserer alle, uten overlapp og unna midten', () => {
+    expect(pos.size).toBe(persons.length)
+    for (const p of persons) for (const q of persons) if (p.id < q.id) expect(dist(p.id, q.id)).toBeGreaterThanOrEqual(83)
+    for (const p of pos.values()) expect(Math.hypot(p.x, p.y)).toBeGreaterThan(120)
+  })
+
+  it('holder miljøene samlet: nærmere sine egne enn de andre', () => {
+    const inside = (dist('a', 'c') + dist('b', 'd') + dist('p', 'r')) / 3
+    const across = (dist('a', 'p') + dist('c', 'r') + dist('d', 's')) / 3
+    expect(inside).toBeLessThan(across)
+  })
+
+  it('er deterministisk', () => {
+    expect(tidyNetwork(persons, groups, pairs)).toEqual(pos)
   })
 })
