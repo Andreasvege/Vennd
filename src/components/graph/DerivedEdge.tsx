@@ -3,7 +3,7 @@
 import { BaseEdge, getStraightPath, type EdgeProps } from '@xyflow/react'
 import { t } from '@/i18n'
 
-export type DerivedEdgeData = { count: number; dimmed?: boolean }
+export type DerivedEdgeData = { count: number; dimmed?: boolean; focus?: 'on' | 'off' }
 
 /**
  * «Ofte sammen»: to som har vært med i samme logg flere ganger, uten at en
@@ -25,7 +25,7 @@ export function DerivedEdge({ id, sourceX, sourceY, targetX, targetY, data }: Ed
           strokeWidth: 1.25,
           strokeDasharray: '1 5',
           strokeLinecap: 'round',
-          strokeOpacity: edge.dimmed ? 0.2 : 0.8,
+          strokeOpacity: edge.dimmed || edge.focus === 'off' ? 0.12 : edge.focus === 'on' ? 0.9 : 0.5,
         }}
       />
     </g>

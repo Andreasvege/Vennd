@@ -186,11 +186,21 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
     return () => cancelAnimationFrame(raf)
   }, [visible, targets, fresh, mode, session, onAddLog, router, flow, setNodes, reducedMotion, refit])
 
+  // Valgt person: deres forbindelser trer fram, resten tones ned.
+  const selectedId = nodes.find((n) => n.selected && n.id !== ME_ID)?.id ?? null
+
   // Kanter: stråler fra deg (bare i Nettverk), relasjoner og «ofte sammen».
   // Vises en sti, tegnes den med rødblyant og alt annet tones ned.
   useEffect(() => {
     const onPath = new Set(highlight.slice(1).map((id, i) => pairKey(highlight[i], id)))
     const pathMode = onPath.size > 0
+    // Nærhet og Nettverk: strekene er bakgrunn. Kretser har sin egen, buntede ro.
+    const calm = mode !== 'circles'
+    const focusOf = (a: string, b: string) =>
+      !selectedId || pathMode ? undefined : a === selectedId || b === selectedId ? ('on' as const) : ('off' as const)
+    // Mange etiketter blir et virvar: på fulle kart bare for den valgte.
+    const roomForLabels = relationships.length <= 20
+    const labelFor = (focus: 'on' | 'off' | undefined) => focus === 'on' || (focus === undefined && roomForLabels && !pathMode)
 
     const spokes: Edge[] =
       mode === 'network'
@@ -200,8 +210,17 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
             target: p.id,
             targetHandle: 'center',
             type: 'relationship',
-            // Hva de er for deg («fetter») står på strålen, som på kantene mellom andre.
-            data: { type: p.type, variant: 'spoke', label: p.relationLabel, dimmed: pathMode } satisfies RelationshipEdgeData,
+            // Hva de er for deg («fetter») står på strålen, men bare når de er valgt.
+            data: {
+              type: p.type,
+              variant: 'spoke',
+              label: p.relationLabel,
+              dimmed: pathMode,
+              calm,
+              weight: fresh.get(p.id) ?? 0,
+              focus: focusOf(ME_ID, p.id),
+              showLabel: focusOf(ME_ID, p.id) === 'on',
+            } satisfies RelationshipEdgeData,
           }))
         : []
 
@@ -215,6 +234,9 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
         historical: r.until !== null,
         path: inPath,
         dimmed: pathMode && !inPath,
+        calm,
+        focus: focusOf(r.fromPersonId, r.toPersonId),
+        showLabel: labelFor(focusOf(r.fromPersonId, r.toPersonId)),
       }
       const route = mode === 'circles' ? edgePath?.(r.fromPersonId, r.toPersonId) : null
       const base = {
@@ -237,11 +259,11 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
       targetHandle: 'center',
       type: 'derived',
       ariaLabel: `${t.map.derived(d.count)}. ${t.map.derivedHint}`,
-      data: { count: d.count, dimmed: pathMode } satisfies DerivedEdgeData,
+      data: { count: d.count, dimmed: pathMode, focus: focusOf(d.a, d.b) } satisfies DerivedEdgeData,
     }))
 
     setEdges(visible.length ? [...spokes, ...between, ...derivedEdges] : [])
-  }, [visible, relationships, derived, edgePath, mode, highlight, settled, setEdges])
+  }, [visible, relationships, derived, edgePath, mode, highlight, settled, setEdges, fresh, selectedId])
 
   // Dra fra knotten under én person til en annen for å lage en relasjon.
   const onConnect = async (connection: Connection) => {

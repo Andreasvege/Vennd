@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
+import { centerHandle } from './PersonNode'
 import { initialsOf } from '@/domain/format'
 import { t } from '@/i18n'
 import type { MeNodeData } from '@/types'
@@ -18,12 +19,8 @@ export function MeNode({ data }: NodeProps) {
   return (
     <div className="flex select-none flex-col items-center gap-2">
       <div className="relative flex size-[72px] items-center justify-center overflow-hidden rounded-full bg-ink text-paper">
-        {/* Ett håndtak i sentrum: alle kanter stråler ut fra midten. */}
-        <Handle
-          type="source"
-          position={Position.Right}
-          className="w-full! h-full! rounded-full! border-0! bg-transparent! left-0! top-0! transform-none! pointer-events-none!"
-        />
+        {/* Ett punkt i sentrum: alle strålene går ut fra midten av deg. */}
+        <Handle type="source" position={Position.Top} className={centerHandle} />
         {d.image ? (
           <Image src={d.image} alt="" width={72} height={72} className="size-full object-cover" />
         ) : (

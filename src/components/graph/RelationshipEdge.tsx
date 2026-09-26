@@ -16,16 +16,27 @@ export type RelationshipEdgeData = {
   path?: boolean
   /** En sti vises, og denne er ikke med: tones ned. */
   dimmed?: boolean
+  /** Rolig stil (Nærhet og Nettverk): strekene er bakgrunn, personene er poenget. */
+  calm?: boolean
+  /** Stråler: hvor fersk kontakten er (0–1). Ferske står litt tydeligere. */
+  weight?: number
+  /** En person er valgt: 'on' = en av deres forbindelser, 'off' = ikke. */
+  focus?: 'on' | 'off'
+  /** Vis etiketten (bare når det er plass, eller for den valgte). */
+  showLabel?: boolean
 }
 
 /** Delt med de buntede kantene i Kretser, så en relasjon ser lik ut i alle syn. */
 export function edgeStroke(edge: RelationshipEdgeData): React.CSSProperties {
   if (edge.path) return { stroke: 'var(--redpencil)', strokeWidth: 2.6 }
   const base = baseStroke(edge)
+  // Den valgte personens forbindelser trer fram; resten blir nesten borte.
+  if (edge.focus === 'on') return { ...base, strokeWidth: 1.6, strokeOpacity: edge.variant === 'spoke' ? 0.6 : 0.9 }
+  if (edge.focus === 'off') return { ...base, strokeOpacity: edge.variant === 'spoke' ? 0.03 : 0.1 }
   return edge.dimmed ? { ...base, strokeOpacity: 0.18 } : base
 }
 
-function baseStroke({ type, variant, historical }: RelationshipEdgeData): React.CSSProperties {
+function baseStroke({ type, variant, historical, calm, weight = 0.5 }: RelationshipEdgeData): React.CSSProperties {
   // Romantiske bånd mellom andre er den ene relasjonen som får farge —
   // det er informasjonen du oftest leter etter i en vennekrets.
   const romantic = variant === 'between' && type === 'ROMANTIC'
@@ -37,9 +48,11 @@ function baseStroke({ type, variant, historical }: RelationshipEdgeData): React.
       strokeDasharray: '1 5',
     }
   }
-  if (romantic) return { stroke: tagStroke('rose'), strokeWidth: 1.4, strokeDasharray: '6 4' }
-  if (variant === 'between') return { stroke: 'var(--ink-muted)', strokeWidth: 1, strokeOpacity: 0.6 }
-  return { stroke: 'var(--ink)', strokeWidth: 1.5, strokeOpacity: 0.5 }
+  if (romantic) return { stroke: tagStroke('rose'), strokeWidth: 1.4, strokeDasharray: '6 4', strokeOpacity: calm ? 0.7 : 1 }
+  if (variant === 'between') return { stroke: 'var(--ink-muted)', strokeWidth: 1, strokeOpacity: calm ? 0.35 : 0.6 }
+  // Strålene fra deg: at alle er koblet til deg, sier kartet allerede. De er
+  // svake, og litt tydeligere for dem du har sett nylig.
+  return { stroke: 'var(--ink)', strokeWidth: 1, strokeOpacity: 0.04 + 0.14 * weight }
 }
 
 export function RelationshipEdge({ id, sourceX, sourceY, targetX, targetY, data }: EdgeProps) {
@@ -49,7 +62,7 @@ export function RelationshipEdge({ id, sourceX, sourceY, targetX, targetY, data 
   return (
     <>
       <BaseEdge id={id} path={path} style={{ ...edgeStroke(edge), strokeLinecap: 'round' }} />
-      {edge.label && (
+      {edge.label && edge.showLabel !== false && (
         <EdgeLabelRenderer>
           <span
             className="ink-halo absolute font-display text-[13px] italic text-ink-muted"

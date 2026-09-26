@@ -16,6 +16,9 @@ import { t } from '@/i18n'
 export const CIRCLE_R = 420
 /** Minste avstand mellom to personer i beregnede syn: en avatar pluss litt luft. */
 const NODE_GAP = 84
+// I Nærhet samles de ferskeste tett rundt deg; navnene under trenger mer
+// plass enn avatarene, ellers skriver de over hverandre.
+const NEARNESS_GAP = 104
 
 export type Backdrop =
   | { kind: 'rings'; rings: { r: number; label: string }[] }
@@ -62,7 +65,7 @@ export function useMapModel(graph: Graph, mode: MapMode, filter: MapFilter, now:
     if (mode === 'nearness') {
       // Ferske i samme gruppe havner tett på den innerste ringen; et lite
       // frastøtingspass hindrer at de legger seg oppå hverandre.
-      targets = relax(nearness(layoutPersons, groups, NEARNESS_DEFAULTS, pairs), NODE_GAP)
+      targets = relax(nearness(layoutPersons, groups, NEARNESS_DEFAULTS, pairs), NEARNESS_GAP)
       backdrop = {
         kind: 'rings',
         rings: nearnessRings(NEARNESS_DEFAULTS).map((ring) => ({ r: ring.r, label: t.map.rings[ring.label] })),
