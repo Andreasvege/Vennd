@@ -1,7 +1,11 @@
 import { Check } from 'lucide-react'
 
-/** Rad for en react-aria Checkbox; boksen under reagerer på radens tilstand. */
-export const checkRow = 'group flex min-h-11 cursor-pointer items-center gap-3 text-[15px] outline-none desk:min-h-9'
+/**
+ * Rad for en react-aria Checkbox; boksen under reagerer på radens tilstand.
+ * `relative` holder det skjulte input-feltet inne i raden, så det aldri
+ * lander utenfor en lista som scroller.
+ */
+export const checkRow = 'group relative flex min-h-11 cursor-pointer items-center gap-3 text-[15px] outline-none desk:min-h-9'
 
 /**
  * Selve avkrysningsboksen i en react-aria Checkbox (som må ha `group`).

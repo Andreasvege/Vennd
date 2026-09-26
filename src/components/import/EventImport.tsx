@@ -129,7 +129,10 @@ export function EventImport({ persons, existing }: { persons: KnownPerson[]; exi
       ) : (
         <>
           <p className="text-[14px] text-ink-muted">{t.import.selected(chosen.length, rows.length)}</p>
-          <ul className="flex max-h-[50vh] flex-col divide-y divide-rule overflow-y-auto overscroll-contain border-y border-rule">
+          {/* relative: avkrysningsboksenes skjulte felt er absolutt plassert og må holde
+              seg inne i lista. Ellers havner de langt ned på siden, lager tom plass,
+              og nettleseren scroller dit når du trykker. */}
+          <ul className="relative flex max-h-[50vh] flex-col divide-y divide-rule overflow-y-auto overscroll-contain border-y border-rule">
             {rows.map((r) => {
               const dup = r.status.duplicate
               return (
