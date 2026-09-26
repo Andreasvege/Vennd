@@ -20,6 +20,7 @@ import { ThreadList } from './ThreadList'
 import { rhythm } from '@/domain/insight'
 import { SuggestionList } from '@/components/suggestions/SuggestionList'
 import { EditLogButton } from '@/components/composer/EditLogButton'
+import { LinkSuggestionList } from '@/components/links/LinkSuggestionList'
 
 const section = 'border-t border-rule pt-6'
 
@@ -231,6 +232,13 @@ export function PersonProfile({ person }: { person: PersonProfileData }) {
         <SectionHeading>{t.relations.title}</SectionHeading>
         <RelationshipList personId={person.id} relationships={person.relationships} people={person.people} />
       </section>
+
+      {person.links.length > 0 && (
+        <section className={section}>
+          <SectionHeading>{t.links.profileTitle}</SectionHeading>
+          <LinkSuggestionList items={person.links} personId={person.id} />
+        </section>
+      )}
     </article>
   )
 }

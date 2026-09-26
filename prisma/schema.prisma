@@ -57,6 +57,7 @@ model User {
   mapViews      MapView[]
   plans         Plan[]
   suggestions   Suggestion[]
+  links         LinkSuggestion[]
 }
 
 model Person {
@@ -93,6 +94,8 @@ model Person {
   threads        ThreadPerson[]
   phases         RomanticPhaseEntry[]
   plans          PlanPerson[]
+  linksA         LinkSuggestion[] @relation("LinkA")
+  linksB         LinkSuggestion[] @relation("LinkB")
   relationsFrom  Relationship[] @relation("FromPerson")
   relationsTo    Relationship[] @relation("ToPerson")
 }
@@ -342,6 +345,35 @@ enum SuggestionKind {
 
 enum SuggestionStatus {
   PENDING
+  ACCEPTED
+  DISMISSED
+}
+
+// Et mulig par i nettverket: to som trolig kjenner hverandre. Kandidatene
+// regnes ut fra strukturen ved lesing; en rad finnes når Claude har vurdert
+// paret, eller når du har svart. a < b, så paret er entydig.
+model LinkSuggestion {
+  id        String            @id @default(cuid())
+  userId    String
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aId       String
+  a         Person            @relation("LinkA", fields: [aId], references: [id], onDelete: Cascade)
+  bId       String
+  b         Person            @relation("LinkB", fields: [bId], references: [id], onDelete: Cascade)
+  status    LinkStatus        @default(OPEN)
+  // Claudes vurdering: gir forslaget mening, og hva er forbindelsen?
+  assessed  Boolean           @default(false)
+  keep      Boolean           @default(true)
+  type      RelationshipType?
+  label     String?
+  reason    String?
+  createdAt DateTime          @default(now())
+
+  @@unique([userId, aId, bId])
+}
+
+enum LinkStatus {
+  OPEN
   ACCEPTED
   DISMISSED
 }

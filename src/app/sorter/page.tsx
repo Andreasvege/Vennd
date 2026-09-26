@@ -1,19 +1,21 @@
 import Link from 'next/link'
-import { ArrowRight, Inbox, Layers, Users } from 'lucide-react'
+import { ArrowRight, Inbox, Layers, Sparkles, Users } from 'lucide-react'
 import { requireUserId } from '@/server/session'
 import { getSortingData } from '@/server/queries/sorting'
+import { getLinkSuggestions } from '@/server/queries/links'
 import { t } from '@/i18n'
 
 const WAYS = [
   { href: '/sorter/kort', icon: Layers, ...t.sort.ways.deck },
   { href: '/sorter/miljo', icon: Users, ...t.sort.ways.group },
   { href: '/sorter/venter', icon: Inbox, ...t.sort.ways.waiting },
+  { href: '/sorter/forbindelser', icon: Sparkles, ...t.links.way },
 ] as const
 
 /** «Bygg kartet ditt»: tre måter å gi folk en plass, samme sted. */
 export default async function SortPage() {
   const userId = await requireUserId()
-  const data = await getSortingData(userId)
+  const [data, links] = await Promise.all([getSortingData(userId), getLinkSuggestions(userId)])
   const n = data.unsorted.length
 
   return (
@@ -39,7 +41,12 @@ export default async function SortPage() {
             >
               <Icon aria-hidden size={22} strokeWidth={1.5} className="shrink-0" />
               <span className="flex min-w-0 flex-1 flex-col">
-                <span className="font-display text-[20px] leading-tight">{title}</span>
+                <span className="font-display text-[20px] leading-tight">
+                  {title}
+                  {href === '/sorter/forbindelser' && links.length > 0 && (
+                    <span className="ml-2 font-sans text-[13px] text-ink-muted">{t.links.count(links.length)}</span>
+                  )}
+                </span>
                 <span className={`text-[14px] ${i === 0 ? 'text-paper/75' : 'text-ink-muted'}`}>{body}</span>
               </span>
               <ArrowRight aria-hidden size={18} strokeWidth={1.75} className="shrink-0 transition-transform group-hover:translate-x-0.5" />

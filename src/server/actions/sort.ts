@@ -13,6 +13,7 @@ import {
 } from '@/server/schemas'
 import { assertPersonsOwned, assertTagsOwned, markSorted, parseId, refreshAll } from './shared'
 import { fail, type ActionError, type ActionResult } from './result'
+import { scheduleLinkAssessment } from '@/server/claude/links'
 
 type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0]
 
@@ -77,7 +78,10 @@ export async function sortPerson(raw: SortPersonInput): Promise<ActionResult<{ r
         return { relationships: pairs.length }
       }),
   )
-  if (result.ok) refreshAll()
+  if (result.ok) {
+    scheduleLinkAssessment(userId)
+    refreshAll()
+  }
   return result
 }
 
@@ -142,7 +146,10 @@ export async function assignGroup(raw: AssignGroupInput): Promise<ActionResult<{
         { timeout: 60_000 },
       ),
   )
-  if (result.ok) refreshAll()
+  if (result.ok) {
+    scheduleLinkAssessment(userId)
+    refreshAll()
+  }
   return result
 }
 
