@@ -28,6 +28,7 @@ import type { ComposerPreset } from './ComposerProvider'
 import { dueFrom, type DueChoice } from '@/domain/plans'
 import { useDraft } from './useDraft'
 import { LOG_TYPES } from '@/domain/logTypes'
+import { uniqueById } from '@/lib/uniqueById'
 
 type When = 'today' | 'yesterday' | 'other'
 type NewThread = { key: number; title: string; personIds: string[]; autoFocus: boolean; due: DueChoice }
@@ -69,7 +70,7 @@ export function Composer({ isOpen, onClose, onSaved, data, preset = {} }: Props)
   const [showRestored, setShowRestored] = useState(Boolean(restored))
 
   const [extraPersons, setExtraPersons] = useState<ComposerPerson[]>([])
-  const persons = useMemo(() => [...data.persons, ...extraPersons], [data.persons, extraPersons])
+  const persons = useMemo(() => uniqueById([...data.persons, ...extraPersons]), [data.persons, extraPersons])
   const byId = useMemo(() => new Map(persons.map((p) => [p.id, p])), [persons])
 
   const presetWhen: When = !preset.date || preset.date === todayISO() ? 'today' : 'other'
