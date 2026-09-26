@@ -123,19 +123,22 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
                   <AriaButton
                     onPress={tidy}
                     isDisabled={tidying}
+                    aria-label={t.map.tidy}
                     className="flex min-h-11 items-center gap-1.5 rounded-[10px] border border-rule bg-paper-raised px-3 text-[13px] text-ink outline-none data-[hovered]:border-ink-muted data-[disabled]:opacity-50 data-[focus-visible]:ring-2 data-[focus-visible]:ring-pen desk:min-h-9"
                   >
                     <Sparkles aria-hidden size={15} strokeWidth={1.75} />
-                    {t.map.tidy}
+                    {/* På mobil bare ikonet, som synene; teksten får ikke plass på én linje. */}
+                    <span className="hidden sm:inline">{t.map.tidy}</span>
                   </AriaButton>
                   {before && (
                     <AriaButton
                       onPress={undoTidy}
                       isDisabled={tidying}
+                      aria-label={t.map.tidyUndo}
                       className="flex min-h-11 items-center gap-1.5 rounded-[10px] px-2 text-[13px] text-ink-muted outline-none data-[hovered]:text-ink data-[focus-visible]:ring-2 data-[focus-visible]:ring-pen desk:min-h-9"
                     >
                       <Undo2 aria-hidden size={14} strokeWidth={1.75} />
-                      {t.map.tidyUndo}
+                      <span className="hidden sm:inline">{t.map.tidyUndo}</span>
                     </AriaButton>
                   )}
                 </>

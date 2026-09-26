@@ -166,7 +166,7 @@ describe('tidyNetwork', () => {
 
   it('plasserer alle, uten overlapp og unna midten', () => {
     expect(pos.size).toBe(persons.length)
-    for (const p of persons) for (const q of persons) if (p.id < q.id) expect(dist(p.id, q.id)).toBeGreaterThanOrEqual(83)
+    for (const p of persons) for (const q of persons) if (p.id < q.id) expect(dist(p.id, q.id)).toBeGreaterThanOrEqual(99)
     for (const p of pos.values()) expect(Math.hypot(p.x, p.y)).toBeGreaterThan(120)
   })
 
@@ -178,5 +178,17 @@ describe('tidyNetwork', () => {
 
   it('er deterministisk', () => {
     expect(tidyNetwork(persons, groups, pairs)).toEqual(pos)
+  })
+
+  it('holder plass rundt «deg» i tyngdepunktet, også når ett miljø er mye større', () => {
+    const big = Array.from({ length: 40 }, (_, i) => ({ id: `r${i}`, name: `r${i}`, groupId: 'radio' }))
+    const clique = big.flatMap((a, i) => big.slice(i + 1).map((b) => [a.id, b.id] as [string, string]))
+    const all = [...big, ...persons.filter((p) => p.groupId !== 'radio')]
+    const out = tidyNetwork(all, groups, [...pairs, ...clique])
+    const pts = [...out.values()]
+    const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length
+    const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length
+    expect(Math.hypot(cx, cy)).toBeLessThan(1)
+    for (const p of pts) expect(Math.hypot(p.x - cx, p.y - cy)).toBeGreaterThan(120)
   })
 })

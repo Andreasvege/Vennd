@@ -90,8 +90,11 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
   const settled = settledMode === mode
   const lastMode = useRef<MapMode | null>(null)
   const lastRefit = useRef(refit)
+  // Et ønske om å se alt, som venter til nodene faktisk flytter seg: «Rydd
+  // opp» ber om det før de nye plasseringene er kommet fra serveren.
+  const wantFit = useRef(false)
 
-  const { visible, targets, fresh, relationships, derived, edgePath } = model
+  const { visible, targets, fresh, relationships, derived, edgePath, groupById } = model
 
   // Noder: plasser, data og overgangen mellom syn.
   useEffect(() => {
@@ -142,7 +145,8 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
     ]
 
     // Nytt syn, eller et ønske om å se alt (etter «Rydd opp»): tilpass utsnittet.
-    const modeChanged = (lastMode.current !== null && lastMode.current !== mode) || lastRefit.current !== refit
+    const modeChanged = lastMode.current !== null && lastMode.current !== mode
+    if (lastRefit.current !== refit) wantFit.current = true
     lastMode.current = mode
     lastRefit.current = refit
     const from = new Map([...current].map(([id, n]) => [id, n.position]))
@@ -175,7 +179,10 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
         raf = requestAnimationFrame(step)
       } else {
         setSettledMode(mode)
-        if (modeChanged) flow.fitView({ padding: 0.2, duration: 300 })
+        if (modeChanged || wantFit.current) {
+          wantFit.current = false
+          flow.fitView({ padding: 0.2, duration: 300 })
+        }
       }
     }
     raf = requestAnimationFrame((now) => {
@@ -201,6 +208,8 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
     // Mange etiketter blir et virvar: på fulle kart bare for den valgte.
     const roomForLabels = relationships.length <= 20
     const labelFor = (focus: 'on' | 'off' | undefined) => focus === 'on' || (focus === undefined && roomForLabels && !pathMode)
+    // I Nettverk viser øya at to i samme miljø hører sammen; streken mellom dem er da underforstått.
+    const impliedBetween = (a: string, b: string) => mode === 'network' && groupById.get(a) != null && groupById.get(a) === groupById.get(b)
 
     const spokes: Edge[] =
       mode === 'network'
@@ -235,8 +244,11 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
         path: inPath,
         dimmed: pathMode && !inPath,
         calm,
+        implied: impliedBetween(r.fromPersonId, r.toPersonId),
         focus: focusOf(r.fromPersonId, r.toPersonId),
-        showLabel: labelFor(focusOf(r.fromPersonId, r.toPersonId)),
+        showLabel:
+          labelFor(focusOf(r.fromPersonId, r.toPersonId)) &&
+          (focusOf(r.fromPersonId, r.toPersonId) === 'on' || !impliedBetween(r.fromPersonId, r.toPersonId)),
       }
       const route = mode === 'circles' ? edgePath?.(r.fromPersonId, r.toPersonId) : null
       const base = {
@@ -263,7 +275,7 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
     }))
 
     setEdges(visible.length ? [...spokes, ...between, ...derivedEdges] : [])
-  }, [visible, relationships, derived, edgePath, mode, highlight, settled, setEdges, fresh, selectedId])
+  }, [visible, relationships, derived, edgePath, mode, highlight, settled, setEdges, fresh, selectedId, groupById])
 
   // Dra fra knotten under én person til en annen for å lage en relasjon.
   const onConnect = async (connection: Connection) => {
@@ -311,7 +323,8 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
       // noden), så vi lar React Flow snappe geometrisk i stedet.
       connectionRadius={60}
       connectionLineStyle={{ stroke: 'var(--pen)', strokeWidth: 1.5 }}
-      minZoom={0.2}
+      // Store nettverk på en mobilskjerm: «vis alt» skal faktisk vise alt.
+      minZoom={0.1}
       maxZoom={2}
     >
       {/* Svak prikkstruktur, som papir med punktrutenett. */}

@@ -24,6 +24,8 @@ export type RelationshipEdgeData = {
   focus?: 'on' | 'off'
   /** Vis etiketten (bare når det er plass, eller for den valgte). */
   showLabel?: boolean
+  /** Begge er på samme øy i Nettverk: øya sier det allerede, så streken er nesten borte. */
+  implied?: boolean
 }
 
 /** Delt med de buntede kantene i Kretser, så en relasjon ser lik ut i alle syn. */
@@ -32,7 +34,8 @@ export function edgeStroke(edge: RelationshipEdgeData): React.CSSProperties {
   const base = baseStroke(edge)
   // Den valgte personens forbindelser trer fram; resten blir nesten borte.
   if (edge.focus === 'on') return { ...base, strokeWidth: 1.6, strokeOpacity: edge.variant === 'spoke' ? 0.6 : 0.9 }
-  if (edge.focus === 'off') return { ...base, strokeOpacity: edge.variant === 'spoke' ? 0.03 : 0.1 }
+  if (edge.focus === 'off') return { ...base, strokeOpacity: edge.variant === 'spoke' || edge.implied ? 0.03 : 0.1 }
+  if (edge.implied) return { ...base, strokeOpacity: 0.06 }
   return edge.dimmed ? { ...base, strokeOpacity: 0.18 } : base
 }
 
