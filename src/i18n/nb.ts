@@ -5,6 +5,9 @@
 // knapper som sier nøyaktig hva som skjer («Lagre», ikke «Send inn»).
 // Feilmeldinger forklarer hva som gikk galt og hva du kan gjøre.
 
+// Genitiv på norsk: «Noras», men «Jonas'» når navnet slutter på s, x eller z.
+const possessive = (name: string) => (/[sxz]$/i.test(name) ? `${name}'` : `${name}s`)
+
 export const nb = {
   time: {
     today: 'i dag',
@@ -248,7 +251,7 @@ export const nb = {
     title: 'Forslag til forbindelser',
     profileTitle: 'Kjenner kanskje',
     way: { title: 'Forslag til forbindelser', body: 'Hvem kjenner trolig hverandre, ut fra det du alt har tegnet.' },
-    count: (n: number) => `${n} ${n === 1 ? 'forslag' : 'forslag'}`,
+    count: (n: number) => `${n} ${n === 1 ? 'gruppe' : 'grupper'}`,
     pair: (a: string, b: string) => `${a} og ${b}`,
     what: (label: string | null, type: string) => label ?? type,
     knowEachOther: 'kjenner hverandre',
@@ -257,15 +260,28 @@ export const nb = {
     fromClaude: 'fra Claude',
     add: 'Legg til',
     dismissLabel: (pair: string) => `Ikke foreslå ${pair}`,
-    addAll: (n: number) => `Legg til alle ${n}`,
     added: (n: number) => (n === 1 ? 'La til forbindelsen.' : `La til ${n} forbindelser.`),
     empty: 'Ingen forslag akkurat nå. De kommer etter hvert som du tegner relasjoner.',
-    askLead: 'Claude leser hele nettverket ditt én gang: vurderer forslagene over og finner forbindelser reglene ikke ser. Koster noen få cent.',
+    askLead: 'Claude leser hele nettverket ditt og peker på mønstre: familier, gjenger som hører sammen, folk som binder miljøer. Koster noen få cent.',
+    fromClaudeTitle: 'Fra Claude',
+    fromRulesTitle: 'Kjenner de hverandre?',
+    fromRulesLead: 'Folk som samme person kjenner, men som ikke er koblet til hverandre.',
+    clusterTitle: (hub: string, members: string[]) =>
+      members.length === 2
+        ? `Kjenner ${members[0].split(' ')[0]} og ${members[1].split(' ')[0]} hverandre?`
+        : `Kjenner ${possessive(hub.split(' ')[0])} folk hverandre?`,
+    clusterReason: (hub: string, n: number) => `${n === 2 ? 'Begge' : `Alle ${n}`} kjenner ${hub.split(' ')[0]}.`,
+    hubReason: (hub: string) => `${hub.split(' ')[0]} kjenner dem alle`,
+    addAllN: (n: number) => (n === 1 ? 'Legg til forbindelsen' : `Legg til ${n} forbindelser`),
+    choose: 'Velg hvem',
+    noThanks: 'Nei takk',
+    createGroup: (name: string) => `Lag miljøet «${name}»`,
+    moreClusters: (n: number) => `Vis ${n} til`,
+    emptyGroups: 'Ingen forslag akkurat nå. De kommer etter hvert som du tegner relasjoner.',
     ask: 'Spør Claude',
     asking: 'Claude ser på nettverket …',
     lastAsked: 'Sist:',
-    askDone: (assessed: number, found: number) =>
-      `Claude vurderte ${assessed} ${assessed === 1 ? 'forslag' : 'forslag'} og fant ${found} ${found === 1 ? 'ny forbindelse' : 'nye forbindelser'}.`,
+    askDone: (found: number) => (found === 0 ? 'Claude fant ingen nye mønstre akkurat nå.' : `Claude fant ${found} ${found === 1 ? 'mønster' : 'mønstre'} i nettverket ditt.`),
     askBusy: 'Claude så på nettverket for litt siden. Prøv igjen om noen minutter.',
     askFailed: 'Claude svarte ikke denne gangen. Forslagene fra reglene står som før.',
   },

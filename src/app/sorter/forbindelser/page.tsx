@@ -1,18 +1,17 @@
 import { BackLink } from '@/components/person/BackLink'
-import { EmptyState } from '@/components/ui'
-import { LinkSuggestionList } from '@/components/links/LinkSuggestionList'
-import { requireUserId } from '@/server/session'
-import { getLinkSuggestions } from '@/server/queries/links'
-import { isClaudeEnabled } from '@/server/claude/client'
+import { GroupSuggestions } from '@/components/links/GroupSuggestions'
 import { AskClaude } from '@/components/links/AskClaude'
+import { requireUserId } from '@/server/session'
+import { getGroupSuggestions } from '@/server/queries/links'
+import { isClaudeEnabled } from '@/server/claude/client'
 import { prisma } from '@/lib/prisma'
 import { t } from '@/i18n'
 
-/** Alle forslag til forbindelser, sterkest først, med «Legg til alle». */
+/** Forslag til forbindelser, i grupper: ett svar dekker mange forbindelser. */
 export default async function LinksPage() {
   const userId = await requireUserId()
-  const [items, user] = await Promise.all([
-    getLinkSuggestions(userId),
+  const [data, user] = await Promise.all([
+    getGroupSuggestions(userId),
     prisma.user.findUnique({ where: { id: userId }, select: { linksAssessedAt: true } }),
   ])
   return (
@@ -23,7 +22,7 @@ export default async function LinksPage() {
         <p className="text-[15px] text-ink-muted">{t.links.way.body}</p>
       </div>
       {isClaudeEnabled() && <AskClaude lastAt={user?.linksAssessedAt ?? null} />}
-      {items.length === 0 ? <EmptyState title={t.links.empty} className="py-8" /> : <LinkSuggestionList items={items} bulk />}
+      <GroupSuggestions data={data} />
     </div>
   )
 }

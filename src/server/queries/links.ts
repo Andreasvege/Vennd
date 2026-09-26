@@ -1,7 +1,7 @@
 import 'server-only'
 import { prisma } from '@/lib/prisma'
 import { personTint } from '@/lib/palette'
-import { answeredPairs, claudeExtras, linkCandidates, pairKey, withAssessments, type LinkRow } from '@/domain/linkSuggestions'
+import { answeredPairs, hubClusters, insightPairs, linkCandidates, pairKey, withAssessments, type LinkRow } from '@/domain/linkSuggestions'
 import { onMap } from './visibility'
 
 /**
@@ -43,18 +43,13 @@ export async function loadLinkState(userId: string) {
  * gjelder personen (til profilen).
  */
 export async function getLinkSuggestions(userId: string, personId?: string, limit?: number) {
-  const { people, rels, rows, candidates } = await loadLinkState(userId)
+  const { people, rows, candidates } = await loadLinkState(userId)
   const byId = new Map(people.map((p) => [p.id, p]))
   const person = (id: string) => {
     const p = byId.get(id)!
     return { id: p.id, name: p.name, tint: p.tint, photoUrl: p.photoUrl }
   }
-  // Regelforslagene (med Claudes vurdering oppå), og forslagene Claude fant selv.
-  const linked = new Set(rels.map((r) => pairKey(r.from, r.to)))
-  const views = [
-    ...withAssessments(candidates, rows),
-    ...claudeExtras(rows, candidates, linked, new Set(people.map((p) => p.id))),
-  ].filter((v) => !personId || v.a === personId || v.b === personId)
+  const views = withAssessments(candidates, rows).filter((v) => !personId || v.a === personId || v.b === personId)
   return views.slice(0, limit ?? views.length).map((v) => ({
     a: person(v.a),
     b: person(v.b),
@@ -69,3 +64,43 @@ export async function getLinkSuggestions(userId: string, personId?: string, limi
 }
 
 export type LinkSuggestionItem = Awaited<ReturnType<typeof getLinkSuggestions>>[number]
+
+/**
+ * Forslagene i grupper: innsiktene fra Claude (når du har spurt), og
+ * reglenes grupper («Kjenner vennene til Nora hverandre?»). Bare det som
+ * faktisk er nytt, og bare folk som står på kartet.
+ */
+export async function getGroupSuggestions(userId: string) {
+  const [{ people, rels, candidates }, insights] = await Promise.all([
+    loadLinkState(userId),
+    prisma.linkInsight.findMany({ where: { userId, status: 'OPEN' }, orderBy: { createdAt: 'asc' } }),
+  ])
+  const byId = new Map(people.map((p) => [p.id, p]))
+  const person = (id: string) => {
+    const p = byId.get(id)
+    return p ? [{ id: p.id, name: p.name, tint: p.tint, photoUrl: p.photoUrl }] : []
+  }
+  const linked = new Set(rels.map((r) => pairKey(r.from, r.to)))
+
+  const fromClaude = insights.flatMap((i) => {
+    const hub = i.hubId ? person(i.hubId)[0] : null
+    if (i.hubId && !hub) return []
+    const members = (i.memberIds as string[]).flatMap(person)
+    const kind = i.kind === 'hub' ? ('hub' as const) : ('group' as const)
+    const fresh = insightPairs(kind, i.hubId, members.map((m) => m.id)).filter(([a, b]) => !linked.has(pairKey(a, b)))
+    if (fresh.length === 0) return []
+    return [{ id: i.id, title: i.title, reason: i.reason, kind, hub, members, type: i.type, label: i.label, groupName: i.groupName, count: fresh.length }]
+  })
+
+  const fromRules = hubClusters(candidates).flatMap((c) => {
+    const hub = person(c.hub)[0]
+    if (!hub) return []
+    return [{ key: `hub:${c.hub}`, hub, members: c.members.flatMap(person), pairs: c.pairs, type: c.type }]
+  })
+
+  return { fromClaude, fromRules }
+}
+
+export type GroupSuggestions = Awaited<ReturnType<typeof getGroupSuggestions>>
+export type InsightItem = GroupSuggestions['fromClaude'][number]
+export type ClusterItem = GroupSuggestions['fromRules'][number]

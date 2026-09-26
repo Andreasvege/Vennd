@@ -234,3 +234,7 @@ export const linkPairs = z.array(linkPair).min(1).max(500)
 const coordinate = z.number().finite().min(-100_000).max(100_000)
 export const positionList = z.array(z.object({ id, x: coordinate, y: coordinate })).min(1).max(2000)
 export type PositionList = z.infer<typeof positionList>
+
+// «Legg til» på en innsikt: hvem av medlemmene, og om miljøet skal lages.
+export const acceptInsightInput = z.object({ id, memberIds: z.array(id).max(200), createGroup: z.boolean() })
+export type AcceptInsightInput = z.infer<typeof acceptInsightInput>
