@@ -20,7 +20,8 @@ type CardProps = {
   reason: string
   fromClaude?: boolean
   hub: Person | null
-  members: Person[]
+  /** Én side (alle i gruppen) eller to (kjenner de på hver side hverandre?). */
+  sides: { label: string; members: Person[] }[]
   /** Hvor mange nye forbindelser de valgte gir. */
   count: (selected: string[]) => number
   groupName?: string | null
@@ -32,7 +33,8 @@ type CardProps = {
  * Én påstand om en gruppe, ett svar: «Legg til alle», «Velg hvem» eller
  * «Nei takk». Et besvart kort forsvinner med en gang.
  */
-function GroupCard({ title, reason, fromClaude, hub, members, count, groupName, onAccept, onDismiss }: CardProps) {
+function GroupCard({ title, reason, fromClaude, hub, sides, count, groupName, onAccept, onDismiss }: CardProps) {
+  const members = sides.flatMap((side) => side.members)
   const [selected, setSelected] = useState(members.map((m) => m.id))
   const [choosing, setChoosing] = useState(false)
   const [createGroup, setCreateGroup] = useState(Boolean(groupName))
@@ -63,40 +65,57 @@ function GroupCard({ title, reason, fromClaude, hub, members, count, groupName, 
       </div>
 
       {choosing ? (
-        <ToggleButtonGroup
-          aria-label={t.links.choose}
-          selectionMode="multiple"
-          selectedKeys={selected}
-          onSelectionChange={(keys) => setSelected([...keys].map(String))}
-          className="flex flex-wrap gap-2"
-        >
-          {members.map((m) => (
-            <ToggleButton key={m.id} id={m.id} className={`${chipBase} pl-1.5`}>
-              <Avatar name={m.name} tint={m.tint} src={m.photoUrl} size="sm" decorative />
-              {m.name}
-            </ToggleButton>
+        <div className="flex flex-col gap-3">
+          {sides.map((side, i) => (
+            <div key={i} className="flex flex-col gap-1.5">
+              {sides.length > 1 && <span className="text-[12px] uppercase tracking-[0.12em] text-ink-muted">{side.label || t.links.noGroup}</span>}
+              <ToggleButtonGroup
+                aria-label={side.label || t.links.choose}
+                selectionMode="multiple"
+                selectedKeys={selected.filter((id) => side.members.some((m) => m.id === id))}
+                onSelectionChange={(keys) => {
+                  const here = new Set(side.members.map((m) => m.id))
+                  setSelected((prev) => [...prev.filter((id) => !here.has(id)), ...[...keys].map(String)])
+                }}
+                className="flex flex-wrap gap-2"
+              >
+                {side.members.map((m) => (
+                  <ToggleButton key={m.id} id={m.id} className={`${chipBase} pl-1.5`}>
+                    <Avatar name={m.name} tint={m.tint} src={m.photoUrl} size="sm" decorative />
+                    {m.name}
+                  </ToggleButton>
+                ))}
+              </ToggleButtonGroup>
+            </div>
           ))}
-        </ToggleButtonGroup>
+        </div>
       ) : (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <div className="flex flex-col gap-2">
           {hub && (
             <span className="flex items-center gap-1.5 text-[13px] text-ink">
               <Avatar name={hub.name} tint={hub.tint} src={hub.photoUrl} size="sm" decorative />
               {t.links.hubReason(hub.name)}:
             </span>
           )}
-          <span className="flex -space-x-2">
-            {members.slice(0, 12).map((m) => (
-              <Avatar key={m.id} name={m.name} tint={m.tint} src={m.photoUrl} size="sm" decorative />
-            ))}
-          </span>
-          <span className="text-[13px] text-ink-muted">
-            {members
-              .slice(0, 6)
-              .map((m) => m.name.split(' ')[0])
-              .join(', ')}
-            {members.length > 6 ? ` +${members.length - 6}` : ''}
-          </span>
+          {sides.map((side, i) => (
+            <div key={i} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              {sides.length > 1 && (
+                <span className="w-24 shrink-0 truncate text-[12px] uppercase tracking-[0.12em] text-ink-muted">{side.label || t.links.noGroup}</span>
+              )}
+              <span className="flex -space-x-2">
+                {side.members.slice(0, 10).map((m) => (
+                  <Avatar key={m.id} name={m.name} tint={m.tint} src={m.photoUrl} size="sm" decorative />
+                ))}
+              </span>
+              <span className="min-w-0 text-[13px] text-ink-muted">
+                {side.members
+                  .slice(0, 5)
+                  .map((m) => m.name.split(' ')[0])
+                  .join(', ')}
+                {side.members.length > 5 ? ` +${side.members.length - 5}` : ''}
+              </span>
+            </div>
+          ))}
         </div>
       )}
 
@@ -150,7 +169,7 @@ export function GroupSuggestions({ data }: { data: Data }) {
       reason={i.reason}
       fromClaude
       hub={i.hub}
-      members={i.members}
+      sides={[{ label: '', members: i.members }]}
       count={(sel) => insightPairs(i.kind, i.hub?.id ?? null, sel).length}
       groupName={i.groupName}
       onAccept={async (sel, createGroup) => report(await settle(acceptInsight({ id: i.id, memberIds: sel, createGroup })))}
@@ -161,10 +180,10 @@ export function GroupSuggestions({ data }: { data: Data }) {
   const clusterCard = (c: ClusterItem) => (
     <GroupCard
       key={c.key}
-      title={t.links.clusterTitle(c.hub.name, c.members.map((m) => m.name))}
-      reason={t.links.clusterReason(c.hub.name, c.members.length)}
+      title={t.links.clusterTitle(c.sides[0].label, c.sides[1]?.label ?? null)}
+      reason={t.links.clusterReason(c.hubs, c.sameSurname)}
       hub={null}
-      members={c.members}
+      sides={c.sides}
       count={(sel) => c.pairs.filter(([a, b]) => sel.includes(a) && sel.includes(b)).length}
       onAccept={async (sel) =>
         report(await settle(acceptLinks(c.pairs.filter(([a, b]) => sel.includes(a) && sel.includes(b)))))

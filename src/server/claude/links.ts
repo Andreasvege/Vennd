@@ -2,7 +2,7 @@ import 'server-only'
 import { z } from 'zod/v4'
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod'
 import { prisma } from '@/lib/prisma'
-import { hubClusters, idByName, insightPairs, pairKey } from '@/domain/linkSuggestions'
+import { groupClusters, idByName, insightPairs, pairKey } from '@/domain/linkSuggestions'
 import { summarizeNetwork } from '@/domain/networkSummary'
 import { loadLinkState } from '@/server/queries/links'
 import { claude, suggestModel } from './client'
@@ -70,9 +70,18 @@ export async function assessNetwork(userId: string): Promise<AssessResult> {
       (type) => (t.relationType as Record<string, string>)[type]?.toLowerCase() ?? type,
     )
     // Reglenes grupper som utgangspunkt; Claude kan slå sammen, dele og gi dem mening.
-    const clusters = hubClusters(candidates)
+    const clusters = groupClusters(
+      candidates,
+      people.map((p) => ({ id: p.id, name: p.name, groupId: p.primaryTagId })),
+      rels,
+      new Map(tags.map((tag) => [tag.id, tag.name])),
+    )
       .slice(0, 30)
-      .map((c) => `- Folk ${names.get(c.hub)} kjenner, som ikke er koblet: ${c.members.map((m) => names.get(m)).join(', ')}`)
+      .map((c) => {
+        const side = (ids: string[]) => ids.map((id) => names.get(id)).join(', ')
+        const via = c.hubs.length ? ` (felles: ${c.hubs.map((h) => names.get(h)).join(', ')})` : ''
+        return c.b ? `- ${side(c.a.ids)} ↔ ${side(c.b.ids)}${via}` : `- ${side(c.a.ids)}${via}`
+      })
       .join('\n')
 
     const response = await claude().messages.parse({

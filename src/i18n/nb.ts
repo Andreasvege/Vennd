@@ -5,9 +5,6 @@
 // knapper som sier nøyaktig hva som skjer («Lagre», ikke «Send inn»).
 // Feilmeldinger forklarer hva som gikk galt og hva du kan gjøre.
 
-// Genitiv på norsk: «Noras», men «Jonas'» når navnet slutter på s, x eller z.
-const possessive = (name: string) => (/[sxz]$/i.test(name) ? `${name}'` : `${name}s`)
-
 export const nb = {
   time: {
     today: 'i dag',
@@ -266,14 +263,18 @@ export const nb = {
     fromClaudeTitle: 'Fra Claude',
     fromRulesTitle: 'Kjenner de hverandre?',
     fromRulesLead: 'Folk som samme person kjenner, men som ikke er koblet til hverandre.',
-    clusterTitle: (hub: string, members: string[]) =>
-      members.length === 2
-        ? `Kjenner ${members[0].split(' ')[0]} og ${members[1].split(' ')[0]} hverandre?`
-        : `Kjenner ${possessive(hub.split(' ')[0])} folk hverandre?`,
-    clusterReason: (hub: string, n: number) => `${n === 2 ? 'Begge' : `Alle ${n}`} kjenner ${hub.split(' ')[0]}.`,
+    clusterTitle: (a: string, b: string | null) =>
+      b !== null ? `${a || 'Uten miljø'} og ${b || 'uten miljø'}: kjenner de hverandre?` : a ? `${a}: kjenner de hverandre?` : 'Kjenner de hverandre?',
+    clusterReason: (hubs: string[], sameSurname: boolean) =>
+      hubs.length
+        ? `De kjenner begge ${hubs.map((h) => h.split(' ')[0]).join(' og ')}.`
+        : sameSurname
+          ? 'Samme etternavn.'
+          : 'Samme miljø.',
     hubReason: (hub: string) => `${hub.split(' ')[0]} kjenner dem alle`,
     addAllN: (n: number) => (n === 1 ? 'Legg til forbindelsen' : `Legg til ${n} forbindelser`),
     choose: 'Velg hvem',
+    noGroup: 'Uten miljø',
     noThanks: 'Nei takk',
     createGroup: (name: string) => `Lag miljøet «${name}»`,
     moreClusters: (n: number) => `Vis ${n} til`,
