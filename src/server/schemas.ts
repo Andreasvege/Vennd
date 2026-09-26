@@ -218,3 +218,7 @@ export const assignGroupInput = z.object({
 export const personIdList = z.array(id).min(1).max(1000)
 export type SortPersonInput = z.infer<typeof sortPersonInput>
 export type AssignGroupInput = z.infer<typeof assignGroupInput>
+
+// Forslag til forbindelser: et par av personer.
+export const linkPair = z.tuple([id, id]).refine(([a, b]) => a !== b)
+export const linkPairs = z.array(linkPair).min(1).max(500)

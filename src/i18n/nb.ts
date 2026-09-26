@@ -233,6 +233,25 @@ export const nb = {
     unsortedBadge: 'usortert',
   },
 
+  links: {
+    title: 'Forslag til forbindelser',
+    profileTitle: 'Kjenner kanskje',
+    way: { title: 'Forslag til forbindelser', body: 'Hvem kjenner trolig hverandre, ut fra det du alt har tegnet.' },
+    count: (n: number) => `${n} ${n === 1 ? 'forslag' : 'forslag'}`,
+    pair: (a: string, b: string) => `${a} og ${b}`,
+    what: (label: string | null, type: string) => label ?? type,
+    knowEachOther: 'kjenner hverandre',
+    because: (names: string[], more: number, surname: string | null) =>
+      `Begge kjenner ${names.join(', ').replace(/, ([^,]*)$/, ' og $1')}${more > 0 ? ` og ${more} til` : ''}${surname ? `, og heter ${surname}` : ''}`,
+    fromClaude: 'fra Claude',
+    add: 'Legg til',
+    dismissLabel: (pair: string) => `Ikke foreslå ${pair}`,
+    addAll: (n: number) => `Legg til alle ${n}`,
+    added: (n: number) => (n === 1 ? 'La til forbindelsen.' : `La til ${n} forbindelser.`),
+    empty: 'Ingen forslag akkurat nå. De kommer etter hvert som du tegner relasjoner.',
+    thinking: 'Claude ser på nye forslag i bakgrunnen.',
+  },
+
   rhythm: {
     every: (days: number) => {
       if (days <= 1) return 'hver dag'
