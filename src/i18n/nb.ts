@@ -513,6 +513,8 @@ export const nb = {
     logContact: 'Logg',
     viewProfile: 'Profil',
     dragToConnect: 'Dra for å koble',
+    connectTo: 'Koble til',
+    neverLogged: 'aldri logget',
     emptyTitle: 'Kartet ditt er tomt',
     emptyBody: 'Legg til en du har truffet i det siste.',
     legend: 'Forklaring',

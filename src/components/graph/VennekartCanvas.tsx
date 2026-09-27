@@ -11,9 +11,9 @@ import {
   useReactFlow,
   type Edge,
   type FinalConnectionState,
+  type NodeChange,
   type Node,
 } from '@xyflow/react'
-import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { fadeFor } from '@/domain/freshness'
 import { easeInOut, interpolate } from '@/domain/interpolate'
@@ -64,7 +64,9 @@ type Props = {
   mode: MapMode
   /** En sti å vise (fra «Se stien»): personer i rekkefølge. */
   highlight: string[]
-  onAddLog: (personId: string) => void
+  /** Hvem som er valgt. På PC styres det av adressen (profilen i panelet). */
+  selectedId: string | null
+  onSelect: (personId: string | null) => void
   onDerivedClick: (a: string, b: string) => void
   /** Et drag som skal bli en kobling: kortet åpnes der du slapp. */
   onConnectRequest: (request: ConnectRequest) => void
@@ -84,14 +86,14 @@ export function VennekartCanvas({
   model,
   mode,
   highlight,
-  onAddLog,
+  selectedId,
+  onSelect,
   onDerivedClick,
   onConnectRequest,
   onHoverPerson,
   onError,
   refit = 0,
 }: Props) {
-  const router = useRouter()
   const { data: session } = useSession()
   const flow = useReactFlow()
   const reducedMotion = usePrefersReducedMotion()
@@ -139,7 +141,7 @@ export function VennekartCanvas({
           id: p.id,
           type: 'person',
           position: { x: c.x, y: c.y - PERSON_TOP },
-          selected: current.get(p.id)?.selected ?? false,
+          selected: p.id === selectedId,
           data: {
             id: p.id,
             name: p.name,
@@ -148,8 +150,6 @@ export function VennekartCanvas({
             fade: fadeFor(fresh.get(p.id) ?? 0),
             // I Nærhet og Kretser står folk fast; der betyr et drag fra personen «koble».
             connectFromBody: mode !== 'network',
-            onAddLog,
-            onViewProfile: (id: string) => router.push(`/person/${id}`),
           } satisfies PersonNodeData,
         }
       }),
@@ -202,10 +202,33 @@ export function VennekartCanvas({
       step(now)
     })
     return () => cancelAnimationFrame(raf)
-  }, [visible, targets, fresh, mode, session, onAddLog, router, flow, setNodes, reducedMotion, refit])
+  }, [visible, targets, fresh, mode, session, selectedId, flow, setNodes, reducedMotion, refit])
 
-  // Valgt person: deres forbindelser trer fram, resten tones ned.
-  const selectedId = nodes.find((n) => n.selected && n.id !== ME_ID)?.id ?? null
+  // Valgt fra et annet sted (søk, en lenke) og utenfor synsfeltet: gli dit.
+  useEffect(() => {
+    if (!selectedId) return
+    const node = flow.getNode(selectedId)
+    const box = document.querySelector('.react-flow')?.getBoundingClientRect()
+    if (!node || !box) return
+    const at = flow.flowToScreenPosition({ x: node.position.x, y: node.position.y + PERSON_TOP })
+    const margin = 80
+    const inside =
+      at.x > box.left + margin && at.x < box.right - margin && at.y > box.top + margin && at.y < box.bottom - margin
+    if (inside) return
+    flow.setCenter(node.position.x, node.position.y + PERSON_TOP, {
+      zoom: Math.max(flow.getZoom(), 0.8),
+      duration: reducedMotion ? 0 : 400,
+    })
+  }, [selectedId, flow, reducedMotion])
+
+  // Valg går via onSelect, så PC-en kan vise profilen i panelet. React Flow
+  // melder valg både fra mus og tastatur (Enter på en person).
+  const handleNodesChange = (changes: NodeChange[]) => {
+    for (const c of changes) {
+      if (c.type === 'select' && c.selected && c.id !== ME_ID && c.id !== selectedId) onSelect(c.id)
+    }
+    onNodesChange(changes.filter((c) => c.type !== 'select'))
+  }
 
   // Kanter: stråler fra deg (bare i Nettverk), relasjoner og «ofte sammen».
   // Vises en sti, tegnes den med rødblyant og alt annet tones ned.
@@ -341,7 +364,8 @@ export function VennekartCanvas({
     <ReactFlow
       nodes={nodes}
       edges={edges}
-      onNodesChange={onNodesChange}
+      onNodesChange={handleNodesChange}
+      onPaneClick={() => selectedId && onSelect(null)}
       onEdgesChange={onEdgesChange}
       onConnectEnd={onConnectEnd}
       // Et klikk på en person skal velge dem, ikke starte en kobling.

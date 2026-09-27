@@ -41,7 +41,8 @@ export function AppHeader({ unsorted = 0 }: { unsorted?: number }) {
         <nav aria-label={t.nav.main} className="hidden desk:block">
           <ul className="flex gap-7 text-[14px]">
             {links.map((l) => {
-              const active = l.href === '/' ? pathname === '/' : pathname.startsWith(l.href)
+              // Kartet bor både på forsiden og på /kart.
+              const active = l.href === '/' ? pathname === '/' || pathname === '/kart' : pathname.startsWith(l.href)
               return (
                 <li key={l.href}>
                   <Link
