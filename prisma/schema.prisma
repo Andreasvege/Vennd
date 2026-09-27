@@ -350,6 +350,8 @@ enum SuggestionKind {
   FACT
   PARTICIPANT
   PERSON
+  // To i loggen som kjenner hverandre: «Ingrid og Jonas er kjærester».
+  RELATIONSHIP
 }
 
 enum SuggestionStatus {

@@ -50,7 +50,8 @@ type Props = {
   isOpen: boolean
   onClose: () => void
   /** Kalles med loggens id når den er lagret. */
-  onSaved?: (logId: string) => void
+  /** Loggen er lagret; `hasText` sier om det er noe for Claude å lese. */
+  onSaved?: (logId: string, hasText: boolean) => void
   data: ComposerData
   /** Forhåndsutfylt, f.eks. fra en profil eller en plan. Uten personer gjenopprettes kladden. */
   preset?: ComposerPreset
@@ -198,7 +199,7 @@ export function Composer({ isOpen, onClose, onSaved, data, preset = {} }: Props)
     // En logg fra en profil har ikke rørt kladden; den skal ligge der til neste gang.
     if (!presetPersonIds?.length) draft.clear()
     toast(t.composer.saved(result.data.closed, result.data.opened))
-    onSaved?.(result.data.id)
+    onSaved?.(result.data.id, text.trim().length > 0)
     onClose()
   }
 

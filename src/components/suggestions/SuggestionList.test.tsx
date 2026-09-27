@@ -13,8 +13,8 @@ import { SuggestionList } from './SuggestionList'
 import { ToastProvider } from '@/components/toast/ToastProvider'
 
 const items = [
-  { id: 's1', kind: 'THREAD' as const, title: 'Andre intervjurunde', people: ['Ingrid Aas'] },
-  { id: 's2', kind: 'PERSON' as const, name: 'Kari Nordmann', log: 'Middag hos Kari' },
+  { id: 's1', logId: 'l1', kind: 'THREAD' as const, title: 'Andre intervjurunde', people: ['Ingrid Aas'] },
+  { id: 's2', logId: 'l1', kind: 'PERSON' as const, name: 'Kari Nordmann', log: 'Middag hos Kari' },
 ]
 
 beforeEach(() => {

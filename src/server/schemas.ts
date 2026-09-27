@@ -3,6 +3,7 @@ import { TAG_COLORS } from '@/lib/palette'
 import { MAP_MODES } from '@/domain/mapMode'
 import { LOG_TYPES } from '@/domain/logTypes'
 import { SEEN_CHOICES } from '@/domain/enrich'
+import { TELL_TYPES } from '@/domain/tell'
 
 // Alt som kommer inn i en server action, valideres her. Skjemaene er rene
 // og testes direkte; handlingene bare kaller safeParse.
@@ -207,6 +208,7 @@ export const suggestionPayload = {
   FACT: z.object({ personId: id, label: factInput.shape.label, value: factInput.shape.value }),
   PARTICIPANT: z.object({ personId: id }),
   PERSON: z.object({ name: z.string().trim().min(1).max(120) }),
+  RELATIONSHIP: z.object({ aId: id, bId: id, type: z.enum(RELATIONSHIP_TYPES), label: z.string().trim().max(60).nullable() }),
 } as const
 
 // Å rette en logg i ettertid: tekst, dag, type og hvem som var med.
@@ -245,6 +247,19 @@ export const enrichPersonInput = z.object({
   seen: z.object({ choice: z.enum(SEEN_CHOICES), on: isoDate }).nullable(),
 })
 export type EnrichPersonInput = z.infer<typeof enrichPersonInput>
+// «Fortell om»: teksten du skrev, og forslagene du valgte å legge inn.
+export const tellInput = z.object({ personId: id, text: z.string().trim().min(3).max(4000) })
+const tellRef = z.union([z.object({ id, name: z.string() }), z.object({ id: z.null(), name: z.string().trim().min(1).max(120) })])
+export const tellProposal = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('LABEL'), personId: id, label: z.string().trim().min(1).max(60) }),
+  z.object({ kind: z.literal('BIRTHDAY'), personId: id, date: isoDate }),
+  z.object({ kind: z.literal('GROUP'), personId: id, tagId: id.nullable(), name: tagName }),
+  z.object({ kind: z.literal('FACT'), personId: id, name: z.string(), label: z.string().trim().min(1).max(40), value: z.string().trim().min(1).max(200) }),
+  z.object({ kind: z.literal('RELATION'), a: tellRef, b: tellRef, type: z.enum(TELL_TYPES), label: z.string().trim().max(60).nullable() }),
+  z.object({ kind: z.literal('THREAD'), title: z.string().trim().min(1).max(120), personIds: z.array(id).min(1).max(10), dueDate: isoDate.nullable() }),
+])
+export const applyTellInput = z.object({ personId: id, proposals: z.array(tellProposal).min(1).max(40) })
+export type ApplyTellInput = z.infer<typeof applyTellInput>
 export const assignGroupInput = z.object({
   tagId: id,
   personIds: z.array(id).max(500),

@@ -6,6 +6,7 @@ import { currentPhase } from '@/domain/romance'
 import { t } from '@/i18n'
 import { getLastContact } from './lastContact'
 import { onMap } from './visibility'
+import { isClaudeEnabled } from '@/server/claude/client'
 
 // Telefon og e-post kommer fra importen; de sier ikke noe om hvem personen er.
 const IMPORTED: string[] = [t.import.phoneLabel, t.import.emailLabel]
@@ -91,6 +92,7 @@ export async function getEnrichData(userId: string, filter: { only?: string[]; t
     pairs: relationships.map((r) => [r.fromPersonId, r.toPersonId] as [string, string]),
     /** Hvor mange på kartet det mangler noe om, for inngangen på Bygg kartet. */
     withGaps: shaped.filter((p) => p.gaps.length > 0).length,
+    aiEnabled: isClaudeEnabled(),
   }
 }
 
