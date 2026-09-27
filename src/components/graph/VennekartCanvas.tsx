@@ -230,21 +230,30 @@ export function VennekartCanvas({
   }, [selectedId, nodes, setNodes])
 
   // Valgt fra et annet sted (søk, en lenke) og utenfor synsfeltet: gli dit.
+  // Venter til kartet har tegnet seg og tilpasset utsnittet første gang,
+  // ellers overstyrer den første «vis alt» dette.
+  const ready = nodes.length > 0
   useEffect(() => {
-    if (!selectedId) return
-    const node = flow.getNode(selectedId)
-    const box = document.querySelector('.react-flow')?.getBoundingClientRect()
-    if (!node || !box) return
-    const at = flow.flowToScreenPosition({ x: node.position.x, y: node.position.y + PERSON_TOP })
-    const margin = 80
-    const inside =
-      at.x > box.left + margin && at.x < box.right - margin && at.y > box.top + margin && at.y < box.bottom - margin
-    if (inside) return
-    flow.setCenter(node.position.x, node.position.y + PERSON_TOP, {
-      zoom: Math.max(flow.getZoom(), 0.8),
-      duration: reducedMotion ? 0 : 400,
-    })
-  }, [selectedId, flow, reducedMotion])
+    if (!selectedId || !ready) return
+    const timer = setTimeout(() => {
+      const node = flow.getNode(selectedId)
+      const box = document.querySelector('.react-flow')?.getBoundingClientRect()
+      if (!node || !box) return
+      const at = flow.flowToScreenPosition({ x: node.position.x, y: node.position.y + PERSON_TOP })
+      const margin = 80
+      // På mobil ligger personlinjen over den nederste delen av kartet.
+      const bottom = narrow ? 220 : margin
+      const inside =
+        at.x > box.left + margin && at.x < box.right - margin && at.y > box.top + margin && at.y < box.bottom - bottom
+      if (inside) return
+      // Litt over midten på mobil, så de ikke havner bak personlinjen.
+      flow.setCenter(node.position.x, node.position.y + PERSON_TOP + (narrow ? 90 / Math.max(flow.getZoom(), 0.8) : 0), {
+        zoom: Math.max(flow.getZoom(), 0.8),
+        duration: reducedMotion ? 0 : 400,
+      })
+    }, 120)
+    return () => clearTimeout(timer)
+  }, [selectedId, ready, flow, reducedMotion, narrow])
 
   // Valg går via onSelect, så PC-en kan vise profilen i panelet. React Flow
   // melder valg både fra mus og tastatur (Enter på en person).

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore, useTransition } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { ReactFlowProvider } from '@xyflow/react'
 import { Layers, Link2, Sparkles, Undo2, UserPlus } from 'lucide-react'
 import { Button, EmptyState } from '@/components/ui'
@@ -103,7 +103,11 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
 
   // Valgt person. På PC er det profilen i sidepanelet (adressen /person/…,
   // mens kartet blir stående); på mobil en linje nederst på kartet.
-  const [mobileSelected, setMobileSelected] = useState<string | null>(null)
+  // «Vis i kartet» fra en profil: /kart?person=<id> velger dem med en gang.
+  const shown = useSearchParams().get('person')
+  const [mobileSelected, setMobileSelected] = useState<string | null>(() =>
+    shown && graph.persons.some((p) => p.id === shown) ? shown : null,
+  )
   const profileId = pathname.startsWith('/person/') ? pathname.split('/')[2] : null
   const selectedId = desk ? profileId : mobileSelected
   const selectedPerson = selectedId ? graph.persons.find((p) => p.id === selectedId) : undefined
@@ -117,6 +121,13 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
     if (profileId) router.replace(`/person/${id}`, { scroll: false })
     else router.push(`/person/${id}`, { scroll: false })
   }
+
+  // På PC er valget profilen i panelet: bytt adressen, så panelet åpnes.
+  useEffect(() => {
+    if (desk && shown && !profileId && graph.persons.some((p) => p.id === shown)) {
+      router.replace(`/person/${shown}`, { scroll: false })
+    }
+  }, [desk, shown, profileId, graph.persons, router])
 
   // Esc lukker profilen i panelet (PC) eller personlinjen (mobil), når ingen
   // dialog er åpen. På mobil lukker profilarket seg selv; da gjør vi ingenting.

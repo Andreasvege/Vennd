@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, CircleCheck, Pencil } from 'lucide-react'
+import { ArrowRight, CircleCheck, Map as MapIcon, Pencil } from 'lucide-react'
 import { Avatar } from '@/components/ui/Avatar'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { buttonClass } from '@/components/ui/button-styles'
@@ -150,6 +150,11 @@ export function PersonProfile({ person }: { person: PersonProfileData }) {
               {t.common.edit}
             </Link>
             {person.aiEnabled && <TellButton person={{ id: person.id, name: person.name }} />}
+            {/* På mobil dekker profilen kartet; herfra kommer du dit, med henne i fokus. */}
+            <Link href={`/kart?person=${person.id}`} className={`${buttonClass('quiet')} desk:hidden`}>
+              <MapIcon aria-hidden size={15} strokeWidth={1.75} />
+              {t.today.showOnMap(person.name)}
+            </Link>
             {gaps.length > 0 && (
               <Link
                 href={`/sorter/fyll?ids=${person.id}`}
