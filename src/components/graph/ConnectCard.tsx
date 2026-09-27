@@ -4,7 +4,7 @@ import { useRef, useState } from 'react'
 import { Dialog, Heading, Popover } from 'react-aria-components'
 import { Button, ChipGroup, TextField, Toggle, Avatar } from '@/components/ui'
 import { TYPE_OPTIONS } from '@/components/person/type-options'
-import { createConnectedPerson, createRelationship, updateRelationship } from '@/server/actions/relationship'
+import { createConnectedPerson, createRelationship, deleteRelationship, updateRelationship } from '@/server/actions/relationship'
 import { settle } from '@/server/actions/result'
 import type { Proximity } from '@/server/queries/proximity'
 import type { MapPerson, MapRelationship, MapTag } from '@/server/queries/graph'
@@ -14,7 +14,14 @@ import { t } from '@/i18n'
 
 /** Hva et drag på kartet ble til: mellom to personer, eller ut i tomrommet. */
 export type ConnectRequest =
-  | { kind: 'pair'; a: string; b: string; at: Point }
+  | {
+      kind: 'pair'
+      a: string
+      b: string
+      at: Point
+      /** Fra et klikk på en strek: nettopp den koblingen (to kan ha flere). */
+      relationshipId?: string
+    }
   | { kind: 'new'; from: string; at: Point; flowAt: Point | null }
 
 type Props = {
@@ -41,7 +48,11 @@ export function ConnectCard({ request, persons, relationships, tags, onClose, on
   // Et navn som finnes fra før, gjør «ny person» om til en kobling.
   const [target, setTarget] = useState<string | null>(request.kind === 'pair' ? request.b : null)
   const source = request.kind === 'pair' ? request.a : request.from
-  const existing = target ? relationships.find((r) => samePair(r, source, target)) : undefined
+  const fromEdge = request.kind === 'pair' && request.relationshipId !== undefined
+  const existing =
+    (request.kind === 'pair' && request.relationshipId
+      ? relationships.find((r) => r.id === request.relationshipId)
+      : undefined) ?? (target ? relationships.find((r) => samePair(r, source, target)) : undefined)
 
   const [type, setType] = useState<RelationshipType>(existing?.type ?? 'FRIEND')
   const [label, setLabel] = useState(existing?.label ?? '')
@@ -74,9 +85,9 @@ export function ConnectCard({ request, persons, relationships, tags, onClose, on
     let proximities: Proximity[] = []
     if (existing) {
       // Var koblingen avsluttet, betyr et nytt drag at de har kontakt igjen.
-      const res = await settle(
-        updateRelationship(existing.id, { type, label: clean, ...(existing.until && { until: null }) }),
-      )
+      // Et klikk på den stiplede streken er bare for å rette den.
+      const reopen = existing.until && !fromEdge
+      const res = await settle(updateRelationship(existing.id, { type, label: clean, ...(reopen && { until: null }) }))
       if (!res.ok) return fail(res.error)
     } else if (target) {
       const res = await settle(createRelationship({ fromPersonId: source, toPersonId: target, type, label: clean }))
@@ -99,6 +110,15 @@ export function ConnectCard({ request, persons, relationships, tags, onClose, on
     }
     setSaving(false)
     onDone(proximities)
+  }
+  // Koblingen var feil: bort med den. Et nytt drag lager den igjen.
+  const remove = async () => {
+    if (!existing || saving) return
+    setSaving(true)
+    const res = await settle(deleteRelationship(existing.id))
+    if (!res.ok) return fail(res.error)
+    setSaving(false)
+    onDone([])
   }
   const fail = (key: keyof typeof t.errors) => {
     setSaving(false)
@@ -161,7 +181,7 @@ export function ConnectCard({ request, persons, relationships, tags, onClose, on
 
             {existing && (
               <p className="-mt-2 text-[13px] text-ink-muted">
-                {existing.until
+                {existing.until && !fromEdge
                   ? t.connect.ended(t.relationType[existing.type].toLowerCase())
                   : t.connect.already(t.relationType[existing.type].toLowerCase())}
               </p>
@@ -185,13 +205,18 @@ export function ConnectCard({ request, persons, relationships, tags, onClose, on
               </p>
             )}
             <div className="flex justify-end gap-2">
+              {existing && (
+                <Button variant="quiet" onPress={remove} isDisabled={saving} className="mr-auto text-redpencil">
+                  {t.connect.remove}
+                </Button>
+              )}
               <Button variant="quiet" onPress={onClose}>
                 {t.common.cancel}
               </Button>
               <Button variant="primary" type="submit" isDisabled={saving || (!to && !name.trim())}>
                 {saving
                   ? t.common.saving
-                  : existing?.until
+                  : existing?.until && !fromEdge
                     ? t.connect.reconnect
                     : existing
                       ? t.connect.save
