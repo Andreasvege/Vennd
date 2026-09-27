@@ -4,7 +4,7 @@ import { useRef, useState } from 'react'
 import { Dialog, Heading, Popover } from 'react-aria-components'
 import { Button, ChipGroup, TextField, Toggle, Avatar } from '@/components/ui'
 import { TYPE_OPTIONS } from '@/components/person/type-options'
-import { createConnectedPerson, createRelationship, updateRelationship } from '@/server/actions/relationship'
+import { createConnectedPerson, createRelationship, deleteRelationship, updateRelationship } from '@/server/actions/relationship'
 import { settle } from '@/server/actions/result'
 import type { Proximity } from '@/server/queries/proximity'
 import type { MapPerson, MapRelationship, MapTag } from '@/server/queries/graph'
@@ -100,6 +100,15 @@ export function ConnectCard({ request, persons, relationships, tags, onClose, on
     setSaving(false)
     onDone(proximities)
   }
+  // Koblingen var feil: bort med den. Et nytt drag lager den igjen.
+  const remove = async () => {
+    if (!existing || saving) return
+    setSaving(true)
+    const res = await settle(deleteRelationship(existing.id))
+    if (!res.ok) return fail(res.error)
+    setSaving(false)
+    onDone([])
+  }
   const fail = (key: keyof typeof t.errors) => {
     setSaving(false)
     setError(t.errors[key])
@@ -185,6 +194,11 @@ export function ConnectCard({ request, persons, relationships, tags, onClose, on
               </p>
             )}
             <div className="flex justify-end gap-2">
+              {existing && (
+                <Button variant="quiet" onPress={remove} isDisabled={saving} className="mr-auto text-redpencil">
+                  {t.connect.remove}
+                </Button>
+              )}
               <Button variant="quiet" onPress={onClose}>
                 {t.common.cancel}
               </Button>

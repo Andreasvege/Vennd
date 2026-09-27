@@ -403,14 +403,28 @@ export function VennekartCanvas({
       onNodeDragStop={onNodeDragStop}
       onNodeMouseEnter={(_e, node) => node.id !== ME_ID && onHoverPerson?.(true)}
       onNodeMouseLeave={() => onHoverPerson?.(false)}
-      onEdgeClick={(_e, edge) => {
-        if (edge.type === 'derived') onDerivedClick(edge.source, edge.target)
+      onEdgeClick={(e, edge) => {
+        if (edge.type === 'derived') return onDerivedClick(edge.source, edge.target)
+        // En strek mellom to: se og endre koblingen der du klikket.
+        if (edge.source === ME_ID) return
+        const box = document.querySelector('.react-flow')?.getBoundingClientRect()
+        onConnectRequest({
+          kind: 'pair',
+          a: edge.source,
+          b: edge.target,
+          at: { x: e.clientX - (box?.left ?? 0), y: e.clientY - (box?.top ?? 0) },
+        })
       }}
-      // Tastatur: velg en «ofte sammen»-kant og trykk Enter for å gjøre den til en relasjon.
+      // Tastatur: velg en strek og trykk Enter. «Ofte sammen» blir en
+      // relasjon; en relasjon åpnes for å endres.
       onKeyDown={(e) => {
         if (e.key !== 'Enter') return
-        const edge = flow.getEdges().find((x) => x.selected && x.type === 'derived')
-        if (edge) onDerivedClick(edge.source, edge.target)
+        const edge = flow.getEdges().find((x) => x.selected)
+        if (!edge || edge.source === ME_ID) return
+        if (edge.type === 'derived') return onDerivedClick(edge.source, edge.target)
+        const a = centerOf(edge.source)
+        const b = centerOf(edge.target)
+        if (a && b) onConnectRequest({ kind: 'pair', a: edge.source, b: edge.target, at: boxPoint({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }) })
       }}
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
