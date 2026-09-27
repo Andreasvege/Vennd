@@ -189,3 +189,11 @@ describe('eventStatus', () => {
     expect(status.duplicate).toBe(false)
   })
 })
+
+describe('contactStatus med bindestrek', () => {
+  it('kjenner igjen «Broby-Bergem» som «Broby Bergem»', () => {
+    const persons = [{ id: 'n', name: 'Nora Broby Bergem', birthday: null, emails: [] }]
+    const c = { key: 'c0', name: 'Nora Broby-Bergem', birthday: null, phone: null, email: null, note: null }
+    expect(contactStatus(c, persons)).toEqual({ kind: 'exists', personId: 'n' })
+  })
+})

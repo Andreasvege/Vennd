@@ -1,8 +1,9 @@
 import Link from 'next/link'
-import { ArrowRight, Inbox, Layers, Sparkles, Users } from 'lucide-react'
+import { ArrowRight, Copy, Inbox, Layers, Sparkles, Users } from 'lucide-react'
 import { requireUserId } from '@/server/session'
 import { getSortingData } from '@/server/queries/sorting'
 import { getGroupSuggestions } from '@/server/queries/links'
+import { getDuplicates } from '@/server/queries/duplicates'
 import { t } from '@/i18n'
 
 const WAYS = [
@@ -10,12 +11,13 @@ const WAYS = [
   { href: '/sorter/miljo', icon: Users, ...t.sort.ways.group },
   { href: '/sorter/venter', icon: Inbox, ...t.sort.ways.waiting },
   { href: '/sorter/forbindelser', icon: Sparkles, ...t.links.way },
+  { href: '/sorter/duplikater', icon: Copy, ...t.dupes.way },
 ] as const
 
 /** «Bygg kartet ditt»: tre måter å gi folk en plass, samme sted. */
 export default async function SortPage() {
   const userId = await requireUserId()
-  const [data, groups] = await Promise.all([getSortingData(userId), getGroupSuggestions(userId)])
+  const [data, groups, dupes] = await Promise.all([getSortingData(userId), getGroupSuggestions(userId), getDuplicates(userId)])
   const linkGroups = groups.fromClaude.length + groups.fromRules.length
   const n = data.unsorted.length
 
@@ -46,6 +48,9 @@ export default async function SortPage() {
                   {title}
                   {href === '/sorter/forbindelser' && linkGroups > 0 && (
                     <span className="ml-2 font-sans text-[13px] text-ink-muted">{t.links.count(linkGroups)}</span>
+                  )}
+                  {href === '/sorter/duplikater' && dupes.length > 0 && (
+                    <span className="ml-2 font-sans text-[13px] text-ink-muted">{t.dupes.count(dupes.length)}</span>
                   )}
                 </span>
                 <span className={`text-[14px] ${i === 0 ? 'text-paper/75' : 'text-ink-muted'}`}>{body}</span>

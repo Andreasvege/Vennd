@@ -59,6 +59,7 @@ model User {
   suggestions   Suggestion[]
   links         LinkSuggestion[]
   linkInsights  LinkInsight[]
+  notSame       NotSamePerson[]
   // Sist Claude vurderte forbindelser: én vurdering om gangen, med pause,
   // så raske endringer (kort etter kort) ikke betaler for det samme to ganger.
   linksAssessedAt DateTime?
@@ -100,6 +101,8 @@ model Person {
   threads        ThreadPerson[]
   phases         RomanticPhaseEntry[]
   plans          PlanPerson[]
+  notSameA       NotSamePerson[]  @relation("NotSameA")
+  notSameB       NotSamePerson[]  @relation("NotSameB")
   linksA         LinkSuggestion[] @relation("LinkA")
   linksB         LinkSuggestion[] @relation("LinkB")
   relationsFrom  Relationship[] @relation("FromPerson")
@@ -405,4 +408,18 @@ model LinkInsight {
   createdAt DateTime          @default(now())
 
   @@index([userId, status])
+}
+
+// «Ikke samme person»: to med nesten like navn som du har sagt er to
+// forskjellige. Duplikatsjekken foreslår dem ikke igjen. a < b.
+model NotSamePerson {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aId    String
+  a      Person @relation("NotSameA", fields: [aId], references: [id], onDelete: Cascade)
+  bId    String
+  b      Person @relation("NotSameB", fields: [bId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, aId, bId])
 }
