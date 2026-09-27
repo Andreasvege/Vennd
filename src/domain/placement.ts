@@ -1,4 +1,4 @@
-// Nye personer plasseres på en ring rundt tyngdepunktet av kartet, på
+// Nye personer plasseres på en ring rundt deg (origo i Nettverk), på
 // første ledige plass. Før landet de på tilfeldige koordinater og kunne
 // havne rett oppå noen andre.
 
@@ -11,14 +11,12 @@ const SLOTS_PER_RING = 24
 const MAX_RINGS = 50
 
 export function placeNewPerson(existing: Point[], rng: () => number = Math.random): Point {
-  if (existing.length === 0) return { x: 0, y: 0 }
-
-  const cx = existing.reduce((sum, p) => sum + p.x, 0) / existing.length
-  const cy = existing.reduce((sum, p) => sum + p.y, 0) / existing.length
+  const cx = 0
+  const cy = 0
   // Tilfeldig startvinkel, så nye personer ikke alltid havner i samme retning.
   const offset = rng() * Math.PI * 2
 
-  // Fra andre ring: i tyngdepunktet står «Deg», og første ring er for tett på.
+  // Fra andre ring: i midten står «Deg», og første ring er for tett på.
   for (let ring = 2; ring <= MAX_RINGS; ring++) {
     const r = ring * RING_STEP
     for (let i = 0; i < SLOTS_PER_RING; i++) {

@@ -5,8 +5,9 @@ const dist = (a: { x: number; y: number }, b: { x: number; y: number }) =>
   Math.hypot(a.x - b.x, a.y - b.y)
 
 describe('placeNewPerson', () => {
-  it('plasserer første person i origo', () => {
-    expect(placeNewPerson([])).toEqual({ x: 0, y: 0 })
+  it('plasserer første person rundt «Deg» i origo, ikke oppå', () => {
+    const p = placeNewPerson([], () => 0)
+    expect(Math.hypot(p.x, p.y)).toBeGreaterThanOrEqual(2 * 110)
   })
 
   it('holder minst MIN_GAP til alle eksisterende, også i et tett kart', () => {
@@ -20,7 +21,7 @@ describe('placeNewPerson', () => {
     expect(dist(p, { x: 40, y: -20 })).toBeGreaterThanOrEqual(MIN_GAP)
   })
 
-  it('holder avstand til «Deg» i tyngdepunktet', () => {
+  it('holder avstand til «Deg» i origo', () => {
     const existing = [{ x: -200, y: 0 }, { x: 200, y: 0 }]
     const p = placeNewPerson(existing, () => 0.5)
     expect(Math.hypot(p.x, p.y)).toBeGreaterThanOrEqual(2 * 110)

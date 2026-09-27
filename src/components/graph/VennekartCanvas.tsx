@@ -9,8 +9,8 @@ import {
   useEdgesState,
   useNodesState,
   useReactFlow,
-  type Connection,
   type Edge,
+  type FinalConnectionState,
   type Node,
 } from '@xyflow/react'
 import { useRouter } from 'next/navigation'
@@ -19,10 +19,8 @@ import { fadeFor } from '@/domain/freshness'
 import { easeInOut, interpolate } from '@/domain/interpolate'
 import type { MapMode } from '@/domain/mapMode'
 import type { Point } from '@/domain/layouts/types'
-import { createRelationship } from '@/server/actions/relationship'
 import { movePerson } from '@/server/actions/person'
 import { settle } from '@/server/actions/result'
-import type { Proximity } from '@/server/queries/proximity'
 import { t } from '@/i18n'
 import { PersonNode, type PersonNodeData } from './PersonNode'
 import { MeNode } from './MeNode'
@@ -31,6 +29,7 @@ import { BundledEdge, type BundledEdgeData } from './BundledEdge'
 import { DerivedEdge, type DerivedEdgeData } from './DerivedEdge'
 import { MapBackdrop } from './MapBackdrop'
 import type { useMapModel } from './useMapModel'
+import type { ConnectRequest } from './ConnectCard'
 
 // Syntetisk id. «Meg» er ingen databaserad, så den kan ikke kollidere med en cuid.
 const ME_ID = 'me'
@@ -44,6 +43,8 @@ const nodeTypes = { person: PersonNode, me: MeNode }
 const edgeTypes = { relationship: RelationshipEdge, bundled: BundledEdge, derived: DerivedEdge }
 
 const pairKey = (a: string, b: string) => [a, b].sort().join('|')
+// Slipper du en person nærmere enn dette fra en annen, er det «koble», ikke «flytt».
+const DROP_ON = 40
 
 const reducedMotionQuery = '(prefers-reduced-motion: reduce)'
 function usePrefersReducedMotion() {
@@ -65,7 +66,10 @@ type Props = {
   highlight: string[]
   onAddLog: (personId: string) => void
   onDerivedClick: (a: string, b: string) => void
-  onProximities: (p: Proximity[]) => void
+  /** Et drag som skal bli en kobling: kortet åpnes der du slapp. */
+  onConnectRequest: (request: ConnectRequest) => void
+  /** Musen over en person (for hintet om å dra). */
+  onHoverPerson?: (hovering: boolean) => void
   onError: (message: string) => void
   /** Øk for å tilpasse utsnittet når nodene har glidd på plass (f.eks. etter «Rydd opp»). */
   refit?: number
@@ -76,7 +80,17 @@ type Props = {
  * bare hvor folk står; når det byttes, glir de til nye plasser, så du ser
  * at det er det samme kartet fra en annen vinkel.
  */
-export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedClick, onProximities, onError, refit = 0 }: Props) {
+export function VennekartCanvas({
+  model,
+  mode,
+  highlight,
+  onAddLog,
+  onDerivedClick,
+  onConnectRequest,
+  onHoverPerson,
+  onError,
+  refit = 0,
+}: Props) {
   const router = useRouter()
   const { data: session } = useSession()
   const flow = useReactFlow()
@@ -98,14 +112,9 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
 
   // Noder: plasser, data og overgangen mellom syn.
   useEffect(() => {
-    const centers = [...targets.values()]
-    const meCenter: Point =
-      mode === 'network' && centers.length
-        ? {
-            x: centers.reduce((s, p) => s + p.x, 0) / centers.length,
-            y: centers.reduce((s, p) => s + p.y, 0) / centers.length,
-          }
-        : { x: 0, y: 0 }
+    // «Deg» står i origo i alle syn. I Nettverk er det der «Rydd opp» og
+    // nye personer regner fra, så du blir stående når du flytter på andre.
+    const meCenter: Point = { x: 0, y: 0 }
 
     const current = new Map(flow.getNodes().map((n) => [n.id, n]))
     const target: Node[] = [
@@ -137,6 +146,8 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
             tint: p.tint,
             photoUrl: p.photoUrl,
             fade: fadeFor(fresh.get(p.id) ?? 0),
+            // I Nærhet og Kretser står folk fast; der betyr et drag fra personen «koble».
+            connectFromBody: mode !== 'network',
             onAddLog,
             onViewProfile: (id: string) => router.push(`/person/${id}`),
           } satisfies PersonNodeData,
@@ -277,21 +288,52 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
     setEdges(visible.length ? [...spokes, ...between, ...derivedEdges] : [])
   }, [visible, relationships, derived, edgePath, mode, highlight, settled, setEdges, fresh, selectedId, groupById])
 
-  // Dra fra knotten under én person til en annen for å lage en relasjon.
-  const onConnect = async (connection: Connection) => {
-    const { source, target } = connection
-    if (!source || !target || source === target || source === ME_ID || target === ME_ID) return
-    const exists = relationships.some((r) => pairKey(r.fromPersonId, r.toPersonId) === pairKey(source, target))
-    if (exists) return
-    const result = await settle(createRelationship({ fromPersonId: source, toPersonId: target, type: 'FRIEND' }))
-    if (!result.ok) onError(t.errors[result.error])
-    else onProximities(result.data.proximities)
+  // Skjermpunktet (i kartets boks) for et punkt i kartet, der kortet skal stå.
+  const boxPoint = (flowPoint: Point): Point => {
+    const box = document.querySelector('.react-flow')?.getBoundingClientRect()
+    const screen = flow.flowToScreenPosition(flowPoint)
+    return { x: screen.x - (box?.left ?? 0), y: screen.y - (box?.top ?? 0) }
+  }
+  const centerOf = (id: string): Point | null => {
+    const n = flow.getNode(id)
+    if (!n) return null
+    return { x: n.position.x, y: n.position.y + PERSON_TOP }
+  }
+
+  // Et drag fra en person er slutt. Over en annen person: koble dem. Ute i
+  // tomrommet: «Hvem kjenner …?», med plassen der du slapp (i Nettverk).
+  const onConnectEnd = (event: MouseEvent | TouchEvent, state: FinalConnectionState) => {
+    const from = state.fromNode?.id
+    if (!from || from === ME_ID) return
+    const to = state.toNode?.id
+    if (to && to !== ME_ID && to !== from) {
+      const c = centerOf(to)
+      if (c) onConnectRequest({ kind: 'pair', a: from, b: to, at: boxPoint(c) })
+      return
+    }
+    if (to) return
+    const pointer = 'changedTouches' in event ? event.changedTouches[0] : event
+    const flowAt = flow.screenToFlowPosition({ x: pointer.clientX, y: pointer.clientY })
+    onConnectRequest({ kind: 'new', from, at: boxPoint(flowAt), flowAt: mode === 'network' ? flowAt : null })
   }
 
   // Bare i Nettverk er plassen din; der lagres den (som avatarens sentrum).
+  // Slippes personen oppå en annen, er det en kobling: hun glir tilbake.
+  const dragFrom = useRef<Point | null>(null)
   const onNodeDragStop = async (_event: React.MouseEvent, node: Node) => {
     if (node.id === ME_ID || mode !== 'network') return
-    const result = await settle(movePerson(node.id, node.position.x, node.position.y + PERSON_TOP))
+    const at = { x: node.position.x, y: node.position.y + PERSON_TOP }
+    const onto = flow
+      .getNodes()
+      .find((n) => n.id !== node.id && n.id !== ME_ID && Math.hypot(n.position.x - node.position.x, n.position.y - node.position.y) < DROP_ON)
+    if (onto && dragFrom.current) {
+      const back = dragFrom.current
+      setNodes((prev) => prev.map((n) => (n.id === node.id ? { ...n, position: { x: back.x, y: back.y - PERSON_TOP } } : n)))
+      const c = { x: onto.position.x, y: onto.position.y + PERSON_TOP }
+      onConnectRequest({ kind: 'pair', a: node.id, b: onto.id, at: boxPoint(c) })
+      return
+    }
+    const result = await settle(movePerson(node.id, at.x, at.y))
     if (!result.ok) onError(t.errors[result.error])
   }
 
@@ -301,8 +343,15 @@ export function VennekartCanvas({ model, mode, highlight, onAddLog, onDerivedCli
       edges={edges}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
-      onConnect={onConnect}
+      onConnectEnd={onConnectEnd}
+      // Et klikk på en person skal velge dem, ikke starte en kobling.
+      connectOnClick={false}
+      onNodeDragStart={(_e, node) => {
+        dragFrom.current = { x: node.position.x, y: node.position.y + PERSON_TOP }
+      }}
       onNodeDragStop={onNodeDragStop}
+      onNodeMouseEnter={(_e, node) => node.id !== ME_ID && onHoverPerson?.(true)}
+      onNodeMouseLeave={() => onHoverPerson?.(false)}
       onEdgeClick={(_e, edge) => {
         if (edge.type === 'derived') onDerivedClick(edge.source, edge.target)
       }}
