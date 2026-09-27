@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { DEFAULT_CADENCE_WEEKS, defaultCadenceFor } from './cadence'
+import { DEFAULT_CADENCE_WEEKS, defaultCadenceFor, nearestCadence } from './cadence'
 import type { RelationshipType } from '@/types'
 
 describe('kadens-standardverdier', () => {
@@ -33,3 +33,12 @@ describe('kadens-standardverdier', () => {
   })
 })
 
+
+describe('nearestCadence', () => {
+  it('runder til nærmeste valg, og det sjeldneste ved uavgjort', () => {
+    expect(nearestCadence(4)).toBe(4)
+    expect(nearestCadence(3)).toBe(4)
+    expect(nearestCadence(8)).toBe(12)
+    expect(nearestCadence(40)).toBe(52)
+  })
+})
