@@ -187,8 +187,8 @@ function EnrichCard({
           <TellSheet
             person={{ id: person.id, name: person.name }}
             isOpen={telling}
+            // Kortet blir stående: det du har fylt inn her, skal ikke forsvinne.
             onClose={() => setTelling(false)}
-            onApplied={() => onSaved([])}
           />
         </>
       )}

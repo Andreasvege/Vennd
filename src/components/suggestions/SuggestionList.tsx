@@ -49,7 +49,7 @@ export function SuggestionList({
   const toast = useToast()
   const [answered, setAnswered] = useState<Set<string>>(new Set())
   const [error, setError] = useState('')
-  const [, startTransition] = useTransition()
+  const [pending, startTransition] = useTransition()
   const shown = items.filter((s) => !answered.has(s.id) && (inTray || s.logId !== trayLog))
   const allAnswered = inTray && items.length > 0 && shown.length === 0
   useEffect(() => {
@@ -57,16 +57,24 @@ export function SuggestionList({
   }, [allAnswered, onAllAnswered])
   if (shown.length === 0) return null
 
-  // Godta alle på én gang, i rekkefølge (en ny person før en tråd om henne).
+  // Godta alle på én gang, i rekkefølge. Ett som ikke går (f.eks. en person
+  // som er slettet siden), stopper ikke resten; de som feilet, blir stående.
   const acceptAll = () => {
     setError('')
+    const batch = shown
+    setAnswered((prev) => new Set([...prev, ...batch.map((s) => s.id)]))
     startTransition(async () => {
-      for (const s of shown) {
+      const failed: string[] = []
+      for (const s of batch) {
         const res = await settle(acceptSuggestion(s.id))
-        if (!res.ok) return setError(t.errors[res.error])
-        setAnswered((prev) => new Set(prev).add(s.id))
+        if (!res.ok) failed.push(s.id)
       }
-      toast(t.suggestions.acceptedAll(shown.length))
+      if (failed.length) {
+        setAnswered((prev) => new Set([...prev].filter((id) => !failed.includes(id))))
+        setError(t.suggestions.someFailed(batch.length - failed.length, batch.length))
+      } else {
+        toast(t.suggestions.acceptedAll(batch.length))
+      }
     })
   }
 
@@ -94,7 +102,7 @@ export function SuggestionList({
         {title}
         <span className="font-sans text-[12px] not-italic text-ink-muted">{t.suggestions.from}</span>
         {shown.length > 1 && (
-          <Button variant="quiet" size="sm" onPress={acceptAll} className="ml-auto">
+          <Button variant="quiet" size="sm" onPress={acceptAll} isDisabled={pending} className="ml-auto">
             {t.suggestions.acceptAll}
           </Button>
         )}
@@ -110,10 +118,16 @@ export function SuggestionList({
                 <span className="block text-[15px] text-ink">{text}</span>
                 <span className="block truncate text-[13px] text-ink-muted">{detail}</span>
               </span>
-              <Button variant="secondary" size="sm" onPress={() => answer(s, true)}>
+              <Button variant="secondary" size="sm" onPress={() => answer(s, true)} isDisabled={pending}>
                 {t.suggestions.accept}
               </Button>
-              <Button variant="quiet" size="icon" aria-label={t.suggestions.dismissLabel(text)} onPress={() => answer(s, false)}>
+              <Button
+                variant="quiet"
+                size="icon"
+                aria-label={t.suggestions.dismissLabel(text)}
+                onPress={() => answer(s, false)}
+                isDisabled={pending}
+              >
                 <X aria-hidden size={16} strokeWidth={1.75} />
               </Button>
             </li>

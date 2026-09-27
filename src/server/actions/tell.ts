@@ -38,6 +38,7 @@ export async function tellAbout(raw: { personId: string; text: string }): Promis
         birthday: true,
         tags: { select: { tagId: true } },
         facts: { select: { label: true, value: true } },
+        threads: { where: { thread: { status: 'OPEN' } }, select: { thread: { select: { title: true } } } },
       },
     }),
     prisma.person.findMany({ where: { userId, archivedAt: null }, orderBy: { name: 'asc' }, select: { id: true, name: true } }),
@@ -57,6 +58,7 @@ export async function tellAbout(raw: { personId: string; text: string }): Promis
       hasBirthday: subject.birthday !== null,
       tagIds: subject.tags.map((x) => x.tagId),
       facts: subject.facts.filter((f) => !IMPORTED.includes(f.label)),
+      openThreads: subject.threads.map((x) => x.thread.title),
     },
     persons,
     tags,
@@ -139,6 +141,9 @@ export async function applyTell(raw: ApplyTellInput): Promise<ActionResult<{ add
         await tx.personTag.createMany({ data: [{ personId: p.personId, tagId: tag.id }], skipDuplicates: true })
         await tx.person.updateMany({ where: { id: p.personId, userId, primaryTagId: null }, data: { primaryTagId: tag.id } })
       } else if (p.kind === 'FACT') {
+        // Det samme faktumet to ganger hjelper ingen (Claude ser bare subjektets fakta).
+        const existing = await tx.fact.findMany({ where: { personId: p.personId }, select: { label: true, value: true } })
+        if (existing.some((f) => fold(f.label) === fold(p.label) && fold(f.value) === fold(p.value))) continue
         await tx.fact.create({ data: { personId: p.personId, label: p.label, value: p.value } })
       } else if (p.kind === 'RELATION') {
         const a = await resolve(p.a)
@@ -156,7 +161,7 @@ export async function applyTell(raw: ApplyTellInput): Promise<ActionResult<{ add
             userId,
             title: p.title,
             dueDate: p.dueDate ? fromDateInput(p.dueDate) : null,
-            persons: { create: p.personIds.map((id) => ({ personId: id })) },
+            persons: { create: [...new Set(p.personIds)].map((id) => ({ personId: id })) },
           },
         })
       }

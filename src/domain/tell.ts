@@ -16,6 +16,8 @@ export type TellContext = {
     hasBirthday: boolean
     tagIds: string[]
     facts: { label: string; value: string }[]
+    /** Åpne tråder med henne, så de ikke foreslås på nytt. */
+    openThreads?: string[]
   }
   persons: { id: string; name: string }[]
   tags: { id: string; name: string }[]
@@ -136,6 +138,7 @@ export function resolveTell(ctx: TellContext, out: ClaudeTell, now: Date = new D
   for (const th of out.threads) {
     const title = clean(th.title, 120)
     if (!title || threads.some((x) => x.kind === 'THREAD' && same(x.title, title))) continue
+    if ((subject.openThreads ?? []).some((o) => same(o, title))) continue
     const ids = [...new Set(th.people.map(find).filter((id): id is string => id !== null))]
     threads.push({ kind: 'THREAD', title, personIds: ids.length ? ids : [subject.id], dueDate: dueFrom(th.due, now) })
   }

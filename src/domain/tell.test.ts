@@ -80,3 +80,13 @@ describe('resolveTell', () => {
     expect(rows).toEqual([{ kind: 'THREAD', title: 'Flyttingen til Bergen', personIds: ['ingrid'], dueDate: null }])
   })
 })
+
+describe('resolveTell: åpne tråder', () => {
+  it('foreslår ikke en tråd hun alt har', () => {
+    const rows = resolveTell(
+      { ...ctx, subject: { ...ctx.subject, openThreads: ['Flyttingen til Bergen'] } },
+      { ...empty, threads: [{ people: [], title: 'flyttingen til bergen', due: 'none' }] },
+    )
+    expect(rows).toEqual([])
+  })
+})
