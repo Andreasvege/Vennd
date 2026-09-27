@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, Copy, Inbox, Layers, NotebookPen, Sparkles, Users } from 'lucide-react'
+import { ArrowRight, Copy, Inbox, Layers, MessageCircleQuestion, NotebookPen, Sparkles, Users } from 'lucide-react'
 import { requireUserId } from '@/server/session'
 import { getSortingData } from '@/server/queries/sorting'
 import { getGroupSuggestions } from '@/server/queries/links'
@@ -12,6 +12,7 @@ const WAYS = [
   { href: '/sorter/miljo', icon: Users, ...t.sort.ways.group },
   { href: '/sorter/venter', icon: Inbox, ...t.sort.ways.waiting },
   { href: '/sorter/fyll', icon: NotebookPen, ...t.enrich.way },
+  { href: '/sorter/sporsmal', icon: MessageCircleQuestion, ...t.questions.way },
   { href: '/sorter/forbindelser', icon: Sparkles, ...t.links.way },
   { href: '/sorter/duplikater', icon: Copy, ...t.dupes.way },
 ] as const

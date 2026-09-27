@@ -4,6 +4,7 @@ import { MAP_MODES } from '@/domain/mapMode'
 import { LOG_TYPES } from '@/domain/logTypes'
 import { SEEN_CHOICES } from '@/domain/enrich'
 import { TELL_TYPES } from '@/domain/tell'
+import { QUESTION_IDS } from '@/domain/questions'
 
 // Alt som kommer inn i en server action, valideres her. Skjemaene er rene
 // og testes direkte; handlingene bare kaller safeParse.
@@ -260,6 +261,16 @@ export const tellProposal = z.discriminatedUnion('kind', [
 ])
 export const applyTellInput = z.object({ personId: id, proposals: z.array(tellProposal).min(1).max(40) })
 export type ApplyTellInput = z.infer<typeof applyTellInput>
+// Et spørsmålskort: hvem du svarte (kjente og nye navn), og miljønavnet.
+export const answerQuestionInput = z.object({
+  questionId: z.enum(QUESTION_IDS),
+  personIds: z.array(id).max(50),
+  newNames: z.array(z.string().trim().min(1).max(120)).max(50),
+  groupName: tagName.nullable(),
+  /** I dag hos deg (for en påminnelse med dato i dag). */
+  today: isoDate,
+})
+export type AnswerQuestionInput = z.infer<typeof answerQuestionInput>
 export const assignGroupInput = z.object({
   tagId: id,
   personIds: z.array(id).max(500),
