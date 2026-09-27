@@ -6,6 +6,7 @@ import { TextField } from '@/components/ui'
 import { chipBase } from '@/components/ui/Chip'
 import { fieldLabel } from '@/components/ui/TextField'
 import { CADENCE_CHOICES, CARD_TYPES, defaultCadence, type CadenceChoice } from '@/domain/sorting'
+import { nearestCadence } from '@/domain/cadence'
 import type { RelationshipType, RomanticPhase } from '@/types'
 import { t } from '@/i18n'
 
@@ -108,7 +109,7 @@ export function WhoFields({ value, onChange }: { value: Who; onChange: (next: Wh
       </div>
 
       <RadioGroup
-        value={value.cadenceWeeks === null ? 'never' : String(value.cadenceWeeks)}
+        value={value.cadenceWeeks === null ? 'never' : String(nearestCadence(value.cadenceWeeks))}
         onChange={(v) => {
           setCadenceTouched(true)
           onChange({ ...value, cadenceWeeks: v === 'never' ? null : (Number(v) as CadenceChoice) })
@@ -120,7 +121,7 @@ export function WhoFields({ value, onChange }: { value: Who; onChange: (next: Wh
         <div className="flex flex-wrap gap-2">
           {CADENCE_CHOICES.map((c) => (
             <Radio key={String(c)} value={c === null ? 'never' : String(c)} className={radio}>
-              {t.sort.cadence[c === null ? 'never' : c]}
+              {c === null ? t.cadence.never : t.cadence.every(c)}
             </Radio>
           ))}
         </div>

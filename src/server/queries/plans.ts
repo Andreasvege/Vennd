@@ -110,6 +110,6 @@ export async function getPersonPlans(userId: string, personId: string) {
   return prisma.plan.findMany({
     where: { userId, status: 'PLANNED', persons: { some: { personId } } },
     orderBy: { at: 'asc' },
-    select: { id: true, at: true, hasTime: true, title: true },
+    select: { id: true, at: true, hasTime: true, title: true, type: true, persons: { select: { personId: true } } },
   })
 }

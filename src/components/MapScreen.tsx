@@ -228,15 +228,6 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
               )
             }
           />
-          {graph.unsorted > 0 && (
-            <Link
-              href="/sorter"
-              className="flex min-h-9 items-center gap-2 rounded-full border border-ink bg-ink px-3.5 text-[13px] text-paper shadow-float outline-none transition-colors hover:bg-ink/90 focus-visible:ring-2 focus-visible:ring-pen focus-visible:ring-offset-2"
-            >
-              <Layers aria-hidden size={14} strokeWidth={1.75} />
-              {t.sort.chip(graph.unsorted)}
-            </Link>
-          )}
           {highlight.length > 1 && (
             <div className="flex items-center gap-2 rounded-[10px] border border-redpencil/40 bg-paper-raised py-1.5 pl-3 pr-1 text-[14px]">
               <span className="text-redpencil">{t.smallWorld.pathLabel(highlight.map(nameOf).join(' → '))}</span>

@@ -20,3 +20,18 @@ export function defaultCadenceFor(type: RelationshipType): number {
   return DEFAULT_CADENCE_WEEKS[type]
 }
 
+
+/**
+ * «Hvor ofte vil du holde kontakten?»: de samme valgene overalt (kortstokken,
+ * ny person, redigering). Uker mellom påminnelser.
+ */
+export const CADENCE_WEEKS = [1, 2, 4, 12, 26, 52] as const
+
+/**
+ * Nærmeste valg; en eldre verdi (3, 6, 8 uker) vises som den som ligger
+ * nærmest. Uavgjort: det sjeldneste, som defaultCadence i kortstokken. En
+ * påminnelse for lite er bedre enn mas.
+ */
+export function nearestCadence(weeks: number): (typeof CADENCE_WEEKS)[number] {
+  return CADENCE_WEEKS.reduce((best, w) => (Math.abs(w - weeks) <= Math.abs(best - weeks) ? w : best))
+}

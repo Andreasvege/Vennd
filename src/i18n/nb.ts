@@ -65,7 +65,7 @@ export const nb = {
     plan: 'Planlegg',
     time: 'Hvor tiden går',
     byTag: 'Miljøer',
-    untagged: 'Uten tagg',
+    untagged: 'Uten miljø',
     overlapNote: 'En logg med folk fra flere miljøer teller for hvert av dem.',
     types: (parts: string[]) => (parts.length ? `${parts.join(', ')}.` : ''),
     typeCount: {
@@ -105,7 +105,7 @@ export const nb = {
     allExist: 'Alt i filen finnes allerede.',
     selectNone: 'Velg ingen',
     status: { new: 'ny', exists: 'finnes', 'add-birthday': 'legg til bursdag', duplicate: 'finnes' } as Record<string, string>,
-    tags: 'Tagger for de nye',
+    tags: 'Miljø for de nye',
     remind: 'Påminnelse hver 4. uke for de nye',
     remindHint: 'Av som standard, så I dag ikke fylles av purringer. Sett påminnelse på dem som betyr noe.',
     willBe: { log: 'logg', plan: 'plan' },
@@ -140,7 +140,7 @@ export const nb = {
 
   exportData: {
     title: 'Dine data',
-    hint: 'Alt du har skrevet i ett JSON-dokument: personer, logger, tråder, planer, tagger og visninger.',
+    hint: 'Alt du har skrevet i ett JSON-dokument: personer, logger, tråder, planer, miljøer og visninger.',
     download: 'Last ned alt (JSON)',
   },
 
@@ -210,7 +210,6 @@ export const nb = {
     phaseQuestion: 'Hvor er dere nå?',
     phaseEx: 'Eks',
     howOften: 'Hvor ofte vil du holde kontakten?',
-    cadence: { 2: 'Hver 2. uke', 4: 'Hver måned', 12: 'Hver 3. måned', 26: 'Hvert halvår', never: 'Aldri' } as Record<string, string>,
     group: 'Miljø',
     newGroup: 'Nytt miljø',
     newGroupPlaceholder: 'Studentradio',
@@ -280,8 +279,13 @@ export const nb = {
     fromClaudeTitle: 'Fra Claude',
     fromRulesTitle: 'Kjenner de hverandre?',
     fromRulesLead: 'Folk som samme person kjenner, men som ikke er koblet til hverandre.',
-    clusterTitle: (a: string, b: string | null) =>
-      b !== null ? `${a || 'Uten miljø'} og ${b || 'uten miljø'}: kjenner de hverandre?` : a ? `${a}: kjenner de hverandre?` : 'Kjenner de hverandre?',
+    // «Uten miljø» er ingen gjeng; da er det folk, ikke et miljø, som møtes.
+    clusterTitle: (a: string, b: string | null) => {
+      const named = [a, b].filter((x): x is string => Boolean(x))
+      if (named.length === 0) return 'Kjenner de hverandre?'
+      if (b === null || named.length === 2) return `${named.join(' og ')}: kjenner de hverandre?`
+      return `${named[0]} og folk uten miljø: kjenner de hverandre?`
+    },
     clusterReason: (hubs: string[], sameSurname: boolean) =>
       hubs.length
         ? `De kjenner begge ${hubs.map((h) => h.split(' ')[0]).join(' og ')}.`
@@ -422,7 +426,7 @@ export const nb = {
   errors: {
     invalid: 'Noe i skjemaet er ikke fylt ut riktig.',
     'not-found': 'Fant det ikke lenger. Last siden på nytt.',
-    taken: 'Du har allerede en tagg med det navnet.',
+    taken: 'Du har allerede et miljø med det navnet.',
     failed: 'Det ble ikke lagret. Sjekk nettforbindelsen og prøv igjen.',
   },
 
@@ -438,20 +442,20 @@ export const nb = {
   },
 
   tags: {
-    label: 'Tagger',
-    add: 'Legg til tagg',
+    label: 'Miljøer',
+    add: 'Legg til miljø',
     create: (name: string) => `Opprett «${name}»`,
-    primary: 'Hovedtagg',
-    makePrimary: (name: string) => `Gjør ${name} til hovedtagg`,
+    primary: 'Hovedmiljø',
+    makePrimary: (name: string) => `Gjør ${name} til hovedmiljø`,
     remove: (name: string) => `Fjern ${name}`,
-    hint: 'Hovedtaggen gir personen farge på kartet.',
-    empty: 'Du har ingen tagger ennå. De lages når du gir en person en tagg.',
+    hint: 'Hovedmiljøet gir personen farge på kartet.',
+    empty: 'Du har ingen miljøer ennå. De lages når du gir en person et miljø.',
     count: (n: number) => (n === 1 ? '1 person' : `${n} personer`),
     rename: (name: string) => `Nytt navn på ${name}`,
     color: (name: string) => `Farge på ${name}`,
     deleteConfirm: (n: number) =>
-      n === 0 ? 'Slett taggen?' : `Taggen fjernes fra ${n === 1 ? '1 person' : `${n} personer`}. Slette?`,
-    nameTaken: 'Du har allerede en tagg med det navnet.',
+      n === 0 ? 'Slette miljøet?' : `Miljøet fjernes fra ${n === 1 ? '1 person' : `${n} personer`}. Slette?`,
+    nameTaken: 'Du har allerede et miljø med det navnet.',
   },
 
   facts: {
@@ -510,16 +514,16 @@ export const nb = {
   },
 
   cadence: {
-    label: 'Minn meg på å ta kontakt',
-    every: (weeks: number) => (weeks === 1 ? 'Hver uke' : `Hver ${weeks}. uke`),
+    label: 'Hvor ofte vil du holde kontakten?',
+    every: (weeks: number) =>
+      ({ 1: 'Hver uke', 2: 'Hver 2. uke', 4: 'Hver måned', 12: 'Hver 3. måned', 26: 'Hvert halvår', 52: 'Hvert år' })[weeks] ??
+      `Hver ${weeks}. uke`,
     never: 'Aldri',
     hint: 'Foreslått fra relasjonstypen. Velg «Aldri» for folk du bare vil ha på kartet.',
     summary: (weeks: number | null) =>
       weeks === null
         ? 'ingen påminnelser'
-        : weeks === 1
-          ? 'påminnelse hver uke'
-          : `påminnelse hver ${weeks}. uke`,
+        : `påminnelse ${(({ 1: 'Hver uke', 2: 'Hver 2. uke', 4: 'Hver måned', 12: 'Hver 3. måned', 26: 'Hvert halvår', 52: 'Hvert år' } as Record<number, string>)[weeks] ?? `hver ${weeks}. uke`).toLowerCase()}`,
   },
 
   map: {
@@ -547,14 +551,14 @@ export const nb = {
       while: 'En stund siden',
       long: 'Lenge siden',
     },
-    untagged: 'Uten tagg',
+    untagged: 'Uten miljø',
     derived: (n: number) => `Sammen i ${n} logger`,
     derivedHint: 'Gjør om til relasjon',
     filter: 'Filter',
     filterCount: (n: number) => (n === 0 ? 'Filter' : `Filter, ${n} aktive`),
-    filterTags: 'Tagger',
+    filterTags: 'Miljøer',
     filterEdges: 'Relasjoner',
-    showUntagged: 'Uten tagg',
+    showUntagged: 'Uten miljø',
     showRomantic: 'Romantiske relasjoner',
     showHistorical: 'Avsluttede relasjoner',
     showDerived: 'Ofte sammen (fra loggene)',
@@ -831,7 +835,7 @@ export const nb = {
     themeSystem: 'Som systemet',
     themeLight: 'Lys',
     themeDark: 'Mørk',
-    tags: 'Tagger',
+    tags: 'Miljøer',
   },
   appError: {
     title: 'Noe gikk galt',

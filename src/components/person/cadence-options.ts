@@ -1,8 +1,9 @@
 import { t } from '@/i18n'
+import { CADENCE_WEEKS, nearestCadence } from '@/domain/cadence'
 
-// Valgene i kadens-velgeren. «Aldri» lagres som null og slår av
-// auto-påminnelser for personen.
-const WEEKS = [1, 2, 3, 4, 6, 8, 12, 26, 52] as const
+// Valgene i kadens-velgeren, de samme som i kortstokken. «Aldri» lagres
+// som null og slår av auto-påminnelser for personen.
+const WEEKS = CADENCE_WEEKS
 
 export type CadenceOption = `${(typeof WEEKS)[number]}` | 'never'
 
@@ -15,8 +16,7 @@ export function cadenceToOption(weeks: number | null): CadenceOption {
   if (weeks === null) return 'never'
   // En kadens som ikke finnes i lista (satt før valgene ble strammet inn)
   // rundes til nærmeste valg, så velgeren aldri står tom.
-  const nearest = WEEKS.reduce((best, w) => (Math.abs(w - weeks) < Math.abs(best - weeks) ? w : best))
-  return `${nearest}` as CadenceOption
+  return `${nearestCadence(weeks)}` as CadenceOption
 }
 
 export function cadenceFromOption(option: CadenceOption): number | null {
