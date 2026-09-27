@@ -19,6 +19,8 @@ export type ReminderItem = {
   message: string
   /** Den eldste åpne tråden med personen: det du kan spørre om. */
   ask: string | null
+  /** Ingen kontakt logget ennå: da vet vi ikke om det er lenge siden. */
+  never: boolean
 }
 
 /**
@@ -79,6 +81,7 @@ export async function getReminders(userId: string, now: Date = new Date()): Prom
         tint: personTint(person),
         message: th.title,
         ask: null,
+        never: false,
       },
     ]
   })
@@ -96,6 +99,7 @@ export async function getReminders(userId: string, now: Date = new Date()): Prom
       tint: personTint(p),
       message: r.message,
       ask: p.threads[0]?.thread.title ?? null,
+      never: r.weeksSinceContact === null,
     }
   })
 

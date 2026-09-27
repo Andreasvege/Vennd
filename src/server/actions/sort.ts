@@ -6,6 +6,8 @@ import { requireUserId } from '@/server/session'
 import { NotOwnedError } from '@/server/ownership'
 import {
   assignGroupInput,
+  enrichPersonInput,
+  type EnrichPersonInput,
   personIdList,
   sortPersonInput,
   type AssignGroupInput,
@@ -13,6 +15,7 @@ import {
 } from '@/server/schemas'
 import { assertPersonsOwned, assertTagsOwned, fromDateInput, markSorted, parseId, refreshAll } from './shared'
 import { todayISO } from '@/domain/format'
+import { t } from '@/i18n'
 import { fail, type ActionError, type ActionResult } from './result'
 
 type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0]
@@ -77,6 +80,75 @@ export async function sortPerson(raw: SortPersonInput): Promise<ActionResult<{ r
           if (last?.phase !== phase) await tx.romanticPhaseEntry.create({ data: { personId, phase, at: fromDateInput(todayISO()) } })
         }
         await markSorted(userId, [personId, ...others], tx)
+        const have = await existingPairs(tx, [personId, ...others])
+        const pairs = missingPairs([personId, ...others], have).filter(([a, b]) => a === personId || b === personId)
+        await tx.relationship.createMany({
+          data: pairs.map(([a, b]) => ({ fromPersonId: a, toPersonId: b, type: 'FRIEND' as const })),
+        })
+        return { relationships: pairs.length }
+      }),
+  )
+  if (result.ok) refreshAll()
+  return result
+}
+
+/**
+ * Ett kort i «Fyll inn kartet»: det du fylte inn om en som allerede står på
+ * kartet. Bare det som er med, endres; resten blir stående.
+ */
+export async function enrichPerson(raw: EnrichPersonInput): Promise<ActionResult<{ relationships: number }>> {
+  const userId = await requireUserId()
+  const parsed = enrichPersonInput.safeParse(raw)
+  if (!parsed.success) return fail('invalid')
+  const { personId, who, birthday, facts, seen } = parsed.data
+  const tags = parsed.data.tagIds ? [...new Set(parsed.data.tagIds)] : null
+  const others = [...new Set(parsed.data.knows)].filter((id) => id !== personId)
+  // Et anslag frem i tid gir ingen mening; datoen kommer fra nettleseren.
+  if (seen && seen.on > todayISO(new Date(Date.now() + 86_400_000))) return fail('invalid')
+
+  const result = await owned(
+    async () => {
+      await assertPersonsOwned(userId, [personId, ...others])
+      await assertTagsOwned(userId, tags ?? [])
+    },
+    () =>
+      prisma.$transaction(async (tx) => {
+        const current = await tx.person.findUniqueOrThrow({ where: { id: personId }, select: { primaryTagId: true } })
+        await tx.person.update({
+          where: { id: personId },
+          data: {
+            ...(who && {
+              type: who.type,
+              relationLabel: who.relationLabel || null,
+              cadenceWeeks: who.cadenceWeeks,
+              snoozedUntil: null,
+            }),
+            ...(tags && {
+              // Hovedtaggen blir stående om den fortsatt er med.
+              primaryTagId: current.primaryTagId && tags.includes(current.primaryTagId) ? current.primaryTagId : (tags[0] ?? null),
+              tags: { deleteMany: {}, create: tags.map((tagId) => ({ tagId })) },
+            }),
+            ...(birthday && { birthday: fromDateInput(birthday) }),
+          },
+        })
+        if (who?.type === 'ROMANTIC' && who.phase) {
+          const last = await tx.romanticPhaseEntry.findFirst({ where: { personId }, orderBy: { at: 'desc' }, select: { phase: true } })
+          if (last?.phase !== who.phase) await tx.romanticPhaseEntry.create({ data: { personId, phase: who.phase, at: fromDateInput(todayISO()) } })
+        }
+        if (facts.length) await tx.fact.createMany({ data: facts.map((f) => ({ personId, label: f.label, value: f.value })) })
+        if (seen) {
+          await tx.logEntry.create({
+            data: {
+              userId,
+              date: fromDateInput(seen.on),
+              type: 'MET',
+              body: t.enrich.seenLog[seen.choice],
+              // Et anslag er ikke en logg Claude skal lete etter forslag i.
+              suggestedAt: new Date(),
+              participants: { create: [{ personId }] },
+            },
+          })
+        }
         const have = await existingPairs(tx, [personId, ...others])
         const pairs = missingPairs([personId, ...others], have).filter(([a, b]) => a === personId || b === personId)
         await tx.relationship.createMany({

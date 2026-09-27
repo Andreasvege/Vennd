@@ -22,7 +22,11 @@ export const getToday = cache(async function getToday(userId: string) {
   ])
   return {
     due: reminders.filter((r) => r.kind === 'thread'),
-    reach: reminders.filter((r) => r.kind === 'cadence'),
+    // Uten noen logget kontakt vet vi ikke om det er lenge siden. Etter en
+    // import er det mange av dem, og de ville druknet dem som faktisk er
+    // forfalt; de samles i én linje (unntatt når du har noe å spørre om).
+    reach: reminders.filter((r) => r.kind === 'cadence' && (!r.never || r.ask)),
+    neverLogged: reminders.filter((r) => r.kind === 'cadence' && r.never && !r.ask),
     recent,
     ahead,
     suggestions,
