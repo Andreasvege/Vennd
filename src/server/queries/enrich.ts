@@ -13,10 +13,11 @@ const IMPORTED: string[] = [t.import.phoneLabel, t.import.emailLabel]
 /**
  * «Fyll inn kartet»: alle på kartet med det vi vet om dem, og stokken av
  * dem det mangler noe om. Med `only` bare de valgte (fra Innsikt eller en
- * profil), og med `tagId` bare ett miljø. De valgte kommer med selv om
+ * profil), med `tagId` bare ett miljø, og med `neverLogged` bare dem uten
+ * noen logget kontakt (fra I dag og Innsikt; for mange til å stå i adressen). De valgte kommer med selv om
  * ingenting mangler, så du kan fylle på likevel.
  */
-export async function getEnrichData(userId: string, filter: { only?: string[]; tagId?: string } = {}) {
+export async function getEnrichData(userId: string, filter: { only?: string[]; tagId?: string; neverLogged?: boolean } = {}) {
   const [persons, tags, relationships, lastContact] = await Promise.all([
     prisma.person.findMany({
       where: { userId, ...onMap },
@@ -76,7 +77,9 @@ export async function getEnrichData(userId: string, filter: { only?: string[]; t
   })
 
   const byId = new Map(shaped.map((p) => [p.id, p]))
-  const pool = shaped.filter((p) => !filter.tagId || p.tagIds.includes(filter.tagId))
+  const pool = shaped.filter(
+    (p) => (!filter.tagId || p.tagIds.includes(filter.tagId)) && (!filter.neverLogged || p.lastContact === null),
+  )
   const deck = filter.only?.length
     ? filter.only.filter((id) => byId.has(id))
     : enrichOrder(pool)

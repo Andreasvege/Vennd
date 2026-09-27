@@ -291,7 +291,7 @@ export function TodayView({ data }: { data: TodayData }) {
             )}
             {data.neverLogged.length > 0 && (
               <Link
-                href={`/sorter/fyll?ids=${data.neverLogged.map((r) => r.personId).join(',')}`}
+                href="/sorter/fyll?aldri=1"
                 className="mt-3 flex items-center gap-3 rounded-[12px] border border-rule px-4 py-3 text-[14px] text-ink-muted outline-none transition-colors hover:border-ink-muted focus-visible:ring-2 focus-visible:ring-pen"
               >
                 <span className="flex-1">{t.today.neverLogged(data.neverLogged.map((r) => r.personName.split(' ')[0]))}</span>

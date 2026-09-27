@@ -56,7 +56,7 @@ function Band({ title, people, review }: { title: string; people: UnseenPerson[]
         {/* Aldri logget: gå gjennom dem og anslå når dere sist så hverandre. */}
         {review && (
           <Link
-            href={`/sorter/fyll?ids=${people.map((p) => p.id).join(',')}`}
+            href="/sorter/fyll?aldri=1"
             className="ml-auto text-[12px] normal-case tracking-normal text-ink underline underline-offset-4 outline-none hover:text-ink-muted focus-visible:ring-2 focus-visible:ring-pen"
           >
             {t.enrich.reviewThese}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, useTransition } from 'react'
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { Radio, RadioGroup, Label, ToggleButton, ToggleButtonGroup, Button as AriaButton } from 'react-aria-components'
 import { Plus, X } from 'lucide-react'
@@ -56,7 +56,8 @@ function EnrichCard({
   canSkip: boolean
 }) {
   const [showAll, setShowAll] = useState(person.gaps.length === 0)
-  const show = (gap: Gap) => showAll || person.gaps.includes(gap)
+  // «Sist sett» er et anslag; har dere logget kontakt, finnes svaret alt.
+  const show = (gap: Gap) => (gap === 'seen' && person.lastContact ? false : showAll || person.gaps.includes(gap))
 
   const [seen, setSeen] = useState<SeenChoice | null>(null)
   const initialWho: Who = {
@@ -116,17 +117,22 @@ function EnrichCard({
     })
   }
 
-  // ⌘↵ / Ctrl+↵: lagre og neste, hvor som helst i kortet.
+  // ⌘↵ / Ctrl+↵: lagre og neste, hvor som helst i kortet, men ikke mens en
+  // liste er åpen (da hører tastetrykket til den, f.eks. et nytt navn).
+  const saveRef = useRef(save)
+  useEffect(() => {
+    saveRef.current = save
+  })
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !busy) {
-        e.preventDefault()
-        save()
-      }
+      if (e.key !== 'Enter' || !(e.metaKey || e.ctrlKey) || busy) return
+      if (document.querySelector('[role="listbox"], [role="dialog"]')) return
+      e.preventDefault()
+      saveRef.current()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  })
+  }, [busy])
 
   const known = [
     person.relationLabel || t.relationType[person.type],
