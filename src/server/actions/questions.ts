@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { nextTagColor } from '@/lib/palette'
 import { placeNewPerson } from '@/domain/placement'
 import { questionById, tighterCadence } from '@/domain/questions'
-import { missingPairs } from '@/domain/sorting'
+import { defaultCadence, missingPairs } from '@/domain/sorting'
 import { fold } from '@/domain/search'
 import { requireUserId } from '@/server/session'
 import { NotOwnedError } from '@/server/ownership'
@@ -42,7 +42,8 @@ export async function answerQuestion(raw: AnswerQuestionInput): Promise<ActionRe
     })
     const positions = existing.map((p) => ({ x: p.positionX, y: p.positionY }))
     const ids = [...known]
-    for (const name of new Set(newNames.map((n) => n.trim()))) {
+    for (const name of newNames.map((n) => n.trim())) {
+      // «ola» og «Ola» i samme svar er samme person.
       const same = existing.find((p) => fold(p.name) === fold(name))
       if (same) {
         if (!ids.includes(same.id)) ids.push(same.id)
@@ -51,10 +52,20 @@ export async function answerQuestion(raw: AnswerQuestionInput): Promise<ActionRe
       const spot = placeNewPerson(positions)
       positions.push(spot)
       const created = await tx.person.create({
-        data: { userId, name, type: effect.type ?? 'FRIEND', positionX: spot.x, positionY: spot.y, sortedAt: new Date() },
+        data: {
+          userId,
+          name,
+          type: effect.type ?? 'FRIEND',
+          // Rytmen følger typen (en nabo får ingen påminnelse), som i kortstokken.
+          cadenceWeeks: defaultCadence(effect.type ?? 'FRIEND'),
+          positionX: spot.x,
+          positionY: spot.y,
+          sortedAt: new Date(),
+        },
         select: { id: true },
       })
       ids.push(created.id)
+      existing.push({ id: created.id, name, positionX: spot.x, positionY: spot.y })
     }
     if (ids.length === 0) return 0
     await markSorted(userId, ids, tx)
@@ -93,7 +104,12 @@ export async function answerQuestion(raw: AnswerQuestionInput): Promise<ActionRe
     }
 
     if (effect.reachOut) {
-      for (const personId of ids) {
+      // Har du alt en åpen påminnelse om å ta kontakt, blir det ikke to.
+      const open = await tx.threadPerson.findMany({
+        where: { personId: { in: ids }, thread: { status: 'OPEN', title: t.questions.reachOutTitle } },
+        select: { personId: true },
+      })
+      for (const personId of ids.filter((id) => !open.some((o) => o.personId === id))) {
         await tx.thread.create({
           data: {
             userId,
@@ -105,7 +121,8 @@ export async function answerQuestion(raw: AnswerQuestionInput): Promise<ActionRe
       }
     }
     return ids.length
-  })
+    // Et stort svar (mange nye navn) er mange skriv; gi det tid.
+  }, { timeout: 15_000 })
 
   refreshAll()
   return { ok: true, data: { people } }
