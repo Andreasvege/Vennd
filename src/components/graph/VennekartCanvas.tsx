@@ -141,7 +141,8 @@ export function VennekartCanvas({
           id: p.id,
           type: 'person',
           position: { x: c.x, y: c.y - PERSON_TOP },
-          selected: p.id === selectedId,
+          // Valget settes i en egen effekt, så et nytt valg aldri flytter noen.
+          selected: current.get(p.id)?.selected ?? false,
           data: {
             id: p.id,
             name: p.name,
@@ -202,7 +203,14 @@ export function VennekartCanvas({
       step(now)
     })
     return () => cancelAnimationFrame(raf)
-  }, [visible, targets, fresh, mode, session, selectedId, flow, setNodes, reducedMotion, refit])
+  }, [visible, targets, fresh, mode, session, flow, setNodes, reducedMotion, refit])
+
+  // Hvem som er valgt, fra adressen eller personlinjen. Bare markeringen
+  // endres; plassene står.
+  useEffect(() => {
+    if (nodes.every((n) => n.selected === (n.id === selectedId))) return
+    setNodes((prev) => prev.map((n) => (n.selected === (n.id === selectedId) ? n : { ...n, selected: n.id === selectedId })))
+  }, [selectedId, nodes, setNodes])
 
   // Valgt fra et annet sted (søk, en lenke) og utenfor synsfeltet: gli dit.
   useEffect(() => {
@@ -370,6 +378,8 @@ export function VennekartCanvas({
       onConnectEnd={onConnectEnd}
       // Et klikk på en person skal velge dem, ikke starte en kobling.
       connectOnClick={false}
+      // Å flytte noen i Nettverk skal ikke åpne profilen deres.
+      selectNodesOnDrag={false}
       onNodeDragStart={(_e, node) => {
         dragFrom.current = { x: node.position.x, y: node.position.y + PERSON_TOP }
       }}

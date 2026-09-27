@@ -118,17 +118,18 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
     else router.push(`/person/${id}`, { scroll: false })
   }
 
-  // Esc lukker profilen i panelet og slipper valget, når ingen dialog er åpen.
+  // Esc lukker profilen i panelet (PC) eller personlinjen (mobil), når ingen
+  // dialog er åpen. På mobil lukker profilarket seg selv; da gjør vi ingenting.
   useEffect(() => {
     if (!selectedId) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || document.querySelector('[role="dialog"]')) return
-      if (profileId) router.back()
-      else setMobileSelected(null)
+      if (desk) router.back()
+      else if (!profileId) setMobileSelected(null)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [selectedId, profileId, router])
+  }, [selectedId, profileId, desk, router])
 
   const tidy = () =>
     startTidy(async () => {
@@ -240,7 +241,8 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
             <div className="flex items-center gap-2 rounded-[10px] border border-redpencil/40 bg-paper-raised py-1.5 pl-3 pr-1 text-[14px]">
               <span className="text-redpencil">{t.smallWorld.pathLabel(highlight.map(nameOf).join(' → '))}</span>
               <Link
-                href={pathname}
+                // Med en profil åpen er adressen /person/…; stien bor på kartet.
+                href={pathname.startsWith('/person/') ? '/' : pathname}
                 className="rounded-[8px] px-2 py-1 text-ink-muted outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-pen"
               >
                 {t.smallWorld.hidePath}
