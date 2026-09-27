@@ -841,6 +841,8 @@ export const nb = {
   },
 
   logPage: {
+    search: 'Søk i loggen',
+    searchPlaceholder: 'Søk på navn, miljø eller ord',
     title: 'Logg',
     older: 'Vis eldre',
     empty: 'Ingen logger ennå.',
