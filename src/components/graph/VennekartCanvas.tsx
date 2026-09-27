@@ -276,8 +276,11 @@ export function VennekartCanvas({
     // Mange etiketter blir et virvar: på fulle kart bare for den valgte.
     const roomForLabels = relationships.length <= 20
     const labelFor = (focus: 'on' | 'off' | undefined) => focus === 'on' || (focus === undefined && roomForLabels && !pathMode)
-    // I Nettverk viser øya at to i samme miljø hører sammen; streken mellom dem er da underforstått.
-    const impliedBetween = (a: string, b: string) => mode === 'network' && groupById.get(a) != null && groupById.get(a) === groupById.get(b)
+    // I Nettverk viser øya at to i samme miljø hører sammen, og i Kretser
+    // buen; streken mellom dem er da underforstått. Det som står igjen, er
+    // forbindelsene mellom miljøene.
+    const impliedBetween = (a: string, b: string) =>
+      mode !== 'nearness' && groupById.get(a) != null && groupById.get(a) === groupById.get(b)
 
     const spokes: Edge[] =
       mode === 'network'
