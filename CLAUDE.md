@@ -120,10 +120,25 @@ spesifikasjoner i `docs/superpowers/specs/`.
 | #24 | «Bygg kartet» i navigasjonen, med antall som venter |
 | #25–27 | Claude-forbindelser: mindre sløsing, hele nettverket i ett kall ved behov, forslag som grupper (innsikter) i stedet for par |
 | #28 | Regelforslag gruppert etter miljø (knutepunkter teller ikke), duplikater med sammenslåing |
+| #30 | «Rydd opp» som pakkede øyer rundt deg (`tidyNetwork`), deg i origo i Nettverk. Dra fra en person gir et kort (`ConnectCard`): oppå en annen = koble med type, ut i tomrommet = ny person de kjenner. Aldri en stille «Venn» |
+| #31 | Valgt person på kartet åpner profilen i sidepanelet (PC), personlinje med Logg/Koble til/Profil (mobil) |
+| #32 | «Fyll inn kartet» (`/sorter/fyll`): kortstokk over folk på kartet med bare det som mangler (sist sett, hvem, miljø, kjenner, bursdag, fakta), økter på 15. Folk uten logget kontakt samles i én linje på I dag |
+| #33 | Claude i flyten: «Fortell om» (fritekst → forslag du krysser av), relasjoner i loggforslag, forslagsskuff rett etter lagret logg |
+| #34 | Samme ord: én rytme («Hvor ofte», `CADENCE_WEEKS`), «miljø» i stedet for «tagg», lesbar startzoom på mobil |
+| #35 | Klikk på en strek for å endre eller fjerne koblingen |
+| #36 | Spørsmålskort (`/sorter/sporsmal`): folk hentes ut av hukommelsen, med miljø, koblinger, rytme eller påminnelse |
+| #37 | Søkefelt og månedskapitler i loggen |
+| #38 | «Finn … i kartet» fra profilen, `/kart?person=`, miljøer i Innstillinger åpner «Fyll inn» |
 
 **Kjente hull og idéer som ikke er bygget:** bilder (venter på Blob),
 kalender-synk (bare fil i dag), og redigering av forslag før de legges til.
-Importen fanger ikke alle duplikater, men sammenslåing finnes.
+Importen fanger ikke alle duplikater, men sammenslåing finnes. «Fortell om»
+hopper over fakta om *nye* personer (bare koblingen foreslås). «Rydd opp»
+flytter også folk du har plassert selv (Angre finnes).
+
+**Testdata:** `.dev/seed-real.mts` lager brukeren `real-user` med 122
+personer (50 i samme krets, med undergjenger), for å teste mot et ekte stort
+kart. Sesjonscookien skrives til `.dev/session-token-real.txt`.
 
 ## Åpent for debatt: AI-integrasjonen (Claude)
 
@@ -133,8 +148,17 @@ oppførselen eller legger til nye Claude-kall.
 
 **Hvordan det er i dag:**
 - **Forslag fra logger** (`src/server/claude/suggest.ts`): etter hver lagret
-  logg, via `after()`, foreslår Claude tråder, fakta og personer. Du godtar
-  med ett trykk på I dag eller profilen. Et kall per logg, noen øre.
+  logg, via `after()`, foreslår Claude tråder, fakta, personer og
+  *forbindelser* («Liv og Brage: kjærester», ikke faktumet «Kjæreste:
+  Brage»). Et kall per logg, noen øre. Rett etter lagring viser en skuff
+  (`SuggestionTray`) «Claude leser loggen …» og så forslagene til akkurat den
+  loggen, med «Legg til alle». Det du ikke svarer på, står på I dag og
+  profilen.
+- **«Fortell om»** (`src/server/claude/tell.ts`, `src/domain/tell.ts`): på
+  profilen og i «Fyll inn kartet». Du skriver fritt; Claude foreslår
+  etikett, bursdag, miljø, fakta, hvem som kjenner hvem (også nye personer)
+  og tråder, og du krysser av. Bare når du trykker «Les», ett kall, rundt
+  2–3k tokens inn.
 - **Forbindelser** (`src/server/claude/links.ts`): bare når du trykker «Spør
   Claude» under Bygg kartet → Forslag til forbindelser.
   - Hele nettverket sendes komprimert (`summarizeNetwork`). En tett gruppe
