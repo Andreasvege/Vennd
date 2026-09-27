@@ -10,6 +10,8 @@ import { interpretFor, logFilter } from '@/server/queries/search'
 import { snippet } from '@/domain/search'
 import { Marked } from '@/components/Marked'
 import { EditLogButton } from '@/components/composer/EditLogButton'
+import { fieldControl } from '@/components/ui/field-styles'
+import { Search } from 'lucide-react'
 import { t } from '@/i18n'
 
 type Props = { searchParams: Promise<{ for?: string; q?: string }> }
@@ -19,6 +21,9 @@ function parseCursor(raw?: string) {
   const date = iso ? new Date(iso) : null
   return date && !Number.isNaN(date.getTime()) && id ? { date, id } : undefined
 }
+
+const monthOf = (date: Date | string) =>
+  new Date(date).toLocaleDateString('nb-NO', { month: 'long', year: 'numeric', timeZone: 'UTC' })
 
 /** Dagboken: alt du har skrevet, nyeste først. Med `?q=` bare det som passer søket. */
 export default async function LogPage({ searchParams }: Props) {
@@ -33,6 +38,21 @@ export default async function LogPage({ searchParams }: Props) {
     <div className="mx-auto flex max-w-2xl flex-col gap-8 px-5 py-8">
       <div className="flex flex-col gap-1">
         <h1 className="font-display text-[34px] leading-tight tracking-tight">{t.logPage.title}</h1>
+        {/* Søk i loggen: et navn blir et filter på personen, et miljø på alle i det. */}
+        <form action="/logg" role="search" className="relative mt-3">
+          <label htmlFor="logg-sok" className="sr-only">
+            {t.logPage.search}
+          </label>
+          <Search aria-hidden size={16} strokeWidth={1.75} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
+          <input
+            id="logg-sok"
+            name="q"
+            type="search"
+            defaultValue={q}
+            placeholder={t.logPage.searchPlaceholder}
+            className={`${fieldControl} appearance-none pl-9 hover:border-ink-muted/60 focus:border-pen focus:ring-2 focus:ring-pen focus:ring-offset-2 focus:ring-offset-paper`}
+          />
+        </form>
         {q && (
           <p className="flex flex-wrap items-baseline gap-x-3 text-[15px] text-ink-muted">
             {t.logPage.filtered(q)}
@@ -47,10 +67,19 @@ export default async function LogPage({ searchParams }: Props) {
         <EmptyState title={q ? t.logPage.noHits : t.logPage.empty} />
       ) : (
         <ol className="flex flex-col">
-          {entries.map((entry) => {
+          {entries.map((entry, i) => {
             const Icon = LOG_ICON[entry.type ?? 'OTHER']
+            // En overskrift når måneden skifter, så en lang dagbok får kapitler.
+            // Datoene står kl. 12 UTC, så måneden er den samme overalt.
+            const month = monthOf(entry.date)
+            const newMonth = i === 0 || monthOf(entries[i - 1].date) !== month
             return (
               <li key={entry.id} className="relative border-l border-rule pb-8 pl-6 last:pb-0">
+                {newMonth && (
+                  <h2 className="-ml-6 mb-4 bg-paper py-1 pl-6 font-display text-[19px] italic text-ink-muted first-letter:uppercase">
+                    {month}
+                  </h2>
+                )}
                 <span aria-hidden className="absolute -left-[3.5px] top-[7px] size-1.5 rounded-full bg-ink" />
                 <p className="flex flex-wrap items-center gap-x-2 text-[14px]">
                   <Icon aria-hidden size={14} strokeWidth={1.75} className="text-ink-muted" />
