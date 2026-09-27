@@ -1,4 +1,5 @@
 import 'server-only'
+import { isClaudeEnabled } from '@/server/claude/client'
 import { prisma } from '@/lib/prisma'
 import { currentPhase } from '@/domain/romance'
 import { personTint } from '@/lib/palette'
@@ -113,6 +114,8 @@ export async function getPersonProfile(userId: string, id: string) {
     plans,
     suggestions,
     links,
+    // «Fortell om» krever Claude; uten nøkkel vises ikke knappen.
+    aiEnabled: isClaudeEnabled(),
   }
 }
 

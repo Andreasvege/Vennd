@@ -22,6 +22,7 @@ import { gapsOf } from '@/domain/enrich'
 import { SuggestionList } from '@/components/suggestions/SuggestionList'
 import { EditLogButton } from '@/components/composer/EditLogButton'
 import { LinkSuggestionList } from '@/components/links/LinkSuggestionList'
+import { TellButton } from '@/components/tell/TellButton'
 
 const section = 'border-t border-rule pt-6'
 
@@ -148,6 +149,7 @@ export function PersonProfile({ person }: { person: PersonProfileData }) {
               <Pencil aria-hidden size={15} strokeWidth={1.75} />
               {t.common.edit}
             </Link>
+            {person.aiEnabled && <TellButton person={{ id: person.id, name: person.name }} />}
             {gaps.length > 0 && (
               <Link
                 href={`/sorter/fyll?ids=${person.id}`}

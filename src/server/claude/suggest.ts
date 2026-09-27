@@ -11,6 +11,14 @@ const output = z.object({
   threads: z.array(z.object({ people: z.array(z.string()), title: z.string(), due: z.enum(['none', 'week', 'month']) })),
   facts: z.array(z.object({ person: z.string(), label: z.string(), value: z.string() })),
   people: z.array(z.object({ name: z.string() })),
+  relations: z.array(
+    z.object({
+      a: z.string(),
+      b: z.string(),
+      type: z.enum(['FRIEND', 'FAMILY', 'COLLEAGUE', 'ROMANTIC', 'ACQUAINTANCE', 'OTHER']),
+      label: z.string().nullable(),
+    }),
+  ),
 })
 
 const SYSTEM = `Du hjelper med Vennekart, en personlig dagbok over folk brukeren kjenner. Brukeren har nettopp skrevet en logg om et treff eller en samtale. Foreslå det brukeren ellers måtte ha registrert selv:
@@ -18,12 +26,13 @@ const SYSTEM = `Du hjelper med Vennekart, en personlig dagbok over folk brukeren
 - threads: ting det er naturlig å spørre om eller følge opp neste gang (maks 3). Skriv tittelen kort som et tema, ikke som et spørsmål: «Andre intervjurunde i Statkraft», «Flyttingen til Bergen». people er hvem tråden gjelder, med navn slik de står i konteksten. due er «week» eller «month» når teksten sier når det blir aktuelt, ellers «none».
 - facts: varige opplysninger om en person, ikke hendelser (maks 5). For eksempel jobb, bosted, partner, barn, allergi, hobby. label er kort (Jobb, Bor, Kjæreste), value er selve opplysningen.
 - people: personer som er nevnt i teksten, men som ikke er med i loggen (maks 3). Bruk fullt navn når det står.
+- relations: forbindelser mellom to personer som teksten sier noe om, for eksempel at to er kjærester, søsken eller kolleger (maks 3). a og b er navn slik de står i konteksten. type er FRIEND, FAMILY, COLLEAGUE, ROMANTIC, ACQUAINTANCE eller OTHER. label er valgfritt og skal gi mening fra begge sider («kjærester», «søsken»). En forbindelse er ikke et faktum: «Ingrid og Jonas er sammen» er en forbindelse, ikke faktumet «Kjæreste: Jonas».
 
 Foreslå bare det teksten faktisk sier. Ikke gjett, og ikke gjenta det som allerede er registrert. Ingenting å foreslå er et godt svar: da blir listene tomme. Skriv på norsk.`
 
 /** Det Claude trenger å vite: hvem som var med, hva som finnes fra før, og hvem brukeren kjenner. */
 async function buildContext(userId: string, logId: string) {
-  const [log, persons] = await Promise.all([
+  const [log, persons, relationships] = await Promise.all([
     prisma.logEntry.findFirst({
       where: { id: logId, userId },
       select: {
@@ -44,6 +53,10 @@ async function buildContext(userId: string, logId: string) {
       },
     }),
     prisma.person.findMany({ where: { userId, archivedAt: null }, orderBy: { name: 'asc' }, select: { id: true, name: true } }),
+    prisma.relationship.findMany({
+      where: { fromPerson: { userId }, toPerson: { userId } },
+      select: { fromPersonId: true, toPersonId: true },
+    }),
   ])
   if (!log?.body?.trim()) return null
   const context: SuggestContext = {
@@ -54,6 +67,7 @@ async function buildContext(userId: string, logId: string) {
       openThreads: person.threads.map((t) => t.thread.title),
     })),
     persons,
+    pairs: relationships.map((r) => [r.fromPersonId, r.toPersonId] as [string, string]),
   }
   return { context, body: log.body, date: log.date }
 }

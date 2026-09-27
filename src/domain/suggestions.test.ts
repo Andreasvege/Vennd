@@ -77,3 +77,28 @@ describe('resolveSuggestions', () => {
     expect(resolveSuggestions(context, { ...empty, threads }, now)).toHaveLength(3)
   })
 })
+
+describe('resolveSuggestions: forbindelser', () => {
+  const ctx = {
+    participants: [{ id: 'i', name: 'Ingrid Aas', facts: [], openThreads: [] }],
+    persons: [
+      { id: 'i', name: 'Ingrid Aas' },
+      { id: 'j', name: 'Jonas Rud' },
+      { id: 'm', name: 'Martin Nilsen' },
+    ],
+    pairs: [['i', 'm']] as [string, string][],
+  }
+  const out = { threads: [], facts: [], people: [] }
+
+  it('foreslår en forbindelse mellom to du har, men ikke en som finnes eller med et ukjent navn', () => {
+    const rows = resolveSuggestions(ctx, {
+      ...out,
+      relations: [
+        { a: 'Ingrid', b: 'Jonas Rud', type: 'ROMANTIC', label: 'kjærester' },
+        { a: 'Ingrid', b: 'Martin', type: 'FRIEND', label: null },
+        { a: 'Ingrid', b: 'Erik', type: 'FAMILY', label: null },
+      ],
+    })
+    expect(rows).toEqual([{ kind: 'RELATIONSHIP', payload: { aId: 'i', bId: 'j', type: 'ROMANTIC', label: 'kjærester' } }])
+  })
+})

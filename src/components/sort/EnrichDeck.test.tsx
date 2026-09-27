@@ -6,6 +6,7 @@ const enrichPerson = vi.fn()
 vi.mock('@/server/actions/sort', () => ({ enrichPerson: (...a: unknown[]) => enrichPerson(...a) }))
 vi.mock('@/server/actions/person', () => ({ createPerson: vi.fn() }))
 vi.mock('@/server/actions/tag', () => ({ createTag: vi.fn() }))
+vi.mock('@/server/actions/tell', () => ({ tellAbout: vi.fn(), applyTell: vi.fn() }))
 vi.mock('@/components/toast/ToastProvider', () => ({ useToast: () => vi.fn() }))
 
 import { EnrichDeck } from './EnrichDeck'
@@ -41,6 +42,7 @@ const data: EnrichData = {
   tags: [{ id: 'radio', name: 'Studentradio', color: 'ochre' }],
   pairs: [['a', 's']],
   withGaps: 2,
+  aiEnabled: false,
 }
 
 beforeEach(() => {

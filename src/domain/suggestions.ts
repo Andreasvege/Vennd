@@ -4,6 +4,8 @@ import { dueFrom } from './plans'
 export type SuggestContext = {
   participants: { id: string; name: string; facts: { label: string; value: string }[]; openThreads: string[] }[]
   persons: { id: string; name: string }[]
+  /** Forbindelsene som finnes, så de ikke foreslås igjen. */
+  pairs?: [string, string][]
 }
 
 /** Det Claude svarer, etter skjemaet i `src/server/claude/suggest.ts`. */
@@ -11,23 +13,27 @@ export type ClaudeOutput = {
   threads: { people: string[]; title: string; due: 'none' | 'week' | 'month' }[]
   facts: { person: string; label: string; value: string }[]
   people: { name: string }[]
+  relations?: { a: string; b: string; type: RelationType; label: string | null }[]
 }
+
+type RelationType = 'FRIEND' | 'FAMILY' | 'COLLEAGUE' | 'ROMANTIC' | 'ACQUAINTANCE' | 'OTHER'
 
 export type SuggestionRow =
   | { kind: 'THREAD'; payload: { title: string; personIds: string[]; dueDate: string | null } }
   | { kind: 'FACT'; payload: { personId: string; label: string; value: string } }
   | { kind: 'PARTICIPANT'; payload: { personId: string } }
   | { kind: 'PERSON'; payload: { name: string } }
+  | { kind: 'RELATIONSHIP'; payload: { aId: string; bId: string; type: RelationType; label: string | null } }
 
-const MAX = { threads: 3, facts: 5, people: 3 }
-const clean = (s: string, max: number) => s.trim().replace(/\s+/g, ' ').slice(0, max)
-const same = (a: string, b: string) => fold(clean(a, 500)) === fold(clean(b, 500))
+const MAX = { threads: 3, facts: 5, people: 3, relations: 3 }
+export const clean = (s: string, max: number) => s.trim().replace(/\s+/g, ' ').slice(0, max)
+export const same = (a: string, b: string) => fold(clean(a, 500)) === fold(clean(b, 500))
 
 /**
  * Et navn fra Claude til én person: fullt navn, ellers et fornavn som bare
  * én har. Tvetydig eller ukjent gir null: da er det bedre å la være.
  */
-function lookup(name: string, among: { id: string; name: string }[]): string | null {
+export function lookup(name: string, among: { id: string; name: string }[]): string | null {
   const wanted = fold(clean(name, 120))
   const full = among.filter((p) => fold(p.name) === wanted)
   if (full.length === 1) return full[0].id
@@ -81,6 +87,20 @@ export function resolveSuggestions(ctx: SuggestContext, out: ClaudeOutput, now: 
     if (!sharesFirstName) people.push({ kind: 'PERSON', payload: { name: cleaned } })
   }
   rows.push(...people.slice(0, MAX.people))
+
+  // Forbindelser mellom to du har: «Ingrid og Jonas er kjærester». Begge
+  // må finnes; et nytt navn er et PERSON-forslag, ikke en forbindelse ennå.
+  const known = new Set((ctx.pairs ?? []).map(([a, b]) => [a, b].sort().join('|')))
+  const relations: SuggestionRow[] = []
+  for (const r of out.relations ?? []) {
+    const aId = lookup(r.a, ctx.persons)
+    const bId = lookup(r.b, ctx.persons)
+    if (!aId || !bId || aId === bId) continue
+    const key = [aId, bId].sort().join('|')
+    if (known.has(key) || relations.some((x) => x.kind === 'RELATIONSHIP' && [x.payload.aId, x.payload.bId].sort().join('|') === key)) continue
+    relations.push({ kind: 'RELATIONSHIP', payload: { aId, bId, type: r.type, label: r.label ? clean(r.label, 60) || null : null } })
+  }
+  rows.push(...relations.slice(0, MAX.relations))
 
   return rows
 }

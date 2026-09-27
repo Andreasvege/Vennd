@@ -83,6 +83,16 @@ export async function acceptSuggestion(rawId: string): Promise<ActionResult<{ ki
           })
           break
         }
+        case 'RELATIONSHIP': {
+          const p = suggestionPayload.RELATIONSHIP.parse(suggestion.payload)
+          await owned([p.aId, p.bId])
+          const exists = await tx.relationship.findFirst({
+            where: { OR: [{ fromPersonId: p.aId, toPersonId: p.bId }, { fromPersonId: p.bId, toPersonId: p.aId }] },
+            select: { id: true },
+          })
+          if (!exists) await tx.relationship.create({ data: { fromPersonId: p.aId, toPersonId: p.bId, type: p.type, label: p.label } })
+          break
+        }
       }
     })
   } catch (e) {

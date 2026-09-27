@@ -20,6 +20,8 @@ import type { EnrichCardPerson, EnrichData } from '@/server/queries/enrich'
 import type { TagColor } from '@/lib/palette'
 import { uniqueById } from '@/lib/uniqueById'
 import { WhoFields, type Who } from './WhoFields'
+import { TellSheet } from '@/components/tell/TellSheet'
+import { Sparkles } from 'lucide-react'
 import { TagPicker, type PickerTag } from './TagPicker'
 import { t } from '@/i18n'
 
@@ -45,6 +47,7 @@ function EnrichCard({
   onSaved,
   onSkip,
   canSkip,
+  aiEnabled,
 }: {
   person: EnrichCardPerson
   tags: PickerTag[]
@@ -54,7 +57,9 @@ function EnrichCard({
   onSaved: (knows: string[]) => void
   onSkip: () => void
   canSkip: boolean
+  aiEnabled: boolean
 }) {
+  const [telling, setTelling] = useState(false)
   const [showAll, setShowAll] = useState(person.gaps.length === 0)
   // «Sist sett» er et anslag; har dere logget kontakt, finnes svaret alt.
   const show = (gap: Gap) => (gap === 'seen' && person.lastContact ? false : showAll || person.gaps.includes(gap))
@@ -168,6 +173,25 @@ function EnrichCard({
           </p>
         </div>
       </header>
+
+      {aiEnabled && (
+        <>
+          <button
+            type="button"
+            onClick={() => setTelling(true)}
+            className="-mt-2 flex items-center gap-2 self-start rounded-[10px] border border-dashed border-rule px-3 py-2 text-left text-[14px] text-ink-muted outline-none transition-colors hover:border-ink-muted hover:text-ink focus-visible:ring-2 focus-visible:ring-pen"
+          >
+            <Sparkles aria-hidden size={15} strokeWidth={1.75} className="shrink-0" />
+            {t.tell.orTellLong(first(person.name))}
+          </button>
+          <TellSheet
+            person={{ id: person.id, name: person.name }}
+            isOpen={telling}
+            onClose={() => setTelling(false)}
+            onApplied={() => onSaved([])}
+          />
+        </>
+      )}
 
       {person.facts.length > 0 && (
         <ul className="-mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[14px]">
@@ -432,6 +456,7 @@ export function EnrichDeck({ data, title }: { data: EnrichData; title?: string }
           onSaved={(knows) => saved(current, knows)}
           onSkip={skip}
           canSkip={queue.length > 1}
+          aiEnabled={data.aiEnabled}
         />
       ) : (
         <div className="animate-card-in flex flex-col items-center gap-4 rounded-[20px] border border-rule bg-paper-raised px-6 py-12 text-center">

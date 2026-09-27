@@ -46,7 +46,7 @@ it('finner personen i teksten og lagrer loggen med henne', async () => {
   await user.click(screen.getByRole('button', { name: 'Lagre' }))
   await waitFor(() => expect(onClose).toHaveBeenCalled())
   // Id-en går videre, så forslag fra Claude kan hentes når de er klare.
-  expect(onSaved).toHaveBeenCalledWith('l1')
+  expect(onSaved).toHaveBeenCalledWith('l1', true)
   expect(createLog).toHaveBeenCalledWith(expect.objectContaining({ personIds: ['martin'], body: 'Middag med Martin' }))
 })
 
