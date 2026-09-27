@@ -73,7 +73,10 @@ export function ConnectCard({ request, persons, relationships, tags, onClose, on
     const clean = label.trim() || null
     let proximities: Proximity[] = []
     if (existing) {
-      const res = await settle(updateRelationship(existing.id, { type, label: clean }))
+      // Var koblingen avsluttet, betyr et nytt drag at de har kontakt igjen.
+      const res = await settle(
+        updateRelationship(existing.id, { type, label: clean, ...(existing.until && { until: null }) }),
+      )
       if (!res.ok) return fail(res.error)
     } else if (target) {
       const res = await settle(createRelationship({ fromPersonId: source, toPersonId: target, type, label: clean }))
@@ -156,7 +159,13 @@ export function ConnectCard({ request, persons, relationships, tags, onClose, on
               </div>
             )}
 
-            {existing && <p className="-mt-2 text-[13px] text-ink-muted">{t.connect.already(t.relationType[existing.type].toLowerCase())}</p>}
+            {existing && (
+              <p className="-mt-2 text-[13px] text-ink-muted">
+                {existing.until
+                  ? t.connect.ended(t.relationType[existing.type].toLowerCase())
+                  : t.connect.already(t.relationType[existing.type].toLowerCase())}
+              </p>
+            )}
 
             <ChipGroup label={t.connect.type} value={type} onChange={setType} options={TYPE_OPTIONS} />
             <TextField
@@ -180,7 +189,15 @@ export function ConnectCard({ request, persons, relationships, tags, onClose, on
                 {t.common.cancel}
               </Button>
               <Button variant="primary" type="submit" isDisabled={saving || (!to && !name.trim())}>
-                {saving ? t.common.saving : existing ? t.connect.save : to ? t.connect.connect : t.connect.add}
+                {saving
+                  ? t.common.saving
+                  : existing?.until
+                    ? t.connect.reconnect
+                    : existing
+                      ? t.connect.save
+                      : to
+                        ? t.connect.connect
+                        : t.connect.add}
               </Button>
             </div>
           </form>

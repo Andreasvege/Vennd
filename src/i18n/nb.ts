@@ -624,6 +624,8 @@ export const nb = {
     namePlaceholder: 'Et nytt navn',
     existing: 'Allerede i kartet:',
     already: (type: string) => `Koblet fra før, som ${type}.`,
+    ended: (type: string) => `Var koblet som ${type}, men det er avsluttet. Lagrer du, er de koblet igjen.`,
+    reconnect: 'Koble igjen',
     type: 'Hva er de for hverandre?',
     how: 'Hvordan kjenner de hverandre? (valgfritt)',
     howPlaceholder: 'klatrer sammen, samboere',
