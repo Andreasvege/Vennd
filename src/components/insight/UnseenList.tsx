@@ -44,7 +44,7 @@ function Row({ p }: { p: UnseenPerson }) {
   )
 }
 
-function Band({ title, people }: { title: string; people: UnseenPerson[] }) {
+function Band({ title, people, review }: { title: string; people: UnseenPerson[]; review?: boolean }) {
   const [all, setAll] = useState(false)
   if (people.length === 0) return null
   const shown = all ? people : people.slice(0, SHOWN)
@@ -53,6 +53,15 @@ function Band({ title, people }: { title: string; people: UnseenPerson[] }) {
       <h3 className="flex items-baseline gap-2 text-[11px] font-medium uppercase tracking-[0.14em] text-ink-muted">
         {title}
         <span className="tabular-nums tracking-normal">{people.length}</span>
+        {/* Aldri logget: gå gjennom dem og anslå når dere sist så hverandre. */}
+        {review && (
+          <Link
+            href={`/sorter/fyll?ids=${people.map((p) => p.id).join(',')}`}
+            className="ml-auto text-[12px] normal-case tracking-normal text-ink underline underline-offset-4 outline-none hover:text-ink-muted focus-visible:ring-2 focus-visible:ring-pen"
+          >
+            {t.enrich.reviewThese}
+          </Link>
+        )}
       </h3>
       <ul className="flex flex-col divide-y divide-rule">
         {shown.map((p) => (
@@ -75,7 +84,7 @@ export function UnseenList({ unseen }: { unseen: Insight['unseen'] }) {
   return (
     <div className="flex flex-col gap-6">
       {BANDS.map((b) => (
-        <Band key={b} title={t.insight.bands[b]} people={unseen[b]} />
+        <Band key={b} title={t.insight.bands[b]} people={unseen[b]} review={b === 'never'} />
       ))}
     </div>
   )

@@ -18,6 +18,7 @@ import { pathHref } from '@/app/kart/sti'
 import { PhaseStripe } from './PhaseStripe'
 import { ThreadList } from './ThreadList'
 import { rhythm } from '@/domain/insight'
+import { gapsOf } from '@/domain/enrich'
 import { SuggestionList } from '@/components/suggestions/SuggestionList'
 import { EditLogButton } from '@/components/composer/EditLogButton'
 import { LinkSuggestionList } from '@/components/links/LinkSuggestionList'
@@ -98,6 +99,16 @@ export function PersonProfile({ person }: { person: PersonProfileData }) {
     person.birthday && t.person.birthdayLabel(formatDate(new Date(person.birthday))),
   ].filter(Boolean)
 
+  // Det vi ikke vet ennå: en vei rett til «Fyll inn kartet» for henne.
+  const imported: string[] = [t.import.phoneLabel, t.import.emailLabel]
+  const gaps = gapsOf({
+    ...person,
+    tagIds: person.tags.map((tag) => tag.id),
+    factCount: person.facts.filter((f) => !imported.includes(f.label)).length,
+    relationshipCount: person.relationships.length,
+    lastContact: person.logs.length ? person.logs[0].date : null,
+  })
+
   return (
     <article className="flex flex-col gap-8">
       <header className="flex flex-col gap-5 sm:flex-row sm:items-start">
@@ -132,10 +143,23 @@ export function PersonProfile({ person }: { person: PersonProfileData }) {
               <PhaseControl personId={person.id} current={person.phase} />
             </div>
           )}
-          <Link href={`/person/${person.id}/edit`} className={`${buttonClass('secondary')} mt-2 self-start`}>
-            <Pencil aria-hidden size={15} strokeWidth={1.75} />
-            {t.common.edit}
-          </Link>
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <Link href={`/person/${person.id}/edit`} className={buttonClass('secondary')}>
+              <Pencil aria-hidden size={15} strokeWidth={1.75} />
+              {t.common.edit}
+            </Link>
+            {gaps.length > 0 && (
+              <Link
+                href={`/sorter/fyll?ids=${person.id}`}
+                className="group flex items-center gap-1.5 rounded-[8px] text-[13px] text-ink-muted outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-pen"
+              >
+                <span>
+                  {t.enrich.missingList(gaps.map((g) => t.enrich.gapNames[g]))}
+                </span>
+                <span className="text-ink underline underline-offset-4">{t.enrich.fillIn}</span>
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 

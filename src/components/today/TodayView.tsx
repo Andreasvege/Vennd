@@ -275,7 +275,7 @@ export function TodayView({ data }: { data: TodayData }) {
 
       <section>
         <SectionHeading>{t.today.reach}</SectionHeading>
-        {data.reach.length === 0 ? (
+        {data.reach.length === 0 && data.neverLogged.length === 0 ? (
           <p className="text-[14px] text-ink-muted">{t.today.quiet}</p>
         ) : (
           <>
@@ -288,6 +288,18 @@ export function TodayView({ data }: { data: TodayData }) {
               <Button variant="secondary" onPress={() => setShowAll(true)} className="mt-2">
                 {t.today.showMore(hidden)}
               </Button>
+            )}
+            {data.neverLogged.length > 0 && (
+              <Link
+                href={`/sorter/fyll?ids=${data.neverLogged.map((r) => r.personId).join(',')}`}
+                className="mt-3 flex items-center gap-3 rounded-[12px] border border-rule px-4 py-3 text-[14px] text-ink-muted outline-none transition-colors hover:border-ink-muted focus-visible:ring-2 focus-visible:ring-pen"
+              >
+                <span className="flex-1">{t.today.neverLogged(data.neverLogged.map((r) => r.personName.split(' ')[0]))}</span>
+                <span className="flex shrink-0 items-center gap-1 text-ink">
+                  {t.today.estimate}
+                  <ArrowRight aria-hidden size={14} strokeWidth={1.75} />
+                </span>
+              </Link>
             )}
           </>
         )}

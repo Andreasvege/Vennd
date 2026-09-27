@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { TAG_COLORS } from '@/lib/palette'
 import { MAP_MODES } from '@/domain/mapMode'
 import { LOG_TYPES } from '@/domain/logTypes'
+import { SEEN_CHOICES } from '@/domain/enrich'
 
 // Alt som kommer inn i en server action, valideres her. Skjemaene er rene
 // og testes direkte; handlingene bare kaller safeParse.
@@ -229,6 +230,21 @@ export const sortPersonInput = z.object({
   tagIds: z.array(id).max(20),
   knows: z.array(id).max(50),
 })
+// «Fyll inn kartet»: bare det som er fylt inn, blir lagret. null = uendret.
+export const enrichPersonInput = z.object({
+  personId: id,
+  who: z
+    .object({ type: z.enum(RELATIONSHIP_TYPES), relationLabel, cadenceWeeks, phase: z.enum(PHASES).nullable() })
+    .nullable(),
+  tagIds: z.array(id).max(20).nullable(),
+  knows: z.array(id).max(50),
+  birthday: isoDate.nullable(),
+  facts: z.array(z.object({ label: z.string().trim().min(1).max(40), value: z.string().trim().min(1).max(200) })).max(10),
+  // «Når så dere hverandre sist?»: valget og datoen det svarer til, regnet i
+  // nettleseren (leserens dag).
+  seen: z.object({ choice: z.enum(SEEN_CHOICES), on: isoDate }).nullable(),
+})
+export type EnrichPersonInput = z.infer<typeof enrichPersonInput>
 export const assignGroupInput = z.object({
   tagId: id,
   personIds: z.array(id).max(500),
