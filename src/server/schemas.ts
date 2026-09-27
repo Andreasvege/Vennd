@@ -55,6 +55,18 @@ export const relationshipInput = z
   .refine((r) => r.fromPersonId !== r.toPersonId, { path: ['toPersonId'] })
   .refine((r) => !r.since || !r.until || r.since <= r.until, { path: ['until'] })
 
+// «Hvem kjenner Ingrid?»: dra fra en person ut i tomrommet på kartet. En ny
+// person, koblet til den du dro fra, og gjerne i samme miljø.
+export const connectedPersonInput = z.object({
+  name: z.string().trim().min(1).max(120),
+  knownPersonId: id,
+  type: z.enum(RELATIONSHIP_TYPES),
+  label: z.string().trim().max(60).nullable().optional(),
+  sameGroup: z.boolean(),
+  /** Der du slapp, i Nettverk. Ellers finner kartet en ledig plass. */
+  position: z.object({ x: z.number().finite(), y: z.number().finite() }).nullable().optional(),
+})
+
 export const logInput = z
   .object({
     personIds: z.array(id).min(1).max(50),
@@ -144,6 +156,7 @@ export type FactInput = z.infer<typeof factInput>
 export type MapViewInput = z.infer<typeof mapViewInput>
 export type PlanInput = z.infer<typeof planInput>
 export type RelationshipPatch = z.infer<typeof relationshipPatch>
+export type ConnectedPersonInput = z.infer<typeof connectedPersonInput>
 
 // Import: radene brukeren valgte i forhåndsvisningen. Filen er lest i
 // nettleseren; serveren sjekker duplikater på nytt før noe lagres.

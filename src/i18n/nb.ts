@@ -512,6 +512,7 @@ export const nb = {
     newRelationship: 'Relasjon',
     logContact: 'Logg',
     viewProfile: 'Profil',
+    dragToConnect: 'Dra for å koble',
     emptyTitle: 'Kartet ditt er tomt',
     emptyBody: 'Legg til en du har truffet i det siste.',
     legend: 'Forklaring',
@@ -614,6 +615,24 @@ export const nb = {
     confirmDelete: 'Slett for godt',
     deleteWarning: 'Loggen slettes. Trådene den åpnet, blir stående. En plan den fulgte opp, venter på «Hvordan gikk det?» igjen.',
     deleted: 'Loggen er slettet.',
+  },
+
+  connect: {
+    pairTitle: (a: string, b: string) => `${a} og ${b}`,
+    newTitle: (name: string) => `Hvem kjenner ${name}?`,
+    name: 'Navn',
+    namePlaceholder: 'Et nytt navn',
+    existing: 'Allerede i kartet:',
+    already: (type: string) => `Koblet fra før, som ${type}.`,
+    type: 'Hva er de for hverandre?',
+    how: 'Hvordan kjenner de hverandre? (valgfritt)',
+    howPlaceholder: 'klatrer sammen, samboere',
+    sameGroup: (group: string) => `Også i ${group}`,
+    connect: 'Koble',
+    save: 'Lagre',
+    add: 'Legg til',
+    hintNetwork: 'Dra en person oppå en annen for å koble dem. Dra fra prikken ut i tomrommet for å legge til en de kjenner.',
+    hintFixed: 'Dra fra en person til en annen for å koble dem, eller ut i tomrommet for å legge til en de kjenner.',
   },
 
   relationship: {

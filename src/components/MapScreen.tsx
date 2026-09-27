@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useSyncExternalStore, useTransition } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ReactFlowProvider } from '@xyflow/react'
 import { Layers, Link2, Sparkles, Undo2, UserPlus } from 'lucide-react'
 import { Button, EmptyState } from '@/components/ui'
 import { VennekartCanvas } from '@/components/graph/VennekartCanvas'
+import { ConnectCard, type ConnectRequest } from '@/components/graph/ConnectCard'
 import { MapControls } from '@/components/graph/MapControls'
 import { useMapModel } from '@/components/graph/useMapModel'
 import { useMapState } from '@/components/graph/useMapState'
@@ -28,6 +29,32 @@ import type { PositionList } from '@/server/schemas'
 import { Button as AriaButton } from 'react-aria-components'
 
 type Props = { graph: Graph; tags: TagSummary[]; views: SavedView[]; highlight?: string[] }
+
+// Hintet om å dra forsvinner for godt når du har koblet noen én gang.
+const HINT_KEY = 'vennekart.connectHintSeen'
+const hintListeners = new Set<() => void>()
+function useHintSeen() {
+  return useSyncExternalStore(
+    (fn) => {
+      hintListeners.add(fn)
+      return () => hintListeners.delete(fn)
+    },
+    () => {
+      try {
+        return localStorage.getItem(HINT_KEY) === '1'
+      } catch {
+        return true
+      }
+    },
+    () => true,
+  )
+}
+function markHintSeen() {
+  try {
+    localStorage.setItem(HINT_KEY, '1')
+  } catch {}
+  hintListeners.forEach((fn) => fn())
+}
 
 /**
  * Kartet med alt rundt: synsvalg, filter og visninger øverst, forklaring
@@ -54,6 +81,9 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
   const [before, setBefore] = useState<PositionList | null>(null)
   const [refit, setRefit] = useState(0)
   const [tidying, startTidy] = useTransition()
+  const [connect, setConnect] = useState<ConnectRequest | null>(null)
+  const [hovering, setHovering] = useState(false)
+  const hintSeen = useHintSeen()
 
   const tidy = () =>
     startTidy(async () => {
@@ -100,13 +130,19 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
               setPair([a, b])
               setSheet('relationship')
             }}
-            onProximities={notice}
+            onConnectRequest={(request) => {
+              setError('')
+              setConnect(request)
+            }}
+            onHoverPerson={setHovering}
             onError={setError}
             refit={refit}
           />
         </ReactFlowProvider>
 
-        <div className="absolute left-4 right-16 top-4 z-10 flex flex-col items-start gap-2">
+        {/* Boksen går over hele bredden, men bare knappene tar imot klikk: ellers
+            kunne ingen velge eller dra personer som står under verktøylinjen. */}
+        <div className="pointer-events-none absolute left-4 right-16 top-4 z-10 flex flex-col items-start gap-2 *:pointer-events-auto">
           <MapControls
             mode={state.mode}
             onMode={state.setMode}
@@ -171,6 +207,32 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
             </p>
           )}
         </div>
+
+        {connect && (
+          <ConnectCard
+            key={JSON.stringify(connect)}
+            request={connect}
+            persons={graph.persons}
+            relationships={graph.relationships}
+            tags={graph.tags}
+            onClose={() => setConnect(null)}
+            onDone={(proximities) => {
+              setConnect(null)
+              markHintSeen()
+              notice(proximities)
+            }}
+          />
+        )}
+
+        {/* Hvordan man kobler, mens musen er over en person, til du har gjort det én gang. */}
+        {!hintSeen && hovering && !connect && (
+          <p
+            aria-hidden
+            className="pointer-events-none absolute bottom-20 left-1/2 z-10 hidden max-w-md -translate-x-1/2 rounded-full border border-rule bg-paper-raised/95 px-4 py-2 text-center text-[13px] text-ink-muted shadow-float desk:block"
+          >
+            {state.mode === 'network' ? t.connect.hintNetwork : t.connect.hintFixed}
+          </p>
+        )}
 
         <div className="absolute bottom-5 right-5 z-10 flex items-center gap-2">
           <Button variant="secondary" onPress={() => setSheet('relationship')}>

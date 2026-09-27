@@ -180,15 +180,66 @@ describe('tidyNetwork', () => {
     expect(tidyNetwork(persons, groups, pairs)).toEqual(pos)
   })
 
-  it('holder plass rundt «deg» i tyngdepunktet, også når ett miljø er mye større', () => {
+  it('holder plass rundt «deg» i origo, også når ett miljø er mye større', () => {
     const big = Array.from({ length: 40 }, (_, i) => ({ id: `r${i}`, name: `r${i}`, groupId: 'radio' }))
     const clique = big.flatMap((a, i) => big.slice(i + 1).map((b) => [a.id, b.id] as [string, string]))
     const all = [...big, ...persons.filter((p) => p.groupId !== 'radio')]
     const out = tidyNetwork(all, groups, [...pairs, ...clique])
-    const pts = [...out.values()]
-    const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length
-    const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length
-    expect(Math.hypot(cx, cy)).toBeLessThan(1)
-    for (const p of pts) expect(Math.hypot(p.x - cx, p.y - cy)).toBeGreaterThan(120)
+    for (const p of out.values()) expect(Math.hypot(p.x, p.y)).toBeGreaterThan(120)
+  })
+
+  // Et ekte kart: ~120 personer, 50 av dem i samme krets med undergjenger.
+  describe('med et stort, realistisk kart', () => {
+    const tags = ['radio', 'fam', 'jobb', 'klatring', 'hjem', 'fhs'].map((id) => ({ id, name: id }))
+    const sizes: Record<string, number> = { radio: 50, fam: 14, jobb: 16, klatring: 10, hjem: 9, fhs: 9 }
+    const people = Object.entries(sizes).flatMap(([g, n]) =>
+      Array.from({ length: n }, (_, i) => ({ id: `${g}${i}`, name: `${g}${i}`, groupId: g as string | null })),
+    )
+    people.push(...Array.from({ length: 12 }, (_, i) => ({ id: `u${i}`, name: `u${i}`, groupId: null })))
+    let seed = 3
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646
+    const links: [string, string][] = []
+    for (const a of people)
+      for (const b of people) {
+        if (a.id >= b.id) continue
+        const same = a.groupId !== null && a.groupId === b.groupId
+        const sub = same && a.groupId === 'radio' && Number(a.id.slice(5)) % 5 === Number(b.id.slice(5)) % 5
+        if (rnd() < (sub ? 0.75 : same ? 0.3 : 0.004)) links.push([a.id, b.id])
+      }
+    const out = tidyNetwork(people, tags, links)
+    const members = (g: string) => people.filter((p) => p.groupId === g).map((p) => out.get(p.id)!)
+
+    it('ingen overlapper, og alle står unna deg', () => {
+      const pts = [...out.values()]
+      for (let i = 0; i < pts.length; i++) {
+        expect(Math.hypot(pts[i].x, pts[i].y)).toBeGreaterThan(120)
+        for (let j = i + 1; j < pts.length; j++) expect(Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y)).toBeGreaterThanOrEqual(98)
+      }
+    })
+
+    it('omrissene til to miljøer overlapper ikke', () => {
+      // Omrisset ligger 56 utenfor medlemmene; to omriss trenger 112 imellom.
+      for (const a of tags)
+        for (const b of tags) {
+          if (a.id >= b.id) continue
+          for (const p of members(a.id)) for (const q of members(b.id)) expect(Math.hypot(p.x - q.x, p.y - q.y)).toBeGreaterThan(112)
+        }
+    })
+
+    it('hvert miljø er en rund øy, ikke en lang pølse', () => {
+      for (const g of tags) {
+        const pts = members(g.id)
+        const w = Math.max(...pts.map((p) => p.x)) - Math.min(...pts.map((p) => p.x))
+        const h = Math.max(...pts.map((p) => p.y)) - Math.min(...pts.map((p) => p.y))
+        if (pts.length >= 9) expect(Math.max(w, h) / Math.max(1, Math.min(w, h))).toBeLessThan(1.8)
+      }
+    })
+
+    it('er kompakt: kartet er ikke mye større enn øyene til sammen', () => {
+      const pts = [...out.values()]
+      const r = Math.max(...pts.map((p) => Math.hypot(p.x, p.y)))
+      // 120 personer med ~100 px mellomrom dekker rundt 120 × 100² px².
+      expect(Math.PI * r * r).toBeLessThan(120 * 100 * 100 * 6)
+    })
   })
 })
