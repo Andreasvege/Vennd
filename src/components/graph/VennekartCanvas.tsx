@@ -413,6 +413,7 @@ export function VennekartCanvas({
           a: edge.source,
           b: edge.target,
           at: { x: e.clientX - (box?.left ?? 0), y: e.clientY - (box?.top ?? 0) },
+          relationshipId: edge.id,
         })
       }}
       // Tastatur: velg en strek og trykk Enter. «Ofte sammen» blir en
@@ -424,7 +425,10 @@ export function VennekartCanvas({
         if (edge.type === 'derived') return onDerivedClick(edge.source, edge.target)
         const a = centerOf(edge.source)
         const b = centerOf(edge.target)
-        if (a && b) onConnectRequest({ kind: 'pair', a: edge.source, b: edge.target, at: boxPoint({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }) })
+        if (a && b) {
+          const at = boxPoint({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 })
+          onConnectRequest({ kind: 'pair', a: edge.source, b: edge.target, at, relationshipId: edge.id })
+        }
       }}
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}

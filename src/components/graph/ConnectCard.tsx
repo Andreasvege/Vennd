@@ -14,7 +14,14 @@ import { t } from '@/i18n'
 
 /** Hva et drag på kartet ble til: mellom to personer, eller ut i tomrommet. */
 export type ConnectRequest =
-  | { kind: 'pair'; a: string; b: string; at: Point }
+  | {
+      kind: 'pair'
+      a: string
+      b: string
+      at: Point
+      /** Fra et klikk på en strek: nettopp den koblingen (to kan ha flere). */
+      relationshipId?: string
+    }
   | { kind: 'new'; from: string; at: Point; flowAt: Point | null }
 
 type Props = {
@@ -41,7 +48,11 @@ export function ConnectCard({ request, persons, relationships, tags, onClose, on
   // Et navn som finnes fra før, gjør «ny person» om til en kobling.
   const [target, setTarget] = useState<string | null>(request.kind === 'pair' ? request.b : null)
   const source = request.kind === 'pair' ? request.a : request.from
-  const existing = target ? relationships.find((r) => samePair(r, source, target)) : undefined
+  const fromEdge = request.kind === 'pair' && request.relationshipId !== undefined
+  const existing =
+    (request.kind === 'pair' && request.relationshipId
+      ? relationships.find((r) => r.id === request.relationshipId)
+      : undefined) ?? (target ? relationships.find((r) => samePair(r, source, target)) : undefined)
 
   const [type, setType] = useState<RelationshipType>(existing?.type ?? 'FRIEND')
   const [label, setLabel] = useState(existing?.label ?? '')
@@ -74,9 +85,9 @@ export function ConnectCard({ request, persons, relationships, tags, onClose, on
     let proximities: Proximity[] = []
     if (existing) {
       // Var koblingen avsluttet, betyr et nytt drag at de har kontakt igjen.
-      const res = await settle(
-        updateRelationship(existing.id, { type, label: clean, ...(existing.until && { until: null }) }),
-      )
+      // Et klikk på den stiplede streken er bare for å rette den.
+      const reopen = existing.until && !fromEdge
+      const res = await settle(updateRelationship(existing.id, { type, label: clean, ...(reopen && { until: null }) }))
       if (!res.ok) return fail(res.error)
     } else if (target) {
       const res = await settle(createRelationship({ fromPersonId: source, toPersonId: target, type, label: clean }))
@@ -170,7 +181,7 @@ export function ConnectCard({ request, persons, relationships, tags, onClose, on
 
             {existing && (
               <p className="-mt-2 text-[13px] text-ink-muted">
-                {existing.until
+                {existing.until && !fromEdge
                   ? t.connect.ended(t.relationType[existing.type].toLowerCase())
                   : t.connect.already(t.relationType[existing.type].toLowerCase())}
               </p>
@@ -205,7 +216,7 @@ export function ConnectCard({ request, persons, relationships, tags, onClose, on
               <Button variant="primary" type="submit" isDisabled={saving || (!to && !name.trim())}>
                 {saving
                   ? t.common.saving
-                  : existing?.until
+                  : existing?.until && !fromEdge
                     ? t.connect.reconnect
                     : existing
                       ? t.connect.save
