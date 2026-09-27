@@ -46,6 +46,22 @@ const pairKey = (a: string, b: string) => [a, b].sort().join('|')
 // Slipper du en person nærmere enn dette fra en annen, er det «koble», ikke «flytt».
 const DROP_ON = 40
 
+// På en mobilskjerm er «vis alt» med mange personer bare prikker. Der starter
+// kartet på en lesbar zoom rundt midten (deg); knappen «vis alt» viser alt.
+const NARROW = '(max-width: 640px)'
+const fitFor = (narrow: boolean) => ({ padding: 0.2, ...(narrow && { minZoom: 0.55 }) })
+function useNarrow() {
+  return useSyncExternalStore(
+    (fn) => {
+      const mq = window.matchMedia(NARROW)
+      mq.addEventListener('change', fn)
+      return () => mq.removeEventListener('change', fn)
+    },
+    () => window.matchMedia(NARROW).matches,
+    () => false,
+  )
+}
+
 const reducedMotionQuery = '(prefers-reduced-motion: reduce)'
 function usePrefersReducedMotion() {
   return useSyncExternalStore(
@@ -97,6 +113,7 @@ export function VennekartCanvas({
   const { data: session } = useSession()
   const flow = useReactFlow()
   const reducedMotion = usePrefersReducedMotion()
+  const narrow = useNarrow()
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   // Buntede kanter i Kretser beregnes for sluttposisjonene; de tones inn
@@ -174,7 +191,7 @@ export function VennekartCanvas({
       const raf = requestAnimationFrame(() => {
         setNodes(target)
         setSettledMode(mode)
-        if (modeChanged) flow.fitView({ padding: 0.2 })
+        if (modeChanged) flow.fitView(fitFor(narrow))
       })
       return () => cancelAnimationFrame(raf)
     }
@@ -193,7 +210,7 @@ export function VennekartCanvas({
         setSettledMode(mode)
         if (modeChanged || wantFit.current) {
           wantFit.current = false
-          flow.fitView({ padding: 0.2, duration: 300 })
+          flow.fitView({ ...fitFor(narrow), duration: 300 })
         }
       }
     }
@@ -203,7 +220,7 @@ export function VennekartCanvas({
       step(now)
     })
     return () => cancelAnimationFrame(raf)
-  }, [visible, targets, fresh, mode, session, flow, setNodes, reducedMotion, refit])
+  }, [visible, targets, fresh, mode, session, flow, setNodes, reducedMotion, refit, narrow])
 
   // Hvem som er valgt, fra adressen eller personlinjen. Bare markeringen
   // endres; plassene står.
@@ -401,7 +418,7 @@ export function VennekartCanvas({
       nodesDraggable={mode === 'network'}
       proOptions={{ hideAttribution: true }}
       fitView
-      fitViewOptions={{ padding: 0.2 }}
+      fitViewOptions={fitFor(narrow)}
       // Målhåndtaket tar ikke pointer-events (ellers kunne man ikke dra
       // noden), så vi lar React Flow snappe geometrisk i stedet.
       connectionRadius={60}

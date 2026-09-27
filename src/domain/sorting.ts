@@ -1,4 +1,4 @@
-import { DEFAULT_CADENCE_WEEKS } from './cadence'
+import { CADENCE_WEEKS, DEFAULT_CADENCE_WEEKS } from './cadence'
 import type { RelationshipType } from '@/types'
 
 export type DeckPerson = { id: string; name: string; logCount: number; hasBirthday: boolean; email: string | null }
@@ -115,7 +115,7 @@ export function networkHints(personId: string, pairs: [string, string][], tagsOf
 }
 
 /** «Hvor ofte vil du holde kontakten?»: uker mellom påminnelser, eller aldri. */
-export const CADENCE_CHOICES = [2, 4, 12, 26, null] as const
+export const CADENCE_CHOICES = [...CADENCE_WEEKS, null] as const
 export type CadenceChoice = (typeof CADENCE_CHOICES)[number]
 
 /** Typene kortet spør om; «Annet» finnes, men hører hjemme på profilen. */
@@ -129,7 +129,7 @@ export function defaultCadence(type: RelationshipType, phase?: string | null): C
   if (type === 'ROMANTIC' && phase === 'ENDED') return null
   if (type === 'ACQUAINTANCE') return null
   const weeks = DEFAULT_CADENCE_WEEKS[type]
-  const options = CADENCE_CHOICES.filter((c): c is 2 | 4 | 12 | 26 => c !== null)
+  const options = CADENCE_CHOICES.filter((c): c is (typeof CADENCE_WEEKS)[number] => c !== null)
   // Uavgjort: det sjeldneste. En påminnelse for lite er bedre enn mas.
   return options.reduce((best, c) => (Math.abs(c - weeks) <= Math.abs(best - weeks) ? c : best))
 }
