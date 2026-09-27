@@ -692,6 +692,38 @@ export const nb = {
     } as Record<string, string>,
   },
 
+  questions: {
+    way: { title: 'Spørsmål', body: 'Svar på noen spørsmål, så dukker folka opp av seg selv.' },
+    title: 'Spørsmål',
+    start: 'Begynn med noen spørsmål',
+    people: 'Hvem?',
+    peopleHint: 'Skriv navn, også nye. Du kan hoppe over det du ikke har svar på.',
+    groupName: 'Miljøet',
+    what: 'Dette skjer',
+    effects: {
+      group: (name: string) => `De får miljøet «${name}».`,
+      connectAll: 'De blir koblet til hverandre.',
+      cadence: (label: string) => `Påminnelse: ${label.toLowerCase()}.`,
+      reachOut: 'Du får en påminnelse om å ta kontakt, på I dag.',
+    },
+    next: 'Neste',
+    skip: 'Hopp over',
+    reachOutTitle: 'Ta kontakt igjen',
+    saved: (n: number) => (n === 1 ? '1 person lagt inn.' : `${n} personer lagt inn.`),
+    doneTitle: 'Det var alle spørsmålene',
+    doneBody: 'Se kartet ditt, eller fyll inn mer om dem du har lagt til.',
+    items: {
+      goodNews: { question: 'Hvem ringer du først når du får gode nyheter?' },
+      missed: { question: 'Hvem har du ikke snakket med på over et år, men savner?' },
+      livedWith: { question: 'Hvem har du bodd sammen med?', group: 'Kollektivet' },
+      school: { question: 'Hvem var vennene dine på videregående?', group: 'Videregående' },
+      family: { question: 'Hvem i familien ser du oftest?' },
+      work: { question: 'Hvem jobber du tettest med?', group: 'Jobb' },
+      hobby: { question: 'Hvem gjør du noe sammen med, jevnlig? Trening, kor, et lag.', group: 'Trening' },
+      neighbours: { question: 'Hvem hilser du på i nabolaget?' },
+    } as Record<string, { question: string; group?: string }>,
+  },
+
   tell: {
     open: (name: string) => `Fortell om ${name}`,
     title: (name: string) => `Fortell om ${name}`,

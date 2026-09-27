@@ -370,10 +370,16 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
                 body={t.map.emptyBody}
                 className="pointer-events-auto"
                 action={
-                  <Button variant="primary" size="lg" onPress={() => setSheet('person')}>
-                    <UserPlus aria-hidden size={18} strokeWidth={1.75} />
-                    {t.map.newPerson}
-                  </Button>
+                  // Et tomt kart: la spørsmålene hente folk fram, eller legg til én selv.
+                  <div className="flex flex-wrap justify-center gap-3">
+                    <Link href="/sorter/sporsmal" className={buttonClass('primary', 'lg')}>
+                      {t.questions.start}
+                    </Link>
+                    <Button variant="secondary" size="lg" onPress={() => setSheet('person')}>
+                      <UserPlus aria-hidden size={18} strokeWidth={1.75} />
+                      {t.map.newPerson}
+                    </Button>
+                  </div>
                 }
               />
             )}
