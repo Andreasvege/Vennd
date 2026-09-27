@@ -1,7 +1,6 @@
 'use client'
 
 import { Handle, Position, useConnection, type NodeProps } from '@xyflow/react'
-import { PenLine, UserRound } from 'lucide-react'
 import { Avatar } from '@/components/ui'
 import type { TagColor } from '@/lib/palette'
 import { t } from '@/i18n'
@@ -15,8 +14,6 @@ export type PersonNodeData = {
   fade: number
   /** Personen står fast (Nærhet, Kretser): hele avataren er dra-punktet for å koble. */
   connectFromBody: boolean
-  onAddLog: (personId: string) => void
-  onViewProfile: (personId: string) => void
 }
 
 // Midtpunktsankeret: et usynlig punkt i sentrum av avataren. React Flow
@@ -25,9 +22,6 @@ export type PersonNodeData = {
 // pointer-events, ellers kan ikke noden flyttes.
 export const centerHandle =
   'left-1/2! top-1/2! size-px! min-h-0! min-w-0! -translate-x-1/2! -translate-y-1/2! border-0! bg-transparent! opacity-0! pointer-events-none!'
-
-const quickAction =
-  'nodrag inline-flex min-h-11 desk:min-h-8 items-center gap-1.5 rounded-full border border-rule bg-paper-raised px-3 text-[12px] text-ink shadow-float transition-colors hover:border-ink-muted focus-visible:outline-2 focus-visible:outline-pen'
 
 export function PersonNode({ id, data, selected }: NodeProps) {
   const d = data as PersonNodeData
@@ -82,18 +76,6 @@ export function PersonNode({ id, data, selected }: NodeProps) {
         </span>
       </div>
 
-      {selected && (
-        <div className="absolute top-full mt-1 flex gap-1.5">
-          <button type="button" onClick={() => d.onAddLog(d.id)} className={quickAction}>
-            <PenLine aria-hidden size={14} strokeWidth={1.75} />
-            {t.map.logContact}
-          </button>
-          <button type="button" onClick={() => d.onViewProfile(d.id)} className={quickAction}>
-            <UserRound aria-hidden size={14} strokeWidth={1.75} />
-            {t.map.viewProfile}
-          </button>
-        </div>
-      )}
     </div>
   )
 }

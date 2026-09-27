@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useSyncExternalStore, useTransition } from 'react'
+import { useEffect, useState, useSyncExternalStore, useTransition } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { ReactFlowProvider } from '@xyflow/react'
 import { Layers, Link2, Sparkles, Undo2, UserPlus } from 'lucide-react'
 import { Button, EmptyState } from '@/components/ui'
 import { VennekartCanvas } from '@/components/graph/VennekartCanvas'
 import { ConnectCard, type ConnectRequest } from '@/components/graph/ConnectCard'
+import { PersonBar } from '@/components/graph/PersonBar'
 import { MapControls } from '@/components/graph/MapControls'
 import { useMapModel } from '@/components/graph/useMapModel'
 import { useMapState } from '@/components/graph/useMapState'
@@ -49,6 +50,19 @@ function useHintSeen() {
     () => true,
   )
 }
+const DESK = '(min-width: 1024px)'
+function useIsDesk() {
+  return useSyncExternalStore(
+    (fn) => {
+      const mq = window.matchMedia(DESK)
+      mq.addEventListener('change', fn)
+      return () => mq.removeEventListener('change', fn)
+    },
+    () => window.matchMedia(DESK).matches,
+    () => true,
+  )
+}
+
 function markHintSeen() {
   try {
     localStorage.setItem(HINT_KEY, '1')
@@ -63,6 +77,8 @@ function markHintSeen() {
  */
 export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
   const pathname = usePathname()
+  const router = useRouter()
+  const desk = useIsDesk()
   const openComposer = useComposer()
   const notice = useProximityNotice()
   const state = useMapState(
@@ -75,7 +91,7 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
   const model = useMapModel(graph, state.mode, state.filter, now)
 
   const [sheet, setSheet] = useState<'person' | 'relationship' | null>(null)
-  const [pair, setPair] = useState<[string, string] | null>(null)
+  const [pair, setPair] = useState<[string, string | undefined] | null>(null)
   const [error, setError] = useState('')
   // «Rydd opp» i Nettverk: plasseringene fra før, så «Angre» kan sette dem tilbake.
   const [before, setBefore] = useState<PositionList | null>(null)
@@ -84,6 +100,36 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
   const [connect, setConnect] = useState<ConnectRequest | null>(null)
   const [hovering, setHovering] = useState(false)
   const hintSeen = useHintSeen()
+
+  // Valgt person. På PC er det profilen i sidepanelet (adressen /person/…,
+  // mens kartet blir stående); på mobil en linje nederst på kartet.
+  const [mobileSelected, setMobileSelected] = useState<string | null>(null)
+  const profileId = pathname.startsWith('/person/') ? pathname.split('/')[2] : null
+  const selectedId = desk ? profileId : mobileSelected
+  const selectedPerson = selectedId ? graph.persons.find((p) => p.id === selectedId) : undefined
+  const select = (id: string | null) => {
+    if (!desk) return setMobileSelected(id)
+    if (id === null) {
+      if (profileId) router.back()
+      return
+    }
+    // Fra én profil til en annen: bytt, så «tilbake» går til kartet, ikke gjennom alle.
+    if (profileId) router.replace(`/person/${id}`, { scroll: false })
+    else router.push(`/person/${id}`, { scroll: false })
+  }
+
+  // Esc lukker profilen i panelet (PC) eller personlinjen (mobil), når ingen
+  // dialog er åpen. På mobil lukker profilarket seg selv; da gjør vi ingenting.
+  useEffect(() => {
+    if (!selectedId) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || document.querySelector('[role="dialog"]')) return
+      if (desk) router.back()
+      else if (!profileId) setMobileSelected(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [selectedId, profileId, desk, router])
 
   const tidy = () =>
     startTidy(async () => {
@@ -125,7 +171,8 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
             model={model}
             mode={state.mode}
             highlight={highlight}
-            onAddLog={(personId) => openComposer({ personIds: [personId] })}
+            selectedId={selectedId}
+            onSelect={select}
             onDerivedClick={(a, b) => {
               setPair([a, b])
               setSheet('relationship')
@@ -194,7 +241,8 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
             <div className="flex items-center gap-2 rounded-[10px] border border-redpencil/40 bg-paper-raised py-1.5 pl-3 pr-1 text-[14px]">
               <span className="text-redpencil">{t.smallWorld.pathLabel(highlight.map(nameOf).join(' → '))}</span>
               <Link
-                href={pathname}
+                // Med en profil åpen er adressen /person/…; stien bor på kartet.
+                href={pathname.startsWith('/person/') ? '/' : pathname}
                 className="rounded-[8px] px-2 py-1 text-ink-muted outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-pen"
               >
                 {t.smallWorld.hidePath}
@@ -224,6 +272,24 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
           />
         )}
 
+        {selectedPerson && !desk && !connect && (
+          <PersonBar
+            person={selectedPerson}
+            onLog={() => openComposer({ personIds: [selectedPerson.id] })}
+            onProfile={() => router.push(`/person/${selectedPerson.id}`)}
+            onConnect={() => {
+              const box = document.querySelector('.react-flow')?.getBoundingClientRect()
+              setConnect({
+                kind: 'new',
+                from: selectedPerson.id,
+                at: { x: (box?.width ?? 0) / 2, y: (box?.height ?? 0) * 0.15 },
+                flowAt: null,
+              })
+            }}
+            onClose={() => setMobileSelected(null)}
+          />
+        )}
+
         {/* Hvordan man kobler, mens musen er over en person, til du har gjort det én gang. */}
         {!hintSeen && hovering && !connect && (
           <p
@@ -235,7 +301,14 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
         )}
 
         <div className="absolute bottom-5 right-5 z-10 flex items-center gap-2">
-          <Button variant="secondary" onPress={() => setSheet('relationship')}>
+          <Button
+            variant="secondary"
+            onPress={() => {
+              // Med en valgt person: relasjonen gjelder nok dem.
+              setPair(selectedId ? [selectedId, undefined] : null)
+              setSheet('relationship')
+            }}
+          >
             <Link2 aria-hidden size={16} strokeWidth={1.75} />
             {t.map.newRelationship}
           </Button>
