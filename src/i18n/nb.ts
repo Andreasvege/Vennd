@@ -451,6 +451,7 @@ export const nb = {
     hint: 'Hovedmiljøet gir personen farge på kartet.',
     empty: 'Du har ingen miljøer ennå. De lages når du gir en person et miljø.',
     count: (n: number) => (n === 1 ? '1 person' : `${n} personer`),
+    review: (name: string) => `Gå gjennom ${name} og fyll inn det som mangler`,
     rename: (name: string) => `Nytt navn på ${name}`,
     color: (name: string) => `Farge på ${name}`,
     deleteConfirm: (n: number) =>
@@ -788,6 +789,7 @@ export const nb = {
     emptyTitle: 'Kartet ditt er tomt',
     emptyBody: 'Skriv om noen du har truffet i det siste. Du kan legge dem til mens du skriver.',
     emptyAction: 'Skriv første logg',
+    showOnMap: (name: string) => `Finn ${name.split(' ')[0]} i kartet`,
     quiet: 'Ingen du bør ta kontakt med akkurat nå.',
     neverLogged: (names: string[]) =>
       names.length <= 3

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
+import { buttonClass } from '@/components/ui/button-styles'
 import { ArrowRight, CalendarPlus, Cake, Layers, PenLine } from 'lucide-react'
 import { Avatar, Button, EmptyState, SectionHeading } from '@/components/ui'
 import { useComposer, usePlanner } from '@/components/composer/ComposerProvider'
@@ -144,10 +145,15 @@ export function TodayView({ data }: { data: TodayData }) {
           title={t.today.emptyTitle}
           body={t.today.emptyBody}
           action={
-            <Button variant="primary" size="lg" onPress={() => openComposer()}>
-              <PenLine aria-hidden size={18} strokeWidth={1.75} />
-              {t.today.emptyAction}
-            </Button>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link href="/sorter/sporsmal" className={buttonClass('primary', 'lg')}>
+                {t.questions.start}
+              </Link>
+              <Button variant="secondary" size="lg" onPress={() => openComposer()}>
+                <PenLine aria-hidden size={18} strokeWidth={1.75} />
+                {t.today.emptyAction}
+              </Button>
+            </div>
           }
         />
       </div>

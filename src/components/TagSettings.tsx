@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import { Button as AriaButton, Dialog, DialogTrigger, Input, Popover, TextField } from 'react-aria-components'
 import { Trash2 } from 'lucide-react'
@@ -98,7 +99,17 @@ function TagRow({ tag }: { tag: TagSummary }) {
           <Input className="w-full rounded-[8px] border border-transparent bg-transparent px-2 py-1.5 text-[16px] text-ink outline-none transition-colors hover:border-rule focus:border-pen focus:bg-paper-raised" />
         </TextField>
 
-        <span className="hidden shrink-0 text-[13px] text-ink-muted sm:inline">{t.tags.count(tag.personCount)}</span>
+        {tag.personCount > 0 ? (
+          <Link
+            href={`/sorter/fyll?miljo=${tag.id}`}
+            aria-label={t.tags.review(tag.name)}
+            className="hidden shrink-0 rounded-[6px] text-[13px] text-ink-muted underline-offset-4 outline-none hover:text-ink hover:underline focus-visible:ring-2 focus-visible:ring-pen sm:inline"
+          >
+            {t.tags.count(tag.personCount)}
+          </Link>
+        ) : (
+          <span className="hidden shrink-0 text-[13px] text-ink-muted sm:inline">{t.tags.count(tag.personCount)}</span>
+        )}
 
         {confirming ? (
           <>
