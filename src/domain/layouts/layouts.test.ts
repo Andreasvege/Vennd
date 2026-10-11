@@ -188,6 +188,71 @@ describe('tidyNetwork', () => {
     for (const p of out.values()) expect(Math.hypot(p.x, p.y)).toBeGreaterThan(120)
   })
 
+  it('legger miljøer med mange felles kjente inntil hverandre', () => {
+    // Åtte like miljøer; a og e (motsatt i rekkefølgen) har mange felles
+    // kjente, ellers knapt noen.
+    const tags = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((id) => ({ id, name: id }))
+    const people = tags.flatMap((g) => Array.from({ length: 6 }, (_, i) => ({ id: `${g.id}${i}`, name: `${g.id}${i}`, groupId: g.id })))
+    const links: [string, string][] = []
+    for (const g of tags) for (let i = 0; i < 6; i++) for (let j = i + 1; j < 6; j++) links.push([`${g.id}${i}`, `${g.id}${j}`])
+    for (let i = 0; i < 6; i++) for (let j = 0; j < 6; j++) links.push([`a${i}`, `e${j}`])
+    for (const [g, h] of ['ab', 'bc', 'cd', 'de', 'ef', 'fg', 'gh', 'ha']) links.push([`${g}0`, `${h}0`])
+    const out = tidyNetwork(people, tags, links)
+    const center = (g: string) => {
+      const pts = people.filter((p) => p.groupId === g).map((p) => out.get(p.id)!)
+      return { x: pts.reduce((s, p) => s + p.x, 0) / pts.length, y: pts.reduce((s, p) => s + p.y, 0) / pts.length }
+    }
+    const gap = (g: string, h: string) => Math.hypot(center(g).x - center(h).x, center(g).y - center(h).y)
+    // Kant i kant: like nær som den nærmeste av de andre (flere kan røre a).
+    const others = ['b', 'c', 'd', 'f', 'g', 'h'].map((g) => gap('a', g))
+    expect(gap('a', 'e')).toBeLessThan(Math.min(...others) + 10)
+    expect(gap('a', 'e')).toBeLessThan(others.reduce((s, x) => s + x, 0) / others.length)
+  })
+
+  it('setter en uten miljø ved dem hen kjenner, og samler de uten forbindelser alfabetisk', () => {
+    const tags = ['a', 'b', 'c'].map((id) => ({ id, name: id }))
+    const people = [
+      ...tags.flatMap((g) => Array.from({ length: 5 }, (_, i) => ({ id: `${g.id}${i}`, name: `${g.id}${i}`, groupId: g.id as string | null }))),
+      { id: 'venn', name: 'Venn', groupId: null },
+      ...['Øyvind', 'Anne', 'Kari', 'Berit'].map((name) => ({ id: name, name, groupId: null })),
+    ]
+    const links: [string, string][] = [
+      ['a0', 'a1'],
+      ['b0', 'b1'],
+      ['c0', 'c1'],
+      ['venn', 'c0'],
+      ['venn', 'c2'],
+      ['venn', 'c3'],
+    ]
+    const out = tidyNetwork(people, tags, links)
+    const d = (x: string, y: string) => Math.hypot(out.get(x)!.x - out.get(y)!.x, out.get(x)!.y - out.get(y)!.y)
+    const nearest = (id: string) =>
+      people.filter((p) => p.groupId).sort((p, q) => d(id, p.id) - d(id, q.id) || p.id.localeCompare(q.id))[0].groupId
+    expect(nearest('venn')).toBe('c')
+    // Blokken leses som tekst: linje for linje, venstre mot høyre.
+    const reading = ['Anne', 'Berit', 'Kari', 'Øyvind'].map((id) => out.get(id)!)
+    for (let i = 1; i < reading.length; i++) {
+      const [p, q] = [reading[i - 1], reading[i]]
+      expect(q.y > p.y + 1 || (Math.abs(q.y - p.y) <= 1 && q.x > p.x)).toBe(true)
+    }
+  })
+
+  it('en tett øy med mange forbindelser ut, kommer aldri inn i naboens omriss', () => {
+    // Et stort, helt tett miljø der alle kjenner alle i et lite nabomiljø.
+    const tags = ['tett', 'nabo'].map((id) => ({ id, name: id }))
+    const people = [
+      ...Array.from({ length: 36 }, (_, i) => ({ id: `t${i}`, name: `t${i}`, groupId: 'tett' })),
+      ...Array.from({ length: 8 }, (_, i) => ({ id: `n${i}`, name: `n${i}`, groupId: 'nabo' })),
+    ]
+    const links: [string, string][] = []
+    for (let i = 0; i < 36; i++) for (let j = i + 1; j < 36; j++) links.push([`t${i}`, `t${j}`])
+    for (let i = 0; i < 36; i++) for (let j = 0; j < 8; j++) if ((i + j) % 3 === 0) links.push([`t${i}`, `n${j}`])
+    const out = tidyNetwork(people, tags, links)
+    for (const p of people.filter((p) => p.groupId === 'tett'))
+      for (const q of people.filter((p) => p.groupId === 'nabo'))
+        expect(Math.hypot(out.get(p.id)!.x - out.get(q.id)!.x, out.get(p.id)!.y - out.get(q.id)!.y)).toBeGreaterThan(112)
+  })
+
   // Et ekte kart: ~120 personer, 50 av dem i samme krets med undergjenger.
   describe('med et stort, realistisk kart', () => {
     const tags = ['radio', 'fam', 'jobb', 'klatring', 'hjem', 'fhs'].map((id) => ({ id, name: id }))
