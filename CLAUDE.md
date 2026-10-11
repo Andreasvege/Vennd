@@ -129,6 +129,7 @@ spesifikasjoner i `docs/superpowers/specs/`.
 | #36 | Spørsmålskort (`/sorter/sporsmal`): folk hentes ut av hukommelsen, med miljø, koblinger, rytme eller påminnelse |
 | #37 | Søkefelt og månedskapitler i loggen |
 | #38 | «Finn … i kartet» fra profilen, `/kart?person=`, miljøer i Innstillinger åpner «Fyll inn» |
+| #41 | «Rydd opp» etter felles kjente: øyer med sterke bånd blir naboer, løse folk står ved dem de kjenner, de uten forbindelser i alfabetisk blokk, folk med bånd utover på kanten som vender dit. Testrigg i `.dev/render.ts` (ikke i git) |
 
 **Kjente hull og idéer som ikke er bygget:** bilder (venter på Blob),
 kalender-synk (bare fil i dag), og redigering av forslag før de legges til.
