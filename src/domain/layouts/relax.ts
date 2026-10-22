@@ -5,8 +5,16 @@ import type { Point } from './types'
  * nærmere enn `gap` skyves fra hverandre langs linjen mellom dem, litt av
  * gangen, til ingen overlapper. Strukturen (sektor og avstand) beholdes;
  * bare det som kolliderer, flytter seg.
+ *
+ * Med `minRadius` slipper ingen inn mot midten (der du står): den som blir
+ * dyttet innenfor, legges tilbake på ringen og må vike til siden i stedet.
  */
-export function relax(positions: Map<string, Point>, gap: number, rounds = 60): Map<string, Point> {
+export function relax(
+  positions: Map<string, Point>,
+  gap: number,
+  rounds = 60,
+  { minRadius = 0 }: { minRadius?: number } = {},
+): Map<string, Point> {
   const ids = [...positions.keys()].sort()
   const pos = new Map(ids.map((id) => [id, { ...positions.get(id)! }]))
   for (let round = 0; round < rounds; round++) {
@@ -30,10 +38,19 @@ export function relax(positions: Map<string, Point>, gap: number, rounds = 60): 
         a.y -= (dy / d) * push
         b.x += (dx / d) * push
         b.y += (dy / d) * push
+        keepOut(a, minRadius)
+        keepOut(b, minRadius)
         moved = true
       }
     }
     if (!moved) break
   }
   return pos
+}
+
+function keepOut(p: Point, minRadius: number) {
+  const r = Math.hypot(p.x, p.y)
+  if (r >= minRadius || r < 1e-6) return
+  p.x *= minRadius / r
+  p.y *= minRadius / r
 }

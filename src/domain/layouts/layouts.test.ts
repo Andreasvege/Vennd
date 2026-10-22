@@ -117,6 +117,19 @@ describe('relax', () => {
     expect(Number.isFinite(out.get('a')!.x)).toBe(true)
     expect(Math.hypot(out.get('a')!.x - out.get('b')!.x, out.get('a')!.y - out.get('b')!.y)).toBeGreaterThanOrEqual(79)
   })
+  it('med minRadius: skyver ingen innenfor den innerste ringen, der du står', async () => {
+    const { relax } = await import('./relax')
+    // Seks ferske i en smal sektor, alle på ringen: trengsel som før dyttet noen inn mot midten.
+    const start = new Map(
+      Array.from({ length: 6 }, (_, i) => [`p${i}`, { x: 140 * Math.cos(i * 0.12), y: 140 * Math.sin(i * 0.12) }]),
+    )
+    const out = relax(start, 104, 60, { minRadius: 140 })
+    const pts = [...out.values()]
+    for (const p of pts) expect(Math.hypot(p.x, p.y)).toBeGreaterThanOrEqual(139.9)
+    for (let i = 0; i < pts.length; i++)
+      for (let j = i + 1; j < pts.length; j++)
+        expect(Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y)).toBeGreaterThanOrEqual(100)
+  })
 })
 
 describe('connectionOrder', () => {
