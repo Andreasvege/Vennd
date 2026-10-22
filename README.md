@@ -193,7 +193,7 @@ flowchart LR
   antall databasetilkoblinger er begrenset, så Prisma Postgres ikke går tom.
 
 Prosjektet har rundt 23 000 linjer TypeScript, 373 tester (Vitest og Testing
-Library), 14 migreringer og over 40 PR-er. Hver funksjon startet som en
+Library), 13 migreringer og over 40 PR-er. Hver funksjon startet som en
 spesifikasjon i [`docs/superpowers/specs/`](docs/superpowers/specs/), og hver PR er
 sjekket i nettleseren på mobil og PC, i lys og mørk modus, og med axe for
 tilgjengelighet.
@@ -227,7 +227,7 @@ Utstillingsdataene fra bildene lages med
 | Kommando | Hva den gjør |
 | --- | --- |
 | `npm run dev` | Dev-server på http://localhost:3000 |
-| `npm run build` | `prisma generate` og produksjonsbygg |
+| `npm run build` | `prisma generate`, migrering (bare i prod) og produksjonsbygg |
 | `npm run lint` | ESLint |
 | `npm test` | Vitest (én gjennomkjøring) |
 
