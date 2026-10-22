@@ -31,7 +31,7 @@ const on = (iso: string) => new Date(`${iso}T12:00:00.000Z`)
 
 async function main() {
   await prisma.user.deleteMany({ where: { id: USER_ID } })
-  await prisma.user.create({ data: { id: USER_ID, name: 'Andreas Vege', email: 'dev@vennekart.local' } })
+  await prisma.user.create({ data: { id: USER_ID, name: 'Andreas Vege', email: 'dev@vennd.local' } })
 
   const tagSpecs = [
     ['Studentradio', 'ochre'],

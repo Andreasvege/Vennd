@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { ReactFlowProvider } from '@xyflow/react'
 import { Layers, Link2, Sparkles, Undo2, UserPlus } from 'lucide-react'
 import { Button, EmptyState } from '@/components/ui'
-import { VennekartCanvas } from '@/components/graph/VennekartCanvas'
+import { MapCanvas } from '@/components/graph/MapCanvas'
 import { ConnectCard, type ConnectRequest } from '@/components/graph/ConnectCard'
 import { PersonBar } from '@/components/graph/PersonBar'
 import { MapControls } from '@/components/graph/MapControls'
@@ -32,7 +32,7 @@ import { Button as AriaButton } from 'react-aria-components'
 type Props = { graph: Graph; tags: TagSummary[]; views: SavedView[]; highlight?: string[] }
 
 // Hintet om å dra forsvinner for godt når du har koblet noen én gang.
-const HINT_KEY = 'vennekart.connectHintSeen'
+const HINT_KEY = 'vennd.connectHintSeen'
 const hintListeners = new Set<() => void>()
 function useHintSeen() {
   return useSyncExternalStore(
@@ -178,7 +178,7 @@ export function MapScreen({ graph, tags, views, highlight = [] }: Props) {
     <div className="relative flex h-full">
       <div className="relative h-full flex-1">
         <ReactFlowProvider>
-          <VennekartCanvas
+          <MapCanvas
             model={model}
             mode={state.mode}
             highlight={highlight}

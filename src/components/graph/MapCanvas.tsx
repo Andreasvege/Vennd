@@ -98,7 +98,7 @@ type Props = {
  * bare hvor folk står; når det byttes, glir de til nye plasser, så du ser
  * at det er det samme kartet fra en annen vinkel.
  */
-export function VennekartCanvas({
+export function MapCanvas({
   model,
   mode,
   highlight,

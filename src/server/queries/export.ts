@@ -1,5 +1,6 @@
 import 'server-only'
 import { prisma } from '@/lib/prisma'
+import { t } from '@/i18n'
 
 export const EXPORT_VERSION = 1
 
@@ -63,10 +64,10 @@ export async function getExport(userId: string) {
   ])
 
   return {
-    app: 'Vennekart',
+    app: t.app.name,
     version: EXPORT_VERSION,
     exportedAt: new Date().toISOString(),
-    persons: persons.map(({ tags, ...p }) => ({ ...p, tagIds: tags.map((t) => t.tagId) })),
+    persons: persons.map(({ tags, ...p }) => ({ ...p, tagIds: tags.map((tag) => tag.tagId) })),
     relationships,
     logs: logs.map(({ participants, ...l }) => ({ ...l, personIds: participants.map((p) => p.personId) })),
     threads: threads.map(({ persons, ...th }) => ({ ...th, personIds: persons.map((p) => p.personId) })),
