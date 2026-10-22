@@ -34,3 +34,6 @@ yarn-error.log*
 
 # superpowers session scratch
 .superpowers/
+
+# lokale Claude Code-innstillinger
+.claude/settings.local.json
