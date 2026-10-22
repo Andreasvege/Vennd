@@ -130,6 +130,14 @@ describe('relax', () => {
       for (let j = i + 1; j < pts.length; j++)
         expect(Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y)).toBeGreaterThanOrEqual(100)
   })
+  it('med minRadius: en overfylt ring gir endelige tall, og alle står fortsatt utenfor', async () => {
+    const { relax } = await import('./relax')
+    const start = new Map(Array.from({ length: 14 }, (_, i) => [`p${i}`, { x: 140 * Math.cos(i * 0.05), y: 140 * Math.sin(i * 0.05) }]))
+    for (const p of relax(start, 104, 60, { minRadius: 140 }).values()) {
+      expect(Number.isFinite(p.x) && Number.isFinite(p.y)).toBe(true)
+      expect(Math.hypot(p.x, p.y)).toBeGreaterThanOrEqual(139.9)
+    }
+  })
 })
 
 describe('connectionOrder', () => {
