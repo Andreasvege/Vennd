@@ -35,6 +35,19 @@ Det siste skriptet skriver ut en sesjonscookie for dev-brukeren. Sett den
 som `authjs.session-token` på localhost i nettleseren, så er du logget inn
 uten Google. Seed-skriptet nekter å kjøre mot noe annet enn localhost.
 
+### Demobruker for skjermbilder
+
+```bash
+node --env-file=.env.local prisma/seed-demo.mts
+node --env-file=.env.local scripts/dev-session.mts demo-user "Sigrid Hagen"
+```
+
+Lager «Sigrid Hagen» med 40 oppdiktede personer: familie over tre
+generasjoner, kjæreste, studievenner, jobb, klatring, bokklubb, barndom og
+nabolag, med kryssende bånd, et halvt års logger, åpne tråder, planer og
+bursdager. Datoene regnes fra i dag, så kartet ser levende ut når du seeder.
+Nettverk er ferdig ryddet («Rydd opp»). Bruk cookien fra det andre skriptet.
+
 ## Kommandoer
 
 | Kommando | Hva den gjør |
