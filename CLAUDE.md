@@ -1,6 +1,9 @@
 @AGENTS.md
 
-# Vennekart
+# Vennd
+
+Het Vennekart før oktober 2026. GitHub-repoet, Vercel-prosjektet (`vennekart`)
+og lokale databasenavn har fortsatt det gamle navnet.
 
 En personlig dagbok over menneskene du kjenner. Bare for eieren (Andreas).
 Kjernesløyfen er **fange → huske → følge opp**: logg et treff på under 30
@@ -130,6 +133,8 @@ spesifikasjoner i `docs/superpowers/specs/`.
 | #37 | Søkefelt og månedskapitler i loggen |
 | #38 | «Finn … i kartet» fra profilen, `/kart?person=`, miljøer i Innstillinger åpner «Fyll inn» |
 | #41 | «Rydd opp» etter felles kjente: øyer med sterke bånd blir naboer, løse folk står ved dem de kjenner, de uten forbindelser i alfabetisk blokk, folk med bånd utover på kanten som vender dit |
+| #42 | Nærhet: frastøtingspasset (`relax`, `minRadius`) skyver ingen innenfor den innerste ringen og oppå deg |
+| #43 | Nytt navn: Vennd. README med skjermbilder (lys og mørk), GIF av kartet og teknisk del. Utstillingsdata i `scripts/seed-showcase.mts` |
 
 **Kjente hull og idéer som ikke er bygget:** bilder (venter på Blob),
 kalender-synk (bare fil i dag), og redigering av forslag før de legges til.
@@ -140,6 +145,10 @@ flytter også folk du har plassert selv (Angre finnes).
 **Testdata:** `.dev/seed-real.mts` lager brukeren `real-user` med 122
 personer (50 i samme krets, med undergjenger), for å teste mot et ekte stort
 kart. Sesjonscookien skrives til `.dev/session-token-real.txt`.
+`scripts/seed-showcase.mts` lager `showcase-user` med 42 oppdiktede personer,
+logger, tråder, planer og Claude-forslag (uten API-kall). Det er dataene bak
+skjermbildene i `docs/screenshots/`. Cookien skrives til
+`.dev/session-token-showcase.txt`.
 
 ## Åpent for debatt: AI-integrasjonen (Claude)
 
