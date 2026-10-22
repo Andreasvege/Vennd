@@ -29,7 +29,7 @@ const output = z.object({
   ),
 })
 
-const SYSTEM = `Du hjelper med Vennekart, en personlig oversikt over folk brukeren kjenner og hvordan de henger sammen. Du får hele nettverket: miljøene med medlemmer, relasjonene (type og etikett), hva enkelte er for brukeren, og grupper som enkle regler har funnet (folk som samme person kjenner, men som ikke er koblet til hverandre).
+const SYSTEM = `Du hjelper med Vennd, en personlig oversikt over folk brukeren kjenner og hvordan de henger sammen. Du får hele nettverket: miljøene med medlemmer, relasjonene (type og etikett), hva enkelte er for brukeren, og grupper som enkle regler har funnet (folk som samme person kjenner, men som ikke er koblet til hverandre).
 
 Gi maks ${INSIGHTS} innsikter, de mest verdifulle først. En innsikt er én påstand om en gruppe som dekker mange forbindelser på en gang, slik at brukeren kan svare én gang i stedet for mange:
 - kind "group": alle i members kjenner hverandre. For eksempel søsken, et kull, en vennegjeng.

@@ -12,6 +12,7 @@ import { getComposerData } from '@/server/queries/composer'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { prisma } from '@/lib/prisma'
+import { t } from '@/i18n'
 
 // Fraunces bærer dagbok-stemmen: navn, overskrifter og selve loggteksten.
 // SOFT og WONK gir de runde, litt skjeve formene som skiller den fra en
@@ -29,10 +30,10 @@ const instrument = Instrument_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'Vennekart',
+  title: t.app.name,
   description: 'En dagbok over menneskene dine',
   // Lagt til på hjemskjermen på iPhone: åpnes uten nettleserramme.
-  appleWebApp: { capable: true, title: 'Vennekart', statusBarStyle: 'default' },
+  appleWebApp: { capable: true, title: t.app.name, statusBarStyle: 'default' },
 }
 
 export const viewport: Viewport = {

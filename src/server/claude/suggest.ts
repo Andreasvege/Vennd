@@ -21,7 +21,7 @@ const output = z.object({
   ),
 })
 
-const SYSTEM = `Du hjelper med Vennekart, en personlig dagbok over folk brukeren kjenner. Brukeren har nettopp skrevet en logg om et treff eller en samtale. Foreslå det brukeren ellers måtte ha registrert selv:
+const SYSTEM = `Du hjelper med Vennd, en personlig dagbok over folk brukeren kjenner. Brukeren har nettopp skrevet en logg om et treff eller en samtale. Foreslå det brukeren ellers måtte ha registrert selv:
 
 - threads: ting det er naturlig å spørre om eller følge opp neste gang (maks 3). Skriv tittelen kort som et tema, ikke som et spørsmål: «Andre intervjurunde i Statkraft», «Flyttingen til Bergen». people er hvem tråden gjelder, med navn slik de står i konteksten. due er «week» eller «month» når teksten sier når det blir aktuelt, ellers «none».
 - facts: varige opplysninger om en person, ikke hendelser (maks 5). For eksempel jobb, bosted, partner, barn, allergi, hobby. label er kort (Jobb, Bor, Kjæreste), value er selve opplysningen.

@@ -18,7 +18,7 @@ if (!secret) {
 const token = await encode({
   secret,
   salt: 'authjs.session-token',
-  token: { sub: 'dev-user', id: 'dev-user', name: 'Andreas Vege', email: 'dev@vennekart.local' },
+  token: { sub: 'dev-user', id: 'dev-user', name: 'Andreas Vege', email: 'dev@vennd.local' },
   maxAge: 60 * 60 * 24 * 30,
 })
 console.log(token)

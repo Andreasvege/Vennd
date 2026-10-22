@@ -10,7 +10,7 @@ export async function GET() {
   return new NextResponse(JSON.stringify(await getExport(userId), null, 2), {
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
-      'Content-Disposition': `attachment; filename="vennekart-${day}.json"`,
+      'Content-Disposition': `attachment; filename="vennd-${day}.json"`,
       'Cache-Control': 'no-store',
     },
   })

@@ -13,7 +13,7 @@ export const nb = {
   },
 
   app: {
-    name: 'Vennekart',
+    name: 'Vennd',
     description: 'En dagbok over menneskene dine',
   },
 
