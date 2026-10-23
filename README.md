@@ -2,9 +2,10 @@
 
 # Vennd
 
-**En dagbok over folka du kjenner.**
+**En dagbok over folka i livet ditt. Et kart over de du kjenner. En påminnelse om det du har glemt.**
+**Alt i ett!**
 
-Skriv ned et treff på under et halvt minutt. Neste gang du skal møte noen, ser du hva du lurte på sist.
+Skriv ned et treff på under et halvt minutt. Neste gang du skal møte noen, ser du hva dere snakka om sist.
 
 Next.js 16 · React 19 · TypeScript · Prisma 7 · Postgres · Claude API · Vercel
 
@@ -19,8 +20,9 @@ Next.js 16 · React 19 · TypeScript · Prisma 7 · Postgres · Claude API · Ve
 
 ## Hvorfor
 
-Jeg glemmer ting. At Ingrid hadde intervju på torsdag, eller at det er et halvt år
-siden jeg snakket med en barndomsvenn. Vennd er laget for å hjelpe med akkurat det:
+Jeg kan fort glemme ting. At Ingrid hadde et jobbintervju på torsdag. At det plutselig har gått 3 måneder
+siden jeg har ringt barndomskompisen min. Om Jonas egentlig kjente Sofie, eller om det var Simen som introduserte meg til henne.
+Vennd er laget for å hjelpe med akkurat det:
 
 1. **Skriv ned** hva som skjedde, med vanlige ord. Navnene du skriver, blir koblet
    til personene.
